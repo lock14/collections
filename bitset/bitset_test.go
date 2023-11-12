@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
+// https://oeis.org/A000040
 var first100Primes = []uint32{
 	2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
 	31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
@@ -20,6 +21,7 @@ var first100Primes = []uint32{
 }
 
 func TestAllBitsIntializedToZero(t *testing.T) {
+	x := MaxInt
 	n := 128
 	bitSet := New(NumBits(uint32(n)))
 	for i := 0; i < n; i++ {
