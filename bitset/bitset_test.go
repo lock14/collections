@@ -21,7 +21,6 @@ var first100Primes = []uint32{
 }
 
 func TestAllBitsIntializedToZero(t *testing.T) {
-	x := MaxInt
 	n := 128
 	bitSet := New(NumBits(uint32(n)))
 	for i := 0; i < n; i++ {
@@ -71,10 +70,7 @@ func primesLessThan(n uint32) *BitSet {
 				}
 			}
 		}
-		b.Flip()
-	}
-	for i := n; i < b.Size(); i++ {
-		b.Clear(i)
+		b.FlipRange(0, n)
 	}
 	return b
 }
