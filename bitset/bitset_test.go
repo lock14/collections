@@ -1,76 +1,76 @@
 package bitset
 
 import (
-	"testing"
+    "testing"
 
-	"github.com/google/go-cmp/cmp"
+    "github.com/google/go-cmp/cmp"
 )
 
 // https://oeis.org/A000040
 var first100Primes = []uint32{
-	2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
-	31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
-	73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
-	127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
-	179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
-	233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
-	283, 293, 307, 311, 313, 317, 331, 337, 347, 349,
-	353, 359, 367, 373, 379, 383, 389, 397, 401, 409,
-	419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
-	467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
+    2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
+    31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
+    73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
+    127, 131, 137, 139, 149, 151, 157, 163, 167, 173,
+    179, 181, 191, 193, 197, 199, 211, 223, 227, 229,
+    233, 239, 241, 251, 257, 263, 269, 271, 277, 281,
+    283, 293, 307, 311, 313, 317, 331, 337, 347, 349,
+    353, 359, 367, 373, 379, 383, 389, 397, 401, 409,
+    419, 421, 431, 433, 439, 443, 449, 457, 461, 463,
+    467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
 }
 
 func TestAllBitsIntializedToZero(t *testing.T) {
-	n := 128
-	bitSet := New(NumBits(uint32(n)))
-	for i := 0; i < n; i++ {
-		if bitSet.Get(uint32(i)) {
-			t.Fatalf("excepted bit %d to be unset, but it was not", i)
-		}
-	}
+    n := 128
+    bitSet := New(NumBits(uint32(n)))
+    for i := 0; i < n; i++ {
+        if bitSet.Get(uint32(i)) {
+            t.Fatalf("excepted bit %d to be unset, but it was not", i)
+        }
+    }
 }
 
 func TestSetBit(t *testing.T) {
-	n := 128
-	bitSet := New(NumBits(uint32(n)))
-	for i := 0; i < n; i++ {
-		bitSet.Set(uint32(i))
-		if !bitSet.Get(uint32(i)) {
-			t.Fatalf("excepted bit %d to be set, but it was not", i)
-		}
-	}
+    n := 128
+    bitSet := New(NumBits(uint32(n)))
+    for i := 0; i < n; i++ {
+        bitSet.Set(uint32(i))
+        if !bitSet.Get(uint32(i)) {
+            t.Fatalf("excepted bit %d to be set, but it was not", i)
+        }
+    }
 }
 
 func TestBitSet(t *testing.T) {
-	b := primesLessThan(first100Primes[len(first100Primes)-1] + 1)
-	primes := make([]uint32, 0, 100)
-	for n := uint32(0); n < b.Size(); n++ {
-		if b.Get(n) {
-			primes = append(primes, n)
-		}
-	}
-	if diff := cmp.Diff(primes, first100Primes); diff != "" {
-		t.Fatalf("wrong values: %s", diff)
-	}
+    b := primesLessThan(first100Primes[len(first100Primes)-1] + 1)
+    primes := make([]uint32, 0, 100)
+    for n := uint32(0); n < b.Size(); n++ {
+        if b.Get(n) {
+            primes = append(primes, n)
+        }
+    }
+    if diff := cmp.Diff(primes, first100Primes); diff != "" {
+        t.Fatalf("wrong values: %s", diff)
+    }
 }
 
 func primesLessThan(n uint32) *BitSet {
-	b := New(NumBits(n))
-	if n > 2 {
-		b.Set(0)
-		b.Set(1)
-		for i := uint32(4); i < n; i += 2 {
-			b.Set(i)
-		}
-		for i := uint32(3); (i*i) > i && (i*i) < n; i += 2 {
-			if !b.Get(i) {
-				// i is prime
-				for j := i * i; j > i && j < n; j += i {
-					b.Set(j)
-				}
-			}
-		}
-		b.FlipRange(0, n)
-	}
-	return b
+    b := New(NumBits(n))
+    if n > 2 {
+        b.Set(0)
+        b.Set(1)
+        for i := uint32(4); i < n; i += 2 {
+            b.Set(i)
+        }
+        for i := uint32(3); (i*i) > i && (i*i) < n; i += 2 {
+            if !b.Get(i) {
+                // i is prime
+                for j := i * i; j > i && j < n; j += i {
+                    b.Set(j)
+                }
+            }
+        }
+        b.FlipRange(0, n)
+    }
+    return b
 }
