@@ -73,6 +73,16 @@ func (q *Queue[T]) String() string {
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
+func (q *Queue[T]) ToSlice() []T {
+	slice := make([]T, q.Size())
+	for i := 0; i < cap(slice); i++ {
+		t := q.Remove()
+		slice = append(slice, t)
+		q.Add(t)
+	}
+	return slice
+}
+
 func (q *Queue[T]) resize() {
 	newCap := cap(q.slice) + (cap(q.slice) / 2)
 	slice := make([]T, newCap)

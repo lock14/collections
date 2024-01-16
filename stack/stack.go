@@ -58,6 +58,12 @@ func (s *Stack[T]) String() string {
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
+func (s *Stack[T]) ToSlice() []T {
+	slice := make([]T, s.Size())
+	copy(slice, s.slice)
+	return slice
+}
+
 func defaultConfig() *Config {
 	return &Config{}
 }
