@@ -20,7 +20,8 @@ var first100Primes = []uint32{
 	467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
 }
 
-func TestAllBitsIntializedToZero(t *testing.T) {
+func TestAllBitsInitializedToZero(t *testing.T) {
+	t.Parallel()
 	n := 128
 	bitSet := New(NumBits(uint32(n)))
 	for i := 0; i < n; i++ {
@@ -31,6 +32,7 @@ func TestAllBitsIntializedToZero(t *testing.T) {
 }
 
 func TestSetBit(t *testing.T) {
+	t.Parallel()
 	n := 128
 	bitSet := New(NumBits(uint32(n)))
 	for i := 0; i < n; i++ {
@@ -42,6 +44,7 @@ func TestSetBit(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name           string
 		bitSetInitFunc func() *BitSet
@@ -77,6 +80,7 @@ func TestString(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			b := tc.bitSetInitFunc()
 			got := b.String()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
@@ -87,6 +91,7 @@ func TestString(t *testing.T) {
 }
 
 func TestBitSetPrimeGen(t *testing.T) {
+	t.Parallel()
 	// a prime sieve is a good gamut test of a BitSet
 	b := primesLessThan(first100Primes[len(first100Primes)-1] + 1)
 	primes := make([]uint32, 0, 100)
