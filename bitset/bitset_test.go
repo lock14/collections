@@ -1,7 +1,7 @@
 package bitset
 
 import (
-	"github.com/lock14/collections/util"
+	. "github.com/lock14/collections/util"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -96,12 +96,12 @@ func TestBitSetPrimeGen(t *testing.T) {
 	// a prime sieve is a good gamut test of a BitSet
 	b := primesLessThan(first100Primes[len(first100Primes)-1] + 1)
 	primes := make([]uint, 0, 100)
-	for i := b.SetBits(); !i.Empty(); util.MustDo(i.PopFront()) {
-		n := *util.Must(i.Front())
+	for itr := b.SetBits(); !itr.Empty(); MustDo(itr.PopFront()) {
+		n := *MustGet(itr.Front())
 		primes = append(primes, n)
 	}
 	if diff := cmp.Diff(primes, first100Primes); diff != "" {
-		t.Fatalf("wrong values: %s", diff)
+		t.Errorf("unexpected result (-got, +want): %s", diff)
 	}
 }
 
