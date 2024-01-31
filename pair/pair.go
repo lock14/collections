@@ -27,5 +27,5 @@ func (p *Pair[T1, T2]) UnWrap() (T1, T2) {
 }
 
 func (p *Pair[T1, T2]) String() string {
-	return fmt.Sprintf("(%s, %s)", p.fst, p.snd)
+	return fmt.Sprintf("(%v, %v)", p.fst, p.snd)
 }
