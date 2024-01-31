@@ -104,24 +104,24 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 	endMask := ^uint64(0) << endShift
 
 	if startIndex == endIndex {
-		// need to combine start and end masks
+		// flip middle bits, keep upper and lower bits the same
 		middleMask := ^(startMask | endMask)
 		lowerBits := b.bits[startIndex] & startMask
 		middleBits := (^b.bits[startIndex]) & middleMask
 		upperBits := b.bits[endIndex] & endMask
 		b.bits[startIndex] = lowerBits | middleBits | upperBits
 	} else {
-		// do start index
+		// flip upper bits, keep lower bits the same
 		lowerBits := b.bits[startIndex] & startMask
 		upperBits := (^b.bits[startIndex]) & ^startMask
 		b.bits[startIndex] = upperBits | lowerBits
 
-		// do middle indices
+		// flip all bits at each of the middles indices
 		for i := startIndex + 1; i < endIndex; i++ {
 			b.bits[i] = ^b.bits[i]
 		}
 
-		// do end index
+		// flip lower bits, keep upper bits the same
 		lowerBits = (^b.bits[endIndex]) & ^endMask
 		upperBits = b.bits[endIndex] & endMask
 		b.bits[endIndex] = upperBits | lowerBits
