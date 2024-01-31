@@ -3,6 +3,7 @@ package bitset
 import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
+	"github.com/lock14/collections/util"
 	"strings"
 )
 
@@ -114,6 +115,7 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 	}
 }
 
+// String returns a hexadecimal representation of the bits in this BitSet
 func (b *BitSet) String() string {
 	s := make([]string, len(b.bits))
 	for i := 0; i < len(s); i++ {
@@ -122,7 +124,8 @@ func (b *BitSet) String() string {
 	return strings.Join(s, "")
 }
 
-func (b *BitSet) SetBits() iterator.ForwardIterator[uint] {
+// SetBitIterator returns an iterator that iterates over the set bits of this BitSet
+func (b *BitSet) SetBitIterator() iterator.ForwardIterator[uint] {
 	bi := &setBitIterator{
 		bitSet: b,
 	}
@@ -130,7 +133,8 @@ func (b *BitSet) SetBits() iterator.ForwardIterator[uint] {
 	return bi
 }
 
-func (b *BitSet) UnSetBits() iterator.ForwardIterator[uint] {
+// UnsetBitIterator returns an iterator that iterates over the unset bits of this BitSet
+func (b *BitSet) UnsetBitIterator() iterator.ForwardIterator[uint] {
 	bi := &unSetBitIterator{
 		bitSet: b,
 	}
@@ -176,6 +180,14 @@ func (bi *setBitIterator) Front() (*uint, error) {
 	return &v, nil
 }
 
+func (bi *setBitIterator) MustPopFront() {
+	util.MustDo(bi.PopFront())
+}
+
+func (bi *setBitIterator) MustGetFront() *uint {
+	return util.MustGet(bi.Front())
+}
+
 func (bi *setBitIterator) getNextSetIndex(start uint) uint {
 	for start < bi.bitSet.Size() && !bi.bitSet.Get(start) {
 		start++
@@ -208,4 +220,12 @@ func (bi *unSetBitIterator) getNextUnSetIndex(start uint) uint {
 		start++
 	}
 	return start
+}
+
+func (bi *unSetBitIterator) MustPopFront() {
+	util.MustDo(bi.PopFront())
+}
+
+func (bi *unSetBitIterator) MustGetFront() *uint {
+	return util.MustGet(bi.Front())
 }
