@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const ()
-
 // Stack[T] represents a stack of elements of type T
 type Stack[T any] struct {
 	slice []T

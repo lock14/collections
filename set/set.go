@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const ()
-
 // Set[T] represents a set of elements of type T
 type Set[T comparable] struct {
 	m map[T]struct{}
