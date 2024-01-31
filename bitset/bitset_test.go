@@ -1,6 +1,7 @@
 package bitset
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -93,14 +94,37 @@ func TestString(t *testing.T) {
 func TestBitSetPrimeGen(t *testing.T) {
 	t.Parallel()
 	// a prime sieve is a good gamut test of a BitSet
-	b := primesLessThan(first100Primes[len(first100Primes)-1] + 1)
-	primes := make([]uint, 0, 100)
-	for itr := b.SetBitIterator(); !itr.Empty(); itr.MustPopFront() {
-		n := *itr.MustGetFront()
-		primes = append(primes, n)
+	cases := make([]struct {
+		name     string
+		lessThan uint
+		want     []uint
+	}, 0)
+	for i := 0; i < len(first100Primes); i++ {
+		lessThan := first100Primes[i] + 1
+		cases = append(cases, struct {
+			name     string
+			lessThan uint
+			want     []uint
+		}{
+			name:     fmt.Sprintf("primes_less_than_%d", lessThan),
+			lessThan: lessThan,
+			want:     first100Primes[:i+1],
+		})
 	}
-	if diff := cmp.Diff(primes, first100Primes); diff != "" {
-		t.Errorf("unexpected result (-got, +want): %s", diff)
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := primesLessThan(tc.lessThan)
+			primes := make([]uint, 0, len(tc.want))
+			for itr := b.SetBitIterator(); !itr.Empty(); itr.MustPopFront() {
+				n := *itr.MustGetFront()
+				primes = append(primes, n)
+			}
+			if diff := cmp.Diff(primes, tc.want); diff != "" {
+				t.Errorf("unexpected result (-got, +want): %s", diff)
+			}
+		})
 	}
 }
 

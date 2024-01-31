@@ -101,17 +101,30 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 	b.ensureSize(endIndex)
 
 	startMask := ^(^uint64(0) << startShift)
-	lowerBits := b.bits[startIndex] & startMask
-	upperBits := (^b.bits[startIndex]) & ^startMask
-	b.bits[startIndex] = upperBits | lowerBits
-
 	endMask := ^uint64(0) << endShift
-	lowerBits = (^b.bits[endIndex]) & ^endMask
-	upperBits = b.bits[endIndex] & endMask
-	b.bits[endIndex] = upperBits | lowerBits
 
-	for i := startIndex + 1; i < endIndex; i++ {
-		b.bits[i] = ^b.bits[i]
+	if startIndex == endIndex {
+		// need to combine start and end masks
+		middleMask := ^(startMask | endMask)
+		lowerBits := b.bits[startIndex] & startMask
+		middleBits := (^b.bits[startIndex]) & middleMask
+		upperBits := b.bits[endIndex] & endMask
+		b.bits[startIndex] = lowerBits | middleBits | upperBits
+	} else {
+		// do start index
+		lowerBits := b.bits[startIndex] & startMask
+		upperBits := (^b.bits[startIndex]) & ^startMask
+		b.bits[startIndex] = upperBits | lowerBits
+
+		// do middle indices
+		for i := startIndex + 1; i < endIndex; i++ {
+			b.bits[i] = ^b.bits[i]
+		}
+
+		// do end index
+		lowerBits = (^b.bits[endIndex]) & ^endMask
+		upperBits = b.bits[endIndex] & endMask
+		b.bits[endIndex] = upperBits | lowerBits
 	}
 }
 
