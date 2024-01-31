@@ -2,13 +2,14 @@ package bitset
 
 import (
 	"fmt"
+	"github.com/lock14/collections/iterator"
 	"strings"
 )
 
 const (
-	DefaultNumBits uint32 = 64
-	wordSize              = 64
-	wordFmt               = "%016X"
+	DefaultNumBits uint = 64
+	wordSize       uint = 64
+	wordFmt             = "%016X"
 )
 
 // BitSet represents a vector of bits that grows as needed.
@@ -18,17 +19,29 @@ type BitSet struct {
 
 // Config holds the values for configuring a BitSet.
 type Config struct {
-	NumBits uint32
+	NumBits uint
 }
 
 // Option configures a BitSet config
 type Option func(*Config)
 
 // NumBits provides the option to set the number of bits used in a BitSet.
-func NumBits(n uint32) Option {
+func NumBits(n uint) Option {
 	return func(c *Config) {
 		c.NumBits = n
 	}
+}
+
+// iterator over the set bits
+type setBitIterator struct {
+	bitSet   *BitSet
+	bitIndex uint
+}
+
+// iterator over the unset bits
+type unSetBitIterator struct {
+	bitSet   *BitSet
+	bitIndex uint
 }
 
 // New creates a BitSet whose initial size is large enough to explicitly
@@ -46,29 +59,29 @@ func New(opts ...Option) *BitSet {
 }
 
 // Clear sets the bit specified by the index to false.
-func (b *BitSet) Clear(bit uint32) {
+func (b *BitSet) Clear(bit uint) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] &= ^(1 << shift)
 }
 
 // Set sets the bit at the specified index to true.
-func (b *BitSet) Set(bit uint32) {
+func (b *BitSet) Set(bit uint) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] |= 1 << shift
 }
 
 // Get returns the value of the bit with the specified index.
-func (b *BitSet) Get(bit uint32) bool {
+func (b *BitSet) Get(bit uint) bool {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	return (b.bits[index]>>shift)&1 == 1
 }
 
 // Size returns the number of bits in this bit set.
-func (b *BitSet) Size() uint32 {
-	return uint32(len(b.bits)) * wordSize
+func (b *BitSet) Size() uint {
+	return uint(len(b.bits)) * wordSize
 }
 
 // Flip sets each bit to the complement of its current value. This call is
@@ -81,7 +94,7 @@ func (b *BitSet) Flip() {
 
 // FlipRange sets each bit from the specified start bit (inclusive) to the
 // specified end bit (exclusive) to the complement of its current value.
-func (b *BitSet) FlipRange(start uint32, end uint32) {
+func (b *BitSet) FlipRange(start uint, end uint) {
 	startIndex, startShift := convert(start)
 	endIndex, endShift := convert(end)
 	b.ensureSize(endIndex)
@@ -109,7 +122,23 @@ func (b *BitSet) String() string {
 	return strings.Join(s, "")
 }
 
-func convert(bit uint32) (uint32, uint32) {
+func (b *BitSet) SetBits() iterator.ForwardIterator[uint] {
+	bi := &setBitIterator{
+		bitSet: b,
+	}
+	bi.bitIndex = bi.getNextSetIndex(0)
+	return bi
+}
+
+func (b *BitSet) UnSetBits() iterator.ForwardIterator[uint] {
+	bi := &unSetBitIterator{
+		bitSet: b,
+	}
+	bi.bitIndex = bi.getNextUnSetIndex(0)
+	return bi
+}
+
+func convert(bit uint) (uint, uint) {
 	return bit / wordSize, bit % wordSize
 }
 
@@ -119,8 +148,64 @@ func defaultConfig() *Config {
 	}
 }
 
-func (b *BitSet) ensureSize(index uint32) {
-	for index >= uint32(len(b.bits)) {
+func (b *BitSet) ensureSize(index uint) {
+	for index >= uint(len(b.bits)) {
 		b.bits = append(b.bits, 0)
 	}
+}
+
+// Iterator stuff
+
+func (bi *setBitIterator) Empty() bool {
+	return bi.bitIndex >= uint(len(bi.bitSet.bits))*wordSize
+}
+
+func (bi *setBitIterator) PopFront() error {
+	if bi.Empty() {
+		return fmt.Errorf("cannot pop front of an empty iterator")
+	}
+	bi.bitIndex = bi.getNextSetIndex(bi.bitIndex + 1)
+	return nil
+}
+
+func (bi *setBitIterator) Front() (*uint, error) {
+	if bi.Empty() {
+		return nil, fmt.Errorf("cannot get front of an empty iterator")
+	}
+	v := bi.bitIndex
+	return &v, nil
+}
+
+func (bi *setBitIterator) getNextSetIndex(start uint) uint {
+	for start < bi.bitSet.Size() && !bi.bitSet.Get(start) {
+		start++
+	}
+	return start
+}
+
+func (bi *unSetBitIterator) Empty() bool {
+	return bi.bitIndex >= uint(len(bi.bitSet.bits))*wordSize
+}
+
+func (bi *unSetBitIterator) PopFront() error {
+	if bi.Empty() {
+		return fmt.Errorf("cannot pop front of an empty iterator")
+	}
+	bi.bitIndex = bi.getNextUnSetIndex(bi.bitIndex + 1)
+	return nil
+}
+
+func (bi *unSetBitIterator) Front() (*uint, error) {
+	if bi.Empty() {
+		return nil, fmt.Errorf("cannot get front of an empty iterator")
+	}
+	v := bi.bitIndex
+	return &v, nil
+}
+
+func (bi *unSetBitIterator) getNextUnSetIndex(start uint) uint {
+	for start < bi.bitSet.Size() && bi.bitSet.Get(start) {
+		start++
+	}
+	return start
 }
