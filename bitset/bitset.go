@@ -177,7 +177,7 @@ func (bi *setBitIterator) Empty() bool {
 	return bi.bitIndex >= uint(len(bi.bitSet.bits))*wordSize
 }
 
-func (bi *setBitIterator) PopFront() error {
+func (bi *setBitIterator) Increment() error {
 	if bi.Empty() {
 		return fmt.Errorf("cannot pop front of an empty iterator")
 	}
@@ -185,7 +185,7 @@ func (bi *setBitIterator) PopFront() error {
 	return nil
 }
 
-func (bi *setBitIterator) Front() (*uint, error) {
+func (bi *setBitIterator) GetFirst() (*uint, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
@@ -193,12 +193,12 @@ func (bi *setBitIterator) Front() (*uint, error) {
 	return &v, nil
 }
 
-func (bi *setBitIterator) MustPopFront() {
-	util.MustDo(bi.PopFront())
+func (bi *setBitIterator) MustIncrement() {
+	util.MustDo(bi.Increment())
 }
 
-func (bi *setBitIterator) MustGetFront() *uint {
-	return util.MustGet(bi.Front())
+func (bi *setBitIterator) MustGetFirst() *uint {
+	return util.MustGet(bi.GetFirst())
 }
 
 func (bi *setBitIterator) getNextSetIndex(start uint) uint {
@@ -212,7 +212,7 @@ func (bi *unSetBitIterator) Empty() bool {
 	return bi.bitIndex >= uint(len(bi.bitSet.bits))*wordSize
 }
 
-func (bi *unSetBitIterator) PopFront() error {
+func (bi *unSetBitIterator) Increment() error {
 	if bi.Empty() {
 		return fmt.Errorf("cannot pop front of an empty iterator")
 	}
@@ -220,7 +220,7 @@ func (bi *unSetBitIterator) PopFront() error {
 	return nil
 }
 
-func (bi *unSetBitIterator) Front() (*uint, error) {
+func (bi *unSetBitIterator) GetFirst() (*uint, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
@@ -235,10 +235,10 @@ func (bi *unSetBitIterator) getNextUnSetIndex(start uint) uint {
 	return start
 }
 
-func (bi *unSetBitIterator) MustPopFront() {
-	util.MustDo(bi.PopFront())
+func (bi *unSetBitIterator) MustIncrement() {
+	util.MustDo(bi.Increment())
 }
 
-func (bi *unSetBitIterator) MustGetFront() *uint {
-	return util.MustGet(bi.Front())
+func (bi *unSetBitIterator) MustGetFirst() *uint {
+	return util.MustGet(bi.GetFirst())
 }

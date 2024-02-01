@@ -5,36 +5,36 @@ package iterator
 type ForwardIterator[T any] interface {
 	// Empty returns true if this Iterator is empty.
 	Empty() bool
-	// PopFront advances this Iterator one element forwards.
+	// Increment advances this Iterator one element forwards.
 	// If the Iterator is empty, then an error is returned.
-	PopFront() error
-	// MustPopFront advances this Iterator one element forwards.
+	Increment() error
+	// MustIncrement advances this Iterator one element forwards.
 	// If the Iterator is empty, then a panic occurs.
-	MustPopFront()
-	// Front returns the element at the front of this Iterator.
+	MustIncrement()
+	// GetFirst returns the element at the front of this Iterator.
 	// If the Iterator is empty, then an error is returned.
-	Front() (*T, error)
-	// MustGetFront returns the element at the front of this Iterator.
+	GetFirst() (*T, error)
+	// MustGetFirst returns the element at the front of this Iterator.
 	// If the Iterator is empty, then a panic occurs.
-	MustGetFront() *T
+	MustGetFirst() *T
 }
 
 // BidirectionalIterator represents an iterator that can move both 'forwards'
 // and 'backwards'.
 type BidirectionalIterator[T any] interface {
 	ForwardIterator[T]
-	// Back returns the element at the back of this Iterator.
+	// GetBack returns the element at the back of this Iterator.
 	// If the Iterator is empty, then an error is returned.
-	Back(*T, error)
+	GetBack() (*T, error)
 	// MustGetBack returns the element at the back of this Iterator.
 	// If the Iterator is empty, then a panic occurs.
 	MustGetBack() *T
-	// PopBack advances this Iterator one element backwards.
+	// Decrement advances this Iterator one element backwards.
 	// If the Iterator is empty, then an error is returned.
-	PopBack() error
-	// MustPopBack advances this Iterator one element backwards.
+	Decrement() error
+	// MustDecrement advances this Iterator one element backwards.
 	// If the Iterator is empty, then a panic occurs.
-	MustPopBack()
+	MustDecrement()
 }
 
 // RandomAccessIterator represents an iterator where the elements of the range
