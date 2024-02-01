@@ -91,6 +91,43 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestFromBytes(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		input []byte
+		want  string
+	}{
+		{
+			name:  "empty_slice",
+			input: []byte{},
+			want:  "",
+		},
+		{
+			name:  "eight_bytes",
+			input: []byte{0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8},
+			want:  "FFFEFDFCFBFAF9F8",
+		},
+		{
+			name:  "one_byte",
+			input: []byte{0xFF},
+			want:  "00000000000000FF",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := fromBytes(tc.input)
+			got := b.String()
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Errorf("unexpected result (-got, +want):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestBitSetPrimeGen(t *testing.T) {
 	t.Parallel()
 	// a prime sieve is a good gamut test of a BitSet

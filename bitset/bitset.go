@@ -128,6 +128,25 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 	}
 }
 
+// TODO: expose this as a public function once its ready
+func fromBytes(bytes []byte) *BitSet {
+	b := New(NumBits(uint(len(bytes) * 8)))
+	i := len(bytes) - 1
+	k := 0
+	for i >= 0 {
+		word := uint64(0)
+		for j := 0; i-j >= 0 && j < 8; j++ {
+			b := uint64(bytes[i-j])
+			bShift := b << (8 * j)
+			word |= bShift
+		}
+		b.bits[k] = word
+		i -= 8
+		k++
+	}
+	return b
+}
+
 // String returns a hexadecimal representation of the bits in this BitSet
 func (b *BitSet) String() string {
 	s := make([]string, len(b.bits))
