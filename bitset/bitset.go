@@ -98,7 +98,9 @@ func (b *BitSet) Flip() {
 func (b *BitSet) FlipRange(start uint, end uint) {
 	startIndex, startShift := convert(start)
 	endIndex, endShift := convert(end)
-	b.ensureSize(endIndex)
+	if end != uint(b.Size()) {
+		b.ensureSize(endIndex)
+	}
 
 	startMask := ^(^uint64(0) << startShift)
 	endMask := ^uint64(0) << endShift
@@ -121,10 +123,12 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 			b.bits[i] = ^b.bits[i]
 		}
 
-		// flip lower bits, keep upper bits the same
-		lowerBits = (^b.bits[endIndex]) & ^endMask
-		upperBits = b.bits[endIndex] & endMask
-		b.bits[endIndex] = upperBits | lowerBits
+		if end != uint(b.Size()) {
+			// flip lower bits, keep upper bits the same
+			lowerBits = (^b.bits[endIndex]) & ^endMask
+			upperBits = b.bits[endIndex] & endMask
+			b.bits[endIndex] = upperBits | lowerBits
+		}
 	}
 }
 

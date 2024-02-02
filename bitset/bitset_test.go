@@ -145,6 +145,36 @@ func TestFromBytesToBytes(t *testing.T) {
 	}
 }
 
+func TestFlipRange(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		start uint
+		end   uint
+		want  int
+	}{
+		{
+			name:  "flip_entire_range_does_not_expand_size",
+			start: 0,
+			end:   64,
+			want:  64,
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := New()
+			b.FlipRange(tc.start, tc.end)
+			got := b.Size()
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Errorf("unexpected result (-got, +want):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestBitSetPrimeGen(t *testing.T) {
 	t.Parallel()
 	// a prime sieve is a good gamut test of a BitSet
