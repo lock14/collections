@@ -219,7 +219,7 @@ func (bi *setBitIterator) Increment() error {
 	return nil
 }
 
-func (bi *setBitIterator) GetFirst() (*uint, error) {
+func (bi *setBitIterator) GetFront() (*uint, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
@@ -231,8 +231,8 @@ func (bi *setBitIterator) MustIncrement() {
 	util.MustDo(bi.Increment())
 }
 
-func (bi *setBitIterator) MustGetFirst() *uint {
-	return util.MustGet(bi.GetFirst())
+func (bi *setBitIterator) MustGetFront() *uint {
+	return util.MustGet(bi.GetFront())
 }
 
 func (bi *setBitIterator) getNextSetIndex(start uint) uint {
@@ -254,7 +254,7 @@ func (bi *unSetBitIterator) Increment() error {
 	return nil
 }
 
-func (bi *unSetBitIterator) GetFirst() (*uint, error) {
+func (bi *unSetBitIterator) GetFront() (*uint, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
@@ -273,6 +273,6 @@ func (bi *unSetBitIterator) MustIncrement() {
 	util.MustDo(bi.Increment())
 }
 
-func (bi *unSetBitIterator) MustGetFirst() *uint {
-	return util.MustGet(bi.GetFirst())
+func (bi *unSetBitIterator) MustGetFront() *uint {
+	return util.MustGet(bi.GetFront())
 }

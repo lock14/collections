@@ -202,7 +202,7 @@ func TestBitSetPrimeGen(t *testing.T) {
 			b := primesLessThan(tc.lessThan)
 			primes := make([]uint, 0, len(tc.want))
 			for itr := b.SetBitIterator(); !itr.Empty(); itr.MustIncrement() {
-				n := *itr.MustGetFirst()
+				n := *itr.MustGetFront()
 				primes = append(primes, n)
 			}
 			if diff := cmp.Diff(primes, tc.want); diff != "" {

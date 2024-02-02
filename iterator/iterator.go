@@ -11,12 +11,12 @@ type ForwardIterator[T any] interface {
 	// MustIncrement advances this Iterator one element forwards.
 	// If the Iterator is empty, then a panic occurs.
 	MustIncrement()
-	// GetFirst returns the element at the front of this Iterator.
+	// GetFront returns the element at the front of this Iterator.
 	// If the Iterator is empty, then an error is returned.
-	GetFirst() (*T, error)
-	// MustGetFirst returns the element at the front of this Iterator.
+	GetFront() (*T, error)
+	// MustGetFront returns the element at the front of this Iterator.
 	// If the Iterator is empty, then a panic occurs.
-	MustGetFirst() *T
+	MustGetFront() *T
 }
 
 // BidirectionalIterator represents an iterator that can move both 'forwards'
