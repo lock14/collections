@@ -81,8 +81,8 @@ func (b *BitSet) Get(bit uint) bool {
 }
 
 // Size returns the number of bits in this bit set.
-func (b *BitSet) Size() uint {
-	return uint(len(b.bits)) * wordSize
+func (b *BitSet) Size() int {
+	return len(b.bits) * int(wordSize)
 }
 
 // Flip sets each bit to the complement of its current value. This call is
@@ -131,20 +131,31 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 // TODO: expose this as a public function once its ready
 func fromBytes(bytes []byte) *BitSet {
 	b := New(NumBits(uint(len(bytes) * 8)))
-	i := len(bytes) - 1
 	k := 0
-	for i >= 0 {
+	for i := 0; i < len(bytes); i += 8 {
 		word := uint64(0)
-		for j := 0; i-j >= 0 && j < 8; j++ {
-			b := uint64(bytes[i-j])
+		for j := 0; i+j < len(bytes) && j < 8; j++ {
+			b := uint64(bytes[i+j])
 			bShift := b << (8 * j)
 			word |= bShift
 		}
 		b.bits[k] = word
-		i -= 8
 		k++
 	}
 	return b
+}
+
+// TODO: expose this as a public function once its ready
+func (b *BitSet) toBytes() []byte {
+	bytes := make([]byte, len(b.bits)*8)
+	k := 0
+	for i := 0; i < len(b.bits); i++ {
+		for j := 0; j < 8; j++ {
+			bytes[k] = byte(0xFF & (b.bits[i] >> (j * 8)))
+			k++
+		}
+	}
+	return bytes
 }
 
 // String returns a hexadecimal representation of the bits in this BitSet
@@ -221,7 +232,7 @@ func (bi *setBitIterator) MustGetFirst() *uint {
 }
 
 func (bi *setBitIterator) getNextSetIndex(start uint) uint {
-	for start < bi.bitSet.Size() && !bi.bitSet.Get(start) {
+	for start < uint(bi.bitSet.Size()) && !bi.bitSet.Get(start) {
 		start++
 	}
 	return start
@@ -248,7 +259,7 @@ func (bi *unSetBitIterator) GetFirst() (*uint, error) {
 }
 
 func (bi *unSetBitIterator) getNextUnSetIndex(start uint) uint {
-	for start < bi.bitSet.Size() && bi.bitSet.Get(start) {
+	for start < uint(bi.bitSet.Size()) && bi.bitSet.Get(start) {
 		start++
 	}
 	return start

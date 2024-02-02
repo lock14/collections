@@ -91,27 +91,37 @@ func TestString(t *testing.T) {
 	}
 }
 
-func TestFromBytes(t *testing.T) {
+func TestFromBytesToBytes(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
 		input []byte
-		want  string
+		want  []byte
 	}{
 		{
 			name:  "empty_slice",
 			input: []byte{},
-			want:  "",
-		},
-		{
-			name:  "eight_bytes",
-			input: []byte{0xFF, 0xFE, 0xFD, 0xFC, 0xFB, 0xFA, 0xF9, 0xF8},
-			want:  "FFFEFDFCFBFAF9F8",
+			want:  []byte{},
 		},
 		{
 			name:  "one_byte",
 			input: []byte{0xFF},
-			want:  "00000000000000FF",
+			want:  []byte{0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		},
+		{
+			name:  "eight_bytes",
+			input: []byte{0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+			want:  []byte{0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+		},
+		{
+			name:  "twelve_bytes",
+			input: []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+			want:  []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF, 0x00, 0x00, 0x00, 0x00},
+		},
+		{
+			name:  "sixteen_bytes",
+			input: []byte{0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+			want:  []byte{0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
 		},
 	}
 
@@ -120,9 +130,16 @@ func TestFromBytes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			b := fromBytes(tc.input)
-			got := b.String()
+			got := b.toBytes()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("unexpected result (-got, +want):\n%s", diff)
+			}
+			for n := 0; n < b.Size(); n++ {
+				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
+				wantSetBit := b.Get(uint(n))
+				if diff := cmp.Diff(gotSetBit, wantSetBit); diff != "" {
+					t.Errorf("unexpected result (-got, +want):\n%s", diff)
+				}
 			}
 		})
 	}
