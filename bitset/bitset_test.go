@@ -8,7 +8,7 @@ import (
 )
 
 // https://oeis.org/A000040
-var first100Primes = []uint{
+var first100Primes = []int{
 	2, 3, 5, 7, 11, 13, 17, 19, 23, 29,
 	31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
 	73, 79, 83, 89, 97, 101, 103, 107, 109, 113,
@@ -24,9 +24,9 @@ var first100Primes = []uint{
 func TestAllBitsInitializedToZero(t *testing.T) {
 	t.Parallel()
 	n := 128
-	bitSet := New(NumBits(uint(n)))
+	bitSet := New(NumBits(n))
 	for i := 0; i < n; i++ {
-		if bitSet.Get(uint(i)) {
+		if bitSet.Get(i) {
 			t.Fatalf("excepted bit %d to be unset, but it was not", i)
 		}
 	}
@@ -35,10 +35,10 @@ func TestAllBitsInitializedToZero(t *testing.T) {
 func TestSetBit(t *testing.T) {
 	t.Parallel()
 	n := 128
-	bitSet := New(NumBits(uint(n)))
+	bitSet := New(NumBits(n))
 	for i := 0; i < n; i++ {
-		bitSet.Set(uint(i))
-		if !bitSet.Get(uint(i)) {
+		bitSet.Set(i)
+		if !bitSet.Get(i) {
 			t.Fatalf("excepted bit %d to be set, but it was not", i)
 		}
 	}
@@ -136,7 +136,7 @@ func TestFromBytesToBytes(t *testing.T) {
 			}
 			for n := 0; n < b.Size(); n++ {
 				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
-				wantSetBit := b.Get(uint(n))
+				wantSetBit := b.Get(n)
 				if diff := cmp.Diff(gotSetBit, wantSetBit); diff != "" {
 					t.Errorf("unexpected result (-got, +want):\n%s", diff)
 				}
@@ -149,8 +149,8 @@ func TestFlipRange(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
-		start uint
-		end   uint
+		start int
+		end   int
 		want  int
 	}{
 		{
@@ -180,15 +180,15 @@ func TestBitSetPrimeGen(t *testing.T) {
 	// a prime sieve is a good gamut test of a BitSet
 	cases := make([]struct {
 		name     string
-		lessThan uint
-		want     []uint
+		lessThan int
+		want     []int
 	}, 0)
 	for i := 0; i < len(first100Primes); i++ {
 		lessThan := first100Primes[i] + 1
 		cases = append(cases, struct {
 			name     string
-			lessThan uint
-			want     []uint
+			lessThan int
+			want     []int
 		}{
 			name:     fmt.Sprintf("primes_less_than_%d", lessThan),
 			lessThan: lessThan,
@@ -200,7 +200,7 @@ func TestBitSetPrimeGen(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			b := primesLessThan(tc.lessThan)
-			primes := make([]uint, 0, len(tc.want))
+			primes := make([]int, 0, len(tc.want))
 			for itr := b.SetBitIterator(); !itr.Empty(); itr.MustIncrement() {
 				n := *itr.MustGetFront()
 				primes = append(primes, n)
@@ -212,15 +212,15 @@ func TestBitSetPrimeGen(t *testing.T) {
 	}
 }
 
-func primesLessThan(n uint) *BitSet {
+func primesLessThan(n int) *BitSet {
 	b := New(NumBits(n))
 	if n > 2 {
 		b.Set(0)
 		b.Set(1)
-		for i := uint(4); i < n; i += 2 {
+		for i := 4; i < n; i += 2 {
 			b.Set(i)
 		}
-		for i := uint(3); (i*i) > i && (i*i) < n; i += 2 {
+		for i := 3; (i*i) > i && (i*i) < n; i += 2 {
 			if !b.Get(i) {
 				// i is prime
 				for j := i * i; j > i && j < n; j += i {

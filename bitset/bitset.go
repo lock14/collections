@@ -8,9 +8,9 @@ import (
 )
 
 const (
-	DefaultNumBits uint = 64
-	wordSize       uint = 64
-	wordFmt             = "%016X"
+	DefaultNumBits = 64
+	wordSize       = 64
+	wordFmt        = "%016X"
 )
 
 // BitSet represents a vector of bits that grows as needed.
@@ -20,14 +20,14 @@ type BitSet struct {
 
 // Config holds the values for configuring a BitSet.
 type Config struct {
-	NumBits uint
+	NumBits int
 }
 
 // Option configures a BitSet config
 type Option func(*Config)
 
 // NumBits provides the option to set the number of bits used in a BitSet.
-func NumBits(n uint) Option {
+func NumBits(n int) Option {
 	return func(c *Config) {
 		c.NumBits = n
 	}
@@ -36,13 +36,13 @@ func NumBits(n uint) Option {
 // iterator over the set bits
 type setBitIterator struct {
 	bitSet   *BitSet
-	bitIndex uint
+	bitIndex int
 }
 
 // iterator over the unset bits
 type unSetBitIterator struct {
 	bitSet   *BitSet
-	bitIndex uint
+	bitIndex int
 }
 
 // New creates a BitSet whose initial size is large enough to explicitly
@@ -60,21 +60,21 @@ func New(opts ...Option) *BitSet {
 }
 
 // Clear sets the bit specified by the index to false.
-func (b *BitSet) Clear(bit uint) {
+func (b *BitSet) Clear(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] &= ^(1 << shift)
 }
 
 // Set sets the bit at the specified index to true.
-func (b *BitSet) Set(bit uint) {
+func (b *BitSet) Set(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] |= 1 << shift
 }
 
 // Get returns the value of the bit with the specified index.
-func (b *BitSet) Get(bit uint) bool {
+func (b *BitSet) Get(bit int) bool {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	return (b.bits[index]>>shift)&1 == 1
@@ -82,7 +82,7 @@ func (b *BitSet) Get(bit uint) bool {
 
 // Size returns the number of bits in this bit set.
 func (b *BitSet) Size() int {
-	return len(b.bits) * int(wordSize)
+	return len(b.bits) * wordSize
 }
 
 // Flip sets each bit to the complement of its current value. This call is
@@ -95,10 +95,10 @@ func (b *BitSet) Flip() {
 
 // FlipRange sets each bit from the specified start bit (inclusive) to the
 // specified end bit (exclusive) to the complement of its current value.
-func (b *BitSet) FlipRange(start uint, end uint) {
+func (b *BitSet) FlipRange(start int, end int) {
 	startIndex, startShift := convert(start)
 	endIndex, endShift := convert(end)
-	if end != uint(b.Size()) {
+	if end != b.Size() {
 		b.ensureSize(endIndex)
 	}
 
@@ -123,7 +123,7 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 			b.bits[i] = ^b.bits[i]
 		}
 
-		if end != uint(b.Size()) {
+		if end != b.Size() {
 			// flip lower bits, keep upper bits the same
 			lowerBits = (^b.bits[endIndex]) & ^endMask
 			upperBits = b.bits[endIndex] & endMask
@@ -134,7 +134,7 @@ func (b *BitSet) FlipRange(start uint, end uint) {
 
 // TODO: expose this as a public function once its ready
 func fromBytes(bytes []byte) *BitSet {
-	b := New(NumBits(uint(len(bytes) * 8)))
+	b := New(NumBits(len(bytes) * 8))
 	k := 0
 	for i := 0; i < len(bytes); i += 8 {
 		word := uint64(0)
@@ -172,7 +172,7 @@ func (b *BitSet) String() string {
 }
 
 // SetBitIterator returns an iterator that iterates over the set bits of this BitSet
-func (b *BitSet) SetBitIterator() iterator.ForwardIterator[uint] {
+func (b *BitSet) SetBitIterator() iterator.ForwardIterator[int] {
 	bi := &setBitIterator{
 		bitSet: b,
 	}
@@ -181,7 +181,7 @@ func (b *BitSet) SetBitIterator() iterator.ForwardIterator[uint] {
 }
 
 // UnsetBitIterator returns an iterator that iterates over the unset bits of this BitSet
-func (b *BitSet) UnsetBitIterator() iterator.ForwardIterator[uint] {
+func (b *BitSet) UnsetBitIterator() iterator.ForwardIterator[int] {
 	bi := &unSetBitIterator{
 		bitSet: b,
 	}
@@ -189,7 +189,7 @@ func (b *BitSet) UnsetBitIterator() iterator.ForwardIterator[uint] {
 	return bi
 }
 
-func convert(bit uint) (uint, uint) {
+func convert(bit int) (int, int) {
 	return bit / wordSize, bit % wordSize
 }
 
@@ -199,16 +199,26 @@ func defaultConfig() *Config {
 	}
 }
 
-func (b *BitSet) ensureSize(index uint) {
-	for index >= uint(len(b.bits)) {
+func (b *BitSet) ensureSize(index int) {
+	for index >= len(b.bits) {
 		b.bits = append(b.bits, 0)
 	}
+}
+
+// TODO: work on incorporating this
+func (b *BitSet) lastNonZeroWord() int {
+	for i := len(b.bits) - 1; i >= 0; i-- {
+		if b.bits[i] != 0 {
+			return i
+		}
+	}
+	return -1
 }
 
 // Iterator stuff
 
 func (bi *setBitIterator) Empty() bool {
-	return bi.bitIndex >= uint(len(bi.bitSet.bits))*wordSize
+	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
 }
 
 func (bi *setBitIterator) Increment() error {
@@ -219,7 +229,7 @@ func (bi *setBitIterator) Increment() error {
 	return nil
 }
 
-func (bi *setBitIterator) GetFront() (*uint, error) {
+func (bi *setBitIterator) GetFront() (*int, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
@@ -231,19 +241,19 @@ func (bi *setBitIterator) MustIncrement() {
 	util.MustDo(bi.Increment())
 }
 
-func (bi *setBitIterator) MustGetFront() *uint {
+func (bi *setBitIterator) MustGetFront() *int {
 	return util.MustGet(bi.GetFront())
 }
 
-func (bi *setBitIterator) getNextSetIndex(start uint) uint {
-	for start < uint(bi.bitSet.Size()) && !bi.bitSet.Get(start) {
+func (bi *setBitIterator) getNextSetIndex(start int) int {
+	for start < bi.bitSet.Size() && !bi.bitSet.Get(start) {
 		start++
 	}
 	return start
 }
 
 func (bi *unSetBitIterator) Empty() bool {
-	return bi.bitIndex >= uint(len(bi.bitSet.bits))*wordSize
+	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
 }
 
 func (bi *unSetBitIterator) Increment() error {
@@ -254,7 +264,7 @@ func (bi *unSetBitIterator) Increment() error {
 	return nil
 }
 
-func (bi *unSetBitIterator) GetFront() (*uint, error) {
+func (bi *unSetBitIterator) GetFront() (*int, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
@@ -262,8 +272,8 @@ func (bi *unSetBitIterator) GetFront() (*uint, error) {
 	return &v, nil
 }
 
-func (bi *unSetBitIterator) getNextUnSetIndex(start uint) uint {
-	for start < uint(bi.bitSet.Size()) && bi.bitSet.Get(start) {
+func (bi *unSetBitIterator) getNextUnSetIndex(start int) int {
+	for start < bi.bitSet.Size() && bi.bitSet.Get(start) {
 		start++
 	}
 	return start
@@ -273,6 +283,6 @@ func (bi *unSetBitIterator) MustIncrement() {
 	util.MustDo(bi.Increment())
 }
 
-func (bi *unSetBitIterator) MustGetFront() *uint {
+func (bi *unSetBitIterator) MustGetFront() *int {
 	return util.MustGet(bi.GetFront())
 }
