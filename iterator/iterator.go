@@ -47,3 +47,22 @@ type RandomAccessIterator[T any] interface {
 	// Length returns the length of this Iterator.
 	Length() int
 }
+
+// ForwardIterable denotes a type that can be iterated over
+// by using the ForwardIterator supplied using the Iterator method.
+type ForwardIterable[T any] interface {
+	Iterator() ForwardIterator[T]
+}
+
+// Range produces a channel that contains the elements of the iterable.
+func Range[T any](iterable ForwardIterable[T]) chan *T {
+	c := make(chan *T)
+	go func() {
+		for itr := iterable.Iterator(); !itr.Empty(); itr.MustIncrement() {
+			c <- itr.MustGetFront()
+		}
+		close(c)
+	}()
+	return c
+
+}

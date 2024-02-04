@@ -172,6 +172,11 @@ func (b *BitSet) String() string {
 	return strings.Join(s, "")
 }
 
+// Iterator is an alias for SetBitIterator
+func (b *BitSet) Iterator() iterator.ForwardIterator[int] {
+	return b.SetBitIterator()
+}
+
 // SetBitIterator returns an iterator that iterates over the set bits of this BitSet
 func (b *BitSet) SetBitIterator() iterator.ForwardIterator[int] {
 	bi := &setBitIterator{

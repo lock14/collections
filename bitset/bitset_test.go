@@ -2,6 +2,7 @@ package bitset
 
 import (
 	"fmt"
+	"github.com/lock14/collections/iterator"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -201,9 +202,8 @@ func TestBitSetPrimeGen(t *testing.T) {
 			t.Parallel()
 			b := primesLessThan(tc.lessThan)
 			primes := make([]int, 0, len(tc.want))
-			for itr := b.SetBitIterator(); !itr.Empty(); itr.MustIncrement() {
-				n := *itr.MustGetFront()
-				primes = append(primes, n)
+			for n := range iterator.Range[int](b) {
+				primes = append(primes, *n)
 			}
 			if diff := cmp.Diff(primes, tc.want); diff != "" {
 				t.Errorf("unexpected result (-got, +want): %s", diff)
