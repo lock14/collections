@@ -54,6 +54,7 @@ func New(opts ...Option) *BitSet {
 	for _, option := range opts {
 		option(config)
 	}
+	ensureNonNegative(config.NumBits)
 	return &BitSet{
 		bits: make([]uint64, (config.NumBits/wordSize)+min(1, config.NumBits%wordSize)),
 	}
@@ -190,6 +191,7 @@ func (b *BitSet) UnsetBitIterator() iterator.ForwardIterator[int] {
 }
 
 func convert(bit int) (int, int) {
+	ensureNonNegative(bit)
 	return bit / wordSize, bit % wordSize
 }
 
@@ -213,6 +215,12 @@ func (b *BitSet) lastNonZeroWord() int {
 		}
 	}
 	return -1
+}
+
+func ensureNonNegative(i int) {
+	if i < 0 {
+		panic(fmt.Sprintf("runtime error: index out of range [%d]", i))
+	}
 }
 
 // Iterator stuff
