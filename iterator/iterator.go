@@ -65,16 +65,16 @@ type ForwardIterable[T any] interface {
 	Elements() chan *T
 }
 
-// Range produces a channel that contains the elements of the iterable.
+// Elements produces a channel that contains the elements of the iterable.
 // The channel provided will be closed automatically after all elements
 // have been read from the channel. If all elements from the channel
 // are not read, then the channel will not be closed. This method is
 // intended to be used primarily with the for...range construct.
 //
-//	for e := range iterator.Range(iterable) {
+//	for e := range iterator.Elements(iterable) {
 //	   // do something with e
 //	}
-func Range[T any](iterable ForwardIterable[T]) chan *T {
+func Elements[T any](iterable ForwardIterable[T]) chan *T {
 	c := make(chan *T)
 	go func() {
 		for itr := iterable.Iterator(); !itr.Empty(); itr.MustIncrement() {
