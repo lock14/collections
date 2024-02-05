@@ -1,22 +1,15 @@
 package iterator
 
+import "github.com/lock14/collections/util"
+
 // Iterator represents an iterator that moves 'forward' whenever
 // Increment() is called.
 type Iterator[T any] interface {
 	// Empty returns true if this Iterator is empty.
 	Empty() bool
-	// Increment advances this Iterator one element forwards.
+	// Next returns the next element from this Iterator.
 	// If the Iterator is empty, then an error is returned.
-	Increment() error
-	// MustIncrement advances this Iterator one element forwards.
-	// If the Iterator is empty, then a panic occurs.
-	MustIncrement()
-	// GetFront returns the element at the front of this Iterator.
-	// If the Iterator is empty, then an error is returned.
-	GetFront() (*T, error)
-	// MustGetFront returns the element at the front of this Iterator.
-	// If the Iterator is empty, then a panic occurs.
-	MustGetFront() *T
+	Next() (*T, error)
 }
 
 // Iterable denotes a type that can be iterated over
@@ -48,8 +41,8 @@ type Iterable[T any] interface {
 func Elements[T any](iterable Iterable[T]) chan *T {
 	c := make(chan *T)
 	go func() {
-		for itr := iterable.Iterator(); !itr.Empty(); itr.MustIncrement() {
-			c <- itr.MustGetFront()
+		for itr := iterable.Iterator(); !itr.Empty(); {
+			c <- util.MustGet(itr.Next())
 		}
 		close(c)
 	}()

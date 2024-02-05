@@ -3,7 +3,6 @@ package bitset
 import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
-	"github.com/lock14/collections/util"
 	"strings"
 )
 
@@ -238,28 +237,13 @@ func (bi *setBitIterator) Empty() bool {
 	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
 }
 
-func (bi *setBitIterator) Increment() error {
-	if bi.Empty() {
-		return fmt.Errorf("cannot pop front of an empty iterator")
-	}
-	bi.bitIndex = bi.getNextSetIndex(bi.bitIndex + 1)
-	return nil
-}
-
-func (bi *setBitIterator) GetFront() (*int, error) {
+func (bi *setBitIterator) Next() (*int, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
 	v := bi.bitIndex
+	bi.bitIndex = bi.getNextSetIndex(bi.bitIndex + 1)
 	return &v, nil
-}
-
-func (bi *setBitIterator) MustIncrement() {
-	util.MustDo(bi.Increment())
-}
-
-func (bi *setBitIterator) MustGetFront() *int {
-	return util.MustGet(bi.GetFront())
 }
 
 func (bi *setBitIterator) getNextSetIndex(start int) int {
@@ -273,19 +257,12 @@ func (bi *unSetBitIterator) Empty() bool {
 	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
 }
 
-func (bi *unSetBitIterator) Increment() error {
-	if bi.Empty() {
-		return fmt.Errorf("cannot pop front of an empty iterator")
-	}
-	bi.bitIndex = bi.getNextUnSetIndex(bi.bitIndex + 1)
-	return nil
-}
-
-func (bi *unSetBitIterator) GetFront() (*int, error) {
+func (bi *unSetBitIterator) Next() (*int, error) {
 	if bi.Empty() {
 		return nil, fmt.Errorf("cannot get front of an empty iterator")
 	}
 	v := bi.bitIndex
+	bi.bitIndex = bi.getNextUnSetIndex(bi.bitIndex + 1)
 	return &v, nil
 }
 
@@ -294,12 +271,4 @@ func (bi *unSetBitIterator) getNextUnSetIndex(start int) int {
 		start++
 	}
 	return start
-}
-
-func (bi *unSetBitIterator) MustIncrement() {
-	util.MustDo(bi.Increment())
-}
-
-func (bi *unSetBitIterator) MustGetFront() *int {
-	return util.MustGet(bi.GetFront())
 }
