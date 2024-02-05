@@ -1,7 +1,7 @@
 package iterator
 
 // ForwardIterator represents an iterator that moves 'forward' whenever
-// PopFront() is called.
+// Increment() is called.
 type ForwardIterator[T any] interface {
 	// Empty returns true if this Iterator is empty.
 	Empty() bool
@@ -51,10 +51,29 @@ type RandomAccessIterator[T any] interface {
 // ForwardIterable denotes a type that can be iterated over
 // by using the ForwardIterator supplied using the Iterator method.
 type ForwardIterable[T any] interface {
+	// Iterator returns a ForwardIterator over the elements of this Iterable.
 	Iterator() ForwardIterator[T]
+	// Elements returns a channel containing the elements of this Iterable.
+	// The channel provided will be closed automatically after all elements
+	// have been read from the channel. If all elements from the channel
+	// are not read, then the channel will not be closed. This method is
+	// intended to be used primarily with the for...range construct.
+	//
+	//   for e := range i.Elements {
+	//      // do something with e
+	//   }
+	Elements() chan *T
 }
 
 // Range produces a channel that contains the elements of the iterable.
+// The channel provided will be closed automatically after all elements
+// have been read from the channel. If all elements from the channel
+// are not read, then the channel will not be closed. This method is
+// intended to be used primarily with the for...range construct.
+//
+//	for e := range iterator.Range(iterable) {
+//	   // do something with e
+//	}
 func Range[T any](iterable ForwardIterable[T]) chan *T {
 	c := make(chan *T)
 	go func() {

@@ -177,6 +177,10 @@ func (b *BitSet) Iterator() iterator.ForwardIterator[int] {
 	return b.SetBitIterator()
 }
 
+func (b *BitSet) Elements() chan *int {
+	return iterator.Range[int](b)
+}
+
 // SetBitIterator returns an iterator that iterates over the set bits of this BitSet
 func (b *BitSet) SetBitIterator() iterator.ForwardIterator[int] {
 	bi := &setBitIterator{

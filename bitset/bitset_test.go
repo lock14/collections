@@ -2,7 +2,6 @@ package bitset
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -28,7 +27,7 @@ func TestAllBitsInitializedToZero(t *testing.T) {
 	bitSet := New(NumBits(n))
 	for i := 0; i < n; i++ {
 		if bitSet.Get(i) {
-			t.Fatalf("excepted bit %d to be unset, but it was not", i)
+			t.Errorf("excepted bit %d to be unset, but it was not", i)
 		}
 	}
 }
@@ -40,7 +39,7 @@ func TestSetBit(t *testing.T) {
 	for i := 0; i < n; i++ {
 		bitSet.Set(i)
 		if !bitSet.Get(i) {
-			t.Fatalf("excepted bit %d to be set, but it was not", i)
+			t.Errorf("excepted bit %d to be set, but it was not", i)
 		}
 	}
 }
@@ -202,7 +201,7 @@ func TestBitSetPrimeGen(t *testing.T) {
 			t.Parallel()
 			b := primesLessThan(tc.lessThan)
 			primes := make([]int, 0, len(tc.want))
-			for n := range iterator.Range[int](b) {
+			for n := range b.Elements() {
 				primes = append(primes, *n)
 			}
 			if diff := cmp.Diff(primes, tc.want); diff != "" {
