@@ -1,6 +1,8 @@
 package hashset
 
 import (
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -52,6 +54,11 @@ func TestAdd(t *testing.T) {
 				s.Add(item)
 			}
 			got := s.String()
+			parts := strings.Split(got[1:len(got)-1], ",")
+			slices.SortFunc(parts, func(a, b string) int {
+				return strings.Compare(b, a)
+			})
+			got = strings.Join([]string{"[", "]"}, strings.Join(parts, ","))
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}

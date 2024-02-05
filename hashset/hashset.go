@@ -23,7 +23,7 @@ func New[T comparable](opts ...Option) *HashSet[T] {
 		option(config)
 	}
 	return &HashSet[T]{
-		m: make(map[T]struct{}, 0),
+		m: make(map[T]struct{}),
 	}
 }
 
