@@ -1,54 +1,54 @@
-package stack
+package arraystack
 
 import (
 	"fmt"
 	"strings"
 )
 
-// Stack[T] represents a stack of elements of type T
-type Stack[T any] struct {
+// ArrayStack represents a stack of elements of type T backed by an array.
+type ArrayStack[T any] struct {
 	slice []T
 }
 
-// Config holds the values for configuring a Stack.
+// Config holds the values for configuring a ArrayStack.
 type Config struct{}
 
-// Option configures a Stack config
+// Option configures a ArrayStack config
 type Option func(*Config)
 
-// New creates a empty Stack whose initial size is 0.
-func New[T any](opts ...Option) *Stack[T] {
+// New creates a empty ArrayStack whose initial size is 0.
+func New[T any](opts ...Option) *ArrayStack[T] {
 	config := defaultConfig()
 	for _, option := range opts {
 		option(config)
 	}
-	return &Stack[T]{
+	return &ArrayStack[T]{
 		slice: make([]T, 0),
 	}
 }
 
-func (s *Stack[T]) Push(t T) {
+func (s *ArrayStack[T]) Push(t T) {
 	s.slice = append(s.slice, t)
 }
 
-func (s *Stack[T]) Pop() T {
+func (s *ArrayStack[T]) Pop() T {
 	if len(s.slice) == 0 {
-		panic("Cannot Pop an empty Stack")
+		panic("Cannot Pop an empty ArrayStack")
 	}
 	t := s.slice[len(s.slice)-1]
 	s.slice = s.slice[:len(s.slice)-1]
 	return t
 }
 
-func (s *Stack[T]) Size() int {
+func (s *ArrayStack[T]) Size() int {
 	return len(s.slice)
 }
 
-func (s *Stack[T]) isEmpty() bool {
+func (s *ArrayStack[T]) isEmpty() bool {
 	return s.Size() == 0
 }
 
-func (s *Stack[T]) String() string {
+func (s *ArrayStack[T]) String() string {
 	str := make([]string, len(s.slice))
 	for i := 0; i < len(str); i++ {
 		str[i] = fmt.Sprintf("%+v", s.slice[i])
@@ -56,7 +56,7 @@ func (s *Stack[T]) String() string {
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
-func (s *Stack[T]) ToSlice() []T {
+func (s *ArrayStack[T]) ToSlice() []T {
 	slice := make([]T, s.Size())
 	copy(slice, s.slice)
 	return slice

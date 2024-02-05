@@ -1,54 +1,54 @@
-package set
+package hashset
 
 import (
 	"fmt"
 	"strings"
 )
 
-// Set[T] represents a set of elements of type T
-type Set[T comparable] struct {
+// HashSet represents a set of elements of type T.
+type HashSet[T comparable] struct {
 	m map[T]struct{}
 }
 
-// Config holds the values for configuring a Set.
+// Config holds the values for configuring a HashSet.
 type Config struct{}
 
-// Option configures a Set config
+// Option configures a HashSet config
 type Option func(*Config)
 
-// New creates a empty Set.
-func New[T comparable](opts ...Option) *Set[T] {
+// New creates an empty HashSet.
+func New[T comparable](opts ...Option) *HashSet[T] {
 	config := defaultConfig()
 	for _, option := range opts {
 		option(config)
 	}
-	return &Set[T]{
+	return &HashSet[T]{
 		m: make(map[T]struct{}, 0),
 	}
 }
 
-func (s *Set[T]) Add(item T) {
+func (s *HashSet[T]) Add(item T) {
 	s.m[item] = struct{}{}
 }
 
-func (s *Set[T]) Remove(item T) {
+func (s *HashSet[T]) Remove(item T) {
 	delete(s.m, item)
 }
 
-func (s *Set[T]) Contains(item T) bool {
+func (s *HashSet[T]) Contains(item T) bool {
 	_, present := s.m[item]
 	return present
 }
 
-func (s *Set[T]) Size() int {
+func (s *HashSet[T]) Size() int {
 	return len(s.m)
 }
 
-func (s *Set[T]) isEmpty() bool {
+func (s *HashSet[T]) isEmpty() bool {
 	return s.Size() == 0
 }
 
-func (s *Set[T]) String() string {
+func (s *HashSet[T]) String() string {
 	vals := make([]string, s.Size())
 	i := 0
 	for item := range s.m {
@@ -58,7 +58,7 @@ func (s *Set[T]) String() string {
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 
-func (s *Set[T]) ToSlice() []T {
+func (s *HashSet[T]) ToSlice() []T {
 	slice := make([]T, s.Size())
 	i := 0
 	for item := range s.m {

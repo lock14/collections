@@ -1,4 +1,4 @@
-package set
+package arraystack
 
 import (
 	"testing"
@@ -10,17 +10,17 @@ func TestDefaultConstruction(t *testing.T) {
 	t.Parallel()
 	s := New[int]()
 	if size := s.Size(); size != 0 {
-		t.Errorf("new set has non-zero size: %d", size)
+		t.Errorf("new stack has non-zero size: %d", size)
 	}
 	if !s.isEmpty() {
-		t.Error("new set reports not empty")
+		t.Error("new stack reports not empty")
 	}
 	if str := s.String(); str != "[]" {
-		t.Errorf("new set has wrong String(): %s", str)
+		t.Errorf("new stack has wrong String(): %s", str)
 	}
 }
 
-func TestAdd(t *testing.T) {
+func TestPush(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -28,30 +28,35 @@ func TestAdd(t *testing.T) {
 		want  string
 	}{
 		{
-			name:  "add_none",
+			name:  "push_none",
 			items: []int{},
 			want:  "[]",
 		},
 		{
-			name:  "add_one",
+			name:  "push_one",
 			items: []int{1},
 			want:  "[1]",
 		},
 		{
-			name:  "add_duplicates",
-			items: []int{1, 2, 2, 1, 2, 1, 1},
-			want:  "[1, 2]",
+			name:  "push_up_to_default_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
+		},
+		{
+			name:  "push_double_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]",
 		},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			s := New[int]()
+			q := New[int]()
 			for _, item := range tc.items {
-				s.Add(item)
+				q.Push(item)
 			}
-			got := s.String()
+			got := q.String()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}

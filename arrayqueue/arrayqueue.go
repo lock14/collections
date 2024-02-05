@@ -1,4 +1,4 @@
-package queue
+package arrayqueue
 
 import (
 	"fmt"
@@ -9,34 +9,34 @@ const (
 	DefaultCapacity = 10
 )
 
-// Queue[T] represents a queue of elements of type T
-type Queue[T any] struct {
+// ArrayQueue represents a queue of elements of type T backed by an array.
+type ArrayQueue[T any] struct {
 	slice []T
 	front int
 	back  int
 	size  int
 }
 
-// Config holds the values for configuring a Queue.
+// Config holds the values for configuring a ArrayQueue.
 type Config struct {
 	Capacity int
 }
 
-// Option configures a Queue config
+// Option configures a ArrayQueue config
 type Option func(*Config)
 
-// New creates a empty Queue whose initial size is 0.
-func New[T any](opts ...Option) *Queue[T] {
+// New creates a empty ArrayQueue whose initial size is 0.
+func New[T any](opts ...Option) *ArrayQueue[T] {
 	config := defaultConfig()
 	for _, option := range opts {
 		option(config)
 	}
-	return &Queue[T]{
+	return &ArrayQueue[T]{
 		slice: make([]T, config.Capacity),
 	}
 }
 
-func (q *Queue[T]) Add(t T) {
+func (q *ArrayQueue[T]) Add(t T) {
 	if q.size > 0 && q.back == q.front {
 		q.resize()
 	}
@@ -45,9 +45,9 @@ func (q *Queue[T]) Add(t T) {
 	q.size++
 }
 
-func (q *Queue[T]) Remove() T {
+func (q *ArrayQueue[T]) Remove() T {
 	if q.isEmpty() {
-		panic("cannot remove from an empty queue")
+		panic("cannot remove from an empty arrayqueue")
 	}
 	t := q.slice[q.front]
 	q.front = (q.front + 1) % len(q.slice)
@@ -55,15 +55,15 @@ func (q *Queue[T]) Remove() T {
 	return t
 }
 
-func (q *Queue[T]) Size() int {
+func (q *ArrayQueue[T]) Size() int {
 	return q.size
 }
 
-func (q *Queue[T]) isEmpty() bool {
+func (q *ArrayQueue[T]) isEmpty() bool {
 	return q.size == 0
 }
 
-func (q *Queue[T]) String() string {
+func (q *ArrayQueue[T]) String() string {
 	str := make([]string, q.Size())
 	cur := q.front
 	for i := 0; i < len(str); i++ {
@@ -73,7 +73,7 @@ func (q *Queue[T]) String() string {
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
-func (q *Queue[T]) ToSlice() []T {
+func (q *ArrayQueue[T]) ToSlice() []T {
 	slice := make([]T, q.Size())
 	for i := 0; i < cap(slice); i++ {
 		t := q.Remove()
@@ -83,7 +83,7 @@ func (q *Queue[T]) ToSlice() []T {
 	return slice
 }
 
-func (q *Queue[T]) resize() {
+func (q *ArrayQueue[T]) resize() {
 	newCap := cap(q.slice) + (cap(q.slice) / 2)
 	slice := make([]T, newCap)
 	i := 0
