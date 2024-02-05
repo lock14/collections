@@ -173,7 +173,7 @@ func (b *BitSet) String() string {
 }
 
 // Iterator is an alias for SetBitIterator
-func (b *BitSet) Iterator() iterator.ForwardIterator[int] {
+func (b *BitSet) Iterator() iterator.Iterator[int] {
 	return b.SetBitIterator()
 }
 
@@ -182,7 +182,7 @@ func (b *BitSet) Elements() chan *int {
 }
 
 // SetBitIterator returns an iterator that iterates over the set bits of this BitSet
-func (b *BitSet) SetBitIterator() iterator.ForwardIterator[int] {
+func (b *BitSet) SetBitIterator() iterator.Iterator[int] {
 	bi := &setBitIterator{
 		bitSet: b,
 	}
@@ -191,7 +191,7 @@ func (b *BitSet) SetBitIterator() iterator.ForwardIterator[int] {
 }
 
 // UnsetBitIterator returns an iterator that iterates over the unset bits of this BitSet
-func (b *BitSet) UnsetBitIterator() iterator.ForwardIterator[int] {
+func (b *BitSet) UnsetBitIterator() iterator.Iterator[int] {
 	bi := &unSetBitIterator{
 		bitSet: b,
 	}
