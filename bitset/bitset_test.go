@@ -106,7 +106,7 @@ func TestFromBytesToBytes(t *testing.T) {
 		{
 			name:  "one_byte",
 			input: []byte{0xFF},
-			want:  []byte{0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+			want:  []byte{0xFF},
 		},
 		{
 			name:  "eight_bytes",
@@ -116,7 +116,7 @@ func TestFromBytesToBytes(t *testing.T) {
 		{
 			name:  "twelve_bytes",
 			input: []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-			want:  []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF, 0x00, 0x00, 0x00, 0x00},
+			want:  []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
 		},
 		{
 			name:  "sixteen_bytes",
@@ -129,12 +129,12 @@ func TestFromBytesToBytes(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			b := fromBytes(tc.input)
-			got := b.toBytes()
+			b := FromBytes(tc.input)
+			got := b.ToBytes()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("unexpected result (-got, +want):\n%s", diff)
 			}
-			for n := 0; n < b.Size(); n++ {
+			for n := 0; n < b.Length(); n++ {
 				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
 				wantSetBit := b.Get(n)
 				if diff := cmp.Diff(gotSetBit, wantSetBit); diff != "" {

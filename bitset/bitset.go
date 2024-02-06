@@ -3,6 +3,7 @@ package bitset
 import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
+	"math/bits"
 	"strings"
 )
 
@@ -14,7 +15,8 @@ const (
 
 // BitSet represents a vector of bits that grows as needed.
 type BitSet struct {
-	bits []uint64
+	bits         []uint64
+	maxWordInUse int
 }
 
 // Config holds the values for configuring a BitSet.
@@ -55,7 +57,8 @@ func New(opts ...Option) *BitSet {
 	}
 	ensureNonNegative(config.NumBits)
 	return &BitSet{
-		bits: make([]uint64, (config.NumBits/wordSize)+min(1, config.NumBits%wordSize)),
+		bits:         make([]uint64, (config.NumBits/wordSize)+min(1, config.NumBits%wordSize)),
+		maxWordInUse: 0,
 	}
 }
 
@@ -64,6 +67,9 @@ func (b *BitSet) Clear(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] &= ^(1 << shift)
+	if index == b.maxWordInUse && b.bits[index] == 0 {
+		b.maxWordInUse = b.lastNonZeroWord() + 1
+	}
 }
 
 // Set sets the bit at the specified index to true.
@@ -71,6 +77,9 @@ func (b *BitSet) Set(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] |= 1 << shift
+	if index > b.maxWordInUse {
+		b.maxWordInUse = index
+	}
 }
 
 // Get returns the value of the bit with the specified index.
@@ -85,12 +94,23 @@ func (b *BitSet) Size() int {
 	return len(b.bits) * wordSize
 }
 
+// Length returns the 'logical size' of this BitSet.
+// The 'logical size' is the highest set bit in the BitSet plus one.
+// Returns zero if no bits are set.
+func (b *BitSet) Length() int {
+	if b.maxWordInUse == 0 {
+		return 0
+	}
+	return wordSize*(b.maxWordInUse-1) + (wordSize - bits.LeadingZeros64(b.bits[b.maxWordInUse-1]))
+}
+
 // Flip sets each bit to the complement of its current value. This call is
 // equivalent to b.FlipRange(0, b.Size())
 func (b *BitSet) Flip() {
 	for i := 0; i < len(b.bits); i++ {
 		b.bits[i] = ^b.bits[i]
 	}
+	b.maxWordInUse = b.lastNonZeroWord() + 1
 }
 
 // FlipRange sets each bit from the specified start bit (inclusive) to the
@@ -130,10 +150,11 @@ func (b *BitSet) FlipRange(start int, end int) {
 			b.bits[endIndex] = upperBits | lowerBits
 		}
 	}
+	b.maxWordInUse = b.lastNonZeroWord() + 1
 }
 
-// TODO: expose this as a public function once its ready
-func fromBytes(bytes []byte) *BitSet {
+// FromBytes returns new BitSet containing all the bits in the given byte array.
+func FromBytes(bytes []byte) *BitSet {
 	b := New(NumBits(len(bytes) * 8))
 	k := 0
 	for i := 0; i < len(bytes); i += 8 {
@@ -146,18 +167,31 @@ func fromBytes(bytes []byte) *BitSet {
 		b.bits[k] = word
 		k++
 	}
+	b.maxWordInUse = b.lastNonZeroWord() + 1
 	return b
 }
 
-// TODO: expose this as a public function once its ready
-func (b *BitSet) toBytes() []byte {
-	bytes := make([]byte, len(b.bits)*8)
+// ToBytes returns a byte array containing all the set bits in this BitSet.
+func (b *BitSet) ToBytes() []byte {
+	n := b.maxWordInUse
+	if n == 0 {
+		return []byte{}
+	}
+	length := 8 * (n - 1)
+	for word := b.bits[n-1]; word != 0; word >>= 8 {
+		length++
+	}
+	bytes := make([]byte, length)
 	k := 0
-	for i := 0; i < len(b.bits); i++ {
+	for i := 0; i < n-1; i++ {
 		for j := 0; j < 8; j++ {
 			bytes[k] = byte(0xFF & (b.bits[i] >> (j * 8)))
 			k++
 		}
+	}
+	for word := b.bits[n-1]; word != 0; word >>= 8 {
+		bytes[k] = byte(word & 0xFF)
+		k++
 	}
 	return bytes
 }
@@ -215,7 +249,6 @@ func (b *BitSet) ensureSize(index int) {
 	}
 }
 
-// TODO: work on incorporating this
 func (b *BitSet) lastNonZeroWord() int {
 	for i := len(b.bits) - 1; i >= 0; i-- {
 		if b.bits[i] != 0 {
