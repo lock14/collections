@@ -2,6 +2,7 @@ package arrayqueue
 
 import (
 	"fmt"
+	"github.com/lock14/collections/iterator"
 	"strings"
 )
 
@@ -64,21 +65,28 @@ func (q *ArrayQueue[T]) isEmpty() bool {
 }
 
 func (q *ArrayQueue[T]) String() string {
-	str := make([]string, q.Size())
-	cur := q.front
-	for i := 0; i < len(str); i++ {
-		str[i] = fmt.Sprintf("%+v", q.slice[cur])
-		cur = (cur + 1) % len(q.slice)
+	str := make([]string, 0, q.Size())
+	for t := range q.Elements() {
+		str = append(str, fmt.Sprintf("%+v", *t))
 	}
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
+func (q *ArrayQueue[T]) Iterator() iterator.Iterator[T] {
+	return &queueIterator[T]{
+		queue: q,
+		index: 0,
+	}
+}
+
+func (q *ArrayQueue[T]) Elements() chan *T {
+	return iterator.Elements(q.Iterator())
+}
+
 func (q *ArrayQueue[T]) ToSlice() []T {
 	slice := make([]T, q.Size())
-	for i := 0; i < cap(slice); i++ {
-		t := q.Remove()
-		slice = append(slice, t)
-		q.Add(t)
+	for t := range q.Elements() {
+		slice = append(slice, *t)
 	}
 	return slice
 }
@@ -101,4 +109,25 @@ func defaultConfig() *Config {
 	return &Config{
 		Capacity: DefaultCapacity,
 	}
+}
+
+// Iterator
+
+type queueIterator[T any] struct {
+	queue *ArrayQueue[T]
+	index int
+}
+
+func (itr *queueIterator[T]) Empty() bool {
+	return itr.index >= itr.queue.Size()
+}
+
+func (itr *queueIterator[T]) Next() (*T, error) {
+	if itr.Empty() {
+		return nil, fmt.Errorf("cannot call Next() on an empty Iterator")
+	}
+	i := (itr.index + itr.queue.front) % len(itr.queue.slice)
+	t := &itr.queue.slice[i]
+	itr.index++
+	return t, nil
 }
