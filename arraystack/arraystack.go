@@ -58,7 +58,7 @@ func (s *ArrayStack[T]) isEmpty() bool {
 func (s *ArrayStack[T]) String() string {
 	str := make([]string, 0, len(s.slice))
 	for t := range s.Elements() {
-		str = append(str, fmt.Sprintf("%+v", *t))
+		str = append(str, fmt.Sprintf("%+v", t))
 	}
 	return "[" + strings.Join(str, ", ") + "]"
 }
@@ -70,7 +70,7 @@ func (s *ArrayStack[T]) Iterator() iterator.Iterator[T] {
 	}
 }
 
-func (s *ArrayStack[T]) Elements() chan *T {
+func (s *ArrayStack[T]) Elements() chan T {
 	return iterator.Elements(s.Iterator())
 }
 
@@ -97,11 +97,12 @@ func (itr *stackIterator[T]) Empty() bool {
 	return itr.index < 0
 }
 
-func (itr *stackIterator[T]) Next() (*T, error) {
+func (itr *stackIterator[T]) Next() (T, error) {
 	if itr.Empty() {
-		return nil, fmt.Errorf("cannot call Next() on an empty Iterator")
+		var zero T
+		return zero, fmt.Errorf("cannot call Next() on an empty Iterator")
 	}
-	t := &itr.stack.slice[itr.index]
+	t := itr.stack.slice[itr.index]
 	itr.index--
 	return t, nil
 }

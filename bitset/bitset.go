@@ -272,7 +272,7 @@ func (bi *setBitIterator) Empty() bool {
 
 func (bi *setBitIterator) Next() (int, error) {
 	if bi.Empty() {
-		return 0, fmt.Errorf("cannot get front of an empty iterator")
+		return 0, fmt.Errorf("cannot call Next() on an empty Iterator")
 	}
 	v := bi.bitIndex
 	bi.bitIndex = bi.getNextSetIndex(bi.bitIndex + 1)
@@ -292,7 +292,7 @@ func (bi *unSetBitIterator) Empty() bool {
 
 func (bi *unSetBitIterator) Next() (int, error) {
 	if bi.Empty() {
-		return 0, fmt.Errorf("cannot get front of an empty iterator")
+		return 0, fmt.Errorf("cannot call Next() on an empty Iterator")
 	}
 	v := bi.bitIndex
 	bi.bitIndex = bi.getNextUnSetIndex(bi.bitIndex + 1)

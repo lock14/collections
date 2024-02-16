@@ -67,7 +67,7 @@ func (q *ArrayQueue[T]) isEmpty() bool {
 func (q *ArrayQueue[T]) String() string {
 	str := make([]string, 0, q.Size())
 	for t := range q.Elements() {
-		str = append(str, fmt.Sprintf("%+v", *t))
+		str = append(str, fmt.Sprintf("%+v", t))
 	}
 	return "[" + strings.Join(str, ", ") + "]"
 }
@@ -79,14 +79,14 @@ func (q *ArrayQueue[T]) Iterator() iterator.Iterator[T] {
 	}
 }
 
-func (q *ArrayQueue[T]) Elements() chan *T {
+func (q *ArrayQueue[T]) Elements() chan T {
 	return iterator.Elements(q.Iterator())
 }
 
 func (q *ArrayQueue[T]) ToSlice() []T {
 	slice := make([]T, q.Size())
 	for t := range q.Elements() {
-		slice = append(slice, *t)
+		slice = append(slice, t)
 	}
 	return slice
 }
@@ -122,12 +122,13 @@ func (itr *queueIterator[T]) Empty() bool {
 	return itr.index >= itr.queue.Size()
 }
 
-func (itr *queueIterator[T]) Next() (*T, error) {
+func (itr *queueIterator[T]) Next() (T, error) {
 	if itr.Empty() {
-		return nil, fmt.Errorf("cannot call Next() on an empty Iterator")
+		var zero T
+		return zero, fmt.Errorf("cannot call Next() on an empty Iterator")
 	}
 	i := (itr.index + itr.queue.front) % len(itr.queue.slice)
-	t := &itr.queue.slice[i]
+	t := itr.queue.slice[i]
 	itr.index++
 	return t, nil
 }
