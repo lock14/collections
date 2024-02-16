@@ -8,7 +8,7 @@ type Iterator[T any] interface {
 	Empty() bool
 	// Next returns the next element from this Iterator.
 	// If the Iterator is empty, then an error is returned.
-	Next() (*T, error)
+	Next() (T, error)
 }
 
 // Iterable denotes a type that can be iterated over
@@ -25,7 +25,7 @@ type Iterable[T any] interface {
 	//   for e := range i.Elements() {
 	//      // do something with e
 	//   }
-	Elements() chan *T
+	Elements() chan T
 }
 
 // Elements produces a channel that contains the elements of the iterator.
@@ -37,8 +37,8 @@ type Iterable[T any] interface {
 //	for e := range iterator.Elements(iterator) {
 //	   // do something with e
 //	}
-func Elements[T any](itr Iterator[T]) chan *T {
-	c := make(chan *T)
+func Elements[T any](itr Iterator[T]) chan T {
+	c := make(chan T)
 	go func() {
 		for !itr.Empty() {
 			c <- util.MustGet(itr.Next())

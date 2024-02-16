@@ -21,7 +21,7 @@ type BitSet struct {
 
 // Config holds the values for configuring a BitSet.
 type Config struct {
-	NumBits int
+	numBits int
 }
 
 // Option configures a BitSet config
@@ -30,7 +30,7 @@ type Option func(*Config)
 // NumBits provides the option to set the number of bits used in a BitSet.
 func NumBits(n int) Option {
 	return func(c *Config) {
-		c.NumBits = n
+		c.numBits = n
 	}
 }
 
@@ -55,9 +55,9 @@ func New(opts ...Option) *BitSet {
 	for _, option := range opts {
 		option(config)
 	}
-	ensureNonNegative(config.NumBits)
+	ensureNonNegative(config.numBits)
 	return &BitSet{
-		bits:         make([]uint64, (config.NumBits/wordSize)+min(1, config.NumBits%wordSize)),
+		bits:         make([]uint64, (config.numBits/wordSize)+min(1, config.numBits%wordSize)),
 		maxWordInUse: 0,
 	}
 }
@@ -210,7 +210,7 @@ func (b *BitSet) Iterator() iterator.Iterator[int] {
 	return b.SetBitIterator()
 }
 
-func (b *BitSet) Elements() chan *int {
+func (b *BitSet) Elements() chan int {
 	return iterator.Elements(b.Iterator())
 }
 
@@ -239,7 +239,7 @@ func convert(bit int) (int, int) {
 
 func defaultConfig() *Config {
 	return &Config{
-		NumBits: DefaultNumBits,
+		numBits: DefaultNumBits,
 	}
 }
 
@@ -270,13 +270,13 @@ func (bi *setBitIterator) Empty() bool {
 	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
 }
 
-func (bi *setBitIterator) Next() (*int, error) {
+func (bi *setBitIterator) Next() (int, error) {
 	if bi.Empty() {
-		return nil, fmt.Errorf("cannot get front of an empty iterator")
+		return 0, fmt.Errorf("cannot get front of an empty iterator")
 	}
 	v := bi.bitIndex
 	bi.bitIndex = bi.getNextSetIndex(bi.bitIndex + 1)
-	return &v, nil
+	return v, nil
 }
 
 func (bi *setBitIterator) getNextSetIndex(start int) int {
@@ -290,13 +290,13 @@ func (bi *unSetBitIterator) Empty() bool {
 	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
 }
 
-func (bi *unSetBitIterator) Next() (*int, error) {
+func (bi *unSetBitIterator) Next() (int, error) {
 	if bi.Empty() {
-		return nil, fmt.Errorf("cannot get front of an empty iterator")
+		return 0, fmt.Errorf("cannot get front of an empty iterator")
 	}
 	v := bi.bitIndex
 	bi.bitIndex = bi.getNextUnSetIndex(bi.bitIndex + 1)
-	return &v, nil
+	return v, nil
 }
 
 func (bi *unSetBitIterator) getNextUnSetIndex(start int) int {

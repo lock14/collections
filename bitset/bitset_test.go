@@ -202,7 +202,7 @@ func TestBitSetPrimeGen(t *testing.T) {
 			b := primesLessThan(tc.lessThan)
 			primes := make([]int, 0, len(tc.want))
 			for n := range b.Elements() {
-				primes = append(primes, *n)
+				primes = append(primes, n)
 			}
 			if diff := cmp.Diff(primes, tc.want); diff != "" {
 				t.Errorf("unexpected result (-got, +want): %s", diff)
