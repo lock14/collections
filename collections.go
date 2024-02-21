@@ -18,3 +18,29 @@ type Iterable[T any] interface {
 	//   }
 	Elements() chan T
 }
+
+type Collection[T any] interface {
+	Iterable[T]
+	Size() int
+}
+
+type Queue[T any] interface {
+	Collection[T]
+	Add(t T)
+	Remove() T
+}
+
+type Stack[T any] interface {
+	Collection[T]
+	Push(t T)
+	Pop() T
+}
+
+type Deque[T any] interface {
+	Stack[T]
+	Queue[T]
+	AddFront(t T)
+	RemoveFront() T
+	AddBack(t T)
+	RemoveBack() T
+}

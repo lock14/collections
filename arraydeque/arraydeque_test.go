@@ -1,4 +1,4 @@
-package arrayqueue
+package arraydeque
 
 import (
 	"testing"
@@ -10,13 +10,13 @@ func TestDefaultConstruction(t *testing.T) {
 	t.Parallel()
 	q := New[int]()
 	if size := q.Size(); size != 0 {
-		t.Errorf("new queue has non-zero size: %d", size)
+		t.Errorf("new deque has non-zero size: %d", size)
 	}
 	if !q.isEmpty() {
-		t.Error("new queue reports not empty")
+		t.Error("new deque reports not empty")
 	}
 	if str := q.String(); str != "[]" {
-		t.Errorf("new queue has wrong String(): %s", str)
+		t.Errorf("new deque has wrong String(): %s", str)
 	}
 }
 
