@@ -6,21 +6,21 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestDefaultConstruction(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Parallel()
-	q := New[int]()
-	if size := q.Size(); size != 0 {
+	d := New[int]()
+	if size := d.Size(); size != 0 {
 		t.Errorf("new deque has non-zero size: %d", size)
 	}
-	if !q.isEmpty() {
+	if !d.isEmpty() {
 		t.Error("new deque reports not empty")
 	}
-	if str := q.String(); str != "[]" {
+	if str := d.String(); str != "[]" {
 		t.Errorf("new deque has wrong String(): %s", str)
 	}
 }
 
-func TestAdd(t *testing.T) {
+func TestArrayDeque_Add(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -52,11 +52,11 @@ func TestAdd(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			q := New[int]()
+			d := New[int]()
 			for _, item := range tc.items {
-				q.Add(item)
+				d.Add(item)
 			}
-			got := q.String()
+			got := d.String()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -64,7 +64,139 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestRotate(t *testing.T) {
+func TestArrayDeque_Push(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		items []int
+		want  string
+	}{
+		{
+			name:  "push_none",
+			items: []int{},
+			want:  "[]",
+		},
+		{
+			name:  "push_one",
+			items: []int{1},
+			want:  "[1]",
+		},
+		{
+			name:  "push_up_to_default_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			want:  "[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+		},
+		{
+			name:  "push_double_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+			want:  "[20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			for _, item := range tc.items {
+				d.Push(item)
+			}
+			got := d.String()
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Errorf("wrong string value, -got,+want: %s", diff)
+			}
+		})
+	}
+}
+
+func TestArrayDeque_AddFront(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		items []int
+		want  string
+	}{
+		{
+			name:  "add_front_none",
+			items: []int{},
+			want:  "[]",
+		},
+		{
+			name:  "add_front_one",
+			items: []int{1},
+			want:  "[1]",
+		},
+		{
+			name:  "add_front_up_to_default_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			want:  "[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+		},
+		{
+			name:  "add_front_double_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+			want:  "[20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			for _, item := range tc.items {
+				d.AddFront(item)
+			}
+			got := d.String()
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Errorf("wrong string value, -got,+want: %s", diff)
+			}
+		})
+	}
+}
+
+func TestArrayDeque_AddBack(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		items []int
+		want  string
+	}{
+		{
+			name:  "add_back_none",
+			items: []int{},
+			want:  "[]",
+		},
+		{
+			name:  "add_back_one",
+			items: []int{1},
+			want:  "[1]",
+		},
+		{
+			name:  "add_back_up_to_default_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
+		},
+		{
+			name:  "add_back_double_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]",
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			for _, item := range tc.items {
+				d.Add(item)
+			}
+			got := d.String()
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Errorf("wrong string value, -got,+want: %s", diff)
+			}
+		})
+	}
+}
+
+func TestArrayDeque_Rotate(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -96,14 +228,14 @@ func TestRotate(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			q := New[int]()
+			d := New[int]()
 			for _, item := range tc.items {
-				q.Add(item)
+				d.Add(item)
 			}
-			for i := 0; i < q.Size()/2; i++ {
-				q.Add(q.Remove())
+			for i := 0; i < d.Size()/2; i++ {
+				d.Add(d.Remove())
 			}
-			got := q.String()
+			got := d.String()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}

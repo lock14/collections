@@ -171,12 +171,12 @@ func (itr *dequeIterator[T]) Empty() bool {
 }
 
 func (itr *dequeIterator[T]) Next() (T, error) {
+	var t T
 	if itr.Empty() {
-		var zero T
-		return zero, fmt.Errorf("cannot call Next() on an empty Iterator")
+		return t, fmt.Errorf("cannot call Next() on an empty Iterator")
 	}
 	i := (itr.index + itr.deque.front) % len(itr.deque.slice)
-	t := itr.deque.slice[i]
+	t = itr.deque.slice[i]
 	itr.index++
 	return t, nil
 }
