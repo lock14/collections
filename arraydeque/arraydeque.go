@@ -140,7 +140,7 @@ func (d *ArrayDeque[T]) ToSlice() []T {
 }
 
 func (d *ArrayDeque[T]) resize() {
-	newCap := cap(d.slice) + (cap(d.slice) / 2)
+	newCap := len(d.slice) + (len(d.slice) / 2)
 	slice := make([]T, newCap)
 	i := 0
 	for t := range d.Elements() {
