@@ -1,6 +1,7 @@
 package arraydeque
 
 import (
+	"github.com/lock14/collections"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -242,3 +243,10 @@ func TestArrayDeque_Rotate(t *testing.T) {
 		})
 	}
 }
+
+func TestType(t *testing.T) {
+	l := New[int]()
+	testType[int](l)
+}
+
+func testType[T any](deque collections.Deque[T]) {}
