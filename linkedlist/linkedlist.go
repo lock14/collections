@@ -30,7 +30,7 @@ func (l *LinkedList[T]) AddFront(t T) {
 }
 
 func (l *LinkedList[T]) RemoveFront() T {
-	if l.IsEmpty() {
+	if l.Empty() {
 		panic("cannot remove from an empty list")
 	}
 	n := l.list.next
@@ -45,7 +45,7 @@ func (l *LinkedList[T]) AddBack(t T) {
 }
 
 func (l *LinkedList[T]) RemoveBack() T {
-	if l.IsEmpty() {
+	if l.Empty() {
 		panic("cannot remove from an empty list")
 	}
 	n := l.list.prev
@@ -70,12 +70,12 @@ func (l *LinkedList[T]) Pop() T {
 	return l.RemoveFront()
 }
 
-func (l *LinkedList[T]) IsEmpty() bool {
-	return l.Size() == 0
-}
-
 func (l *LinkedList[T]) Size() int {
 	return l.size
+}
+
+func (l *LinkedList[T]) Empty() bool {
+	return l.Size() == 0
 }
 
 func (l *LinkedList[T]) String() string {

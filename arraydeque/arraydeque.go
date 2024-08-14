@@ -71,7 +71,7 @@ func (d *ArrayDeque[T]) AddFront(t T) {
 }
 
 func (d *ArrayDeque[T]) RemoveFront() T {
-	if d.isEmpty() {
+	if d.Empty() {
 		panic("cannot remove from an empty ArrayDeque")
 	}
 	var zero T
@@ -92,7 +92,7 @@ func (d *ArrayDeque[T]) AddBack(t T) {
 }
 
 func (d *ArrayDeque[T]) RemoveBack() T {
-	if d.isEmpty() {
+	if d.Empty() {
 		panic("cannot remove from an empty ArrayDeque")
 	}
 	var zero T
@@ -108,7 +108,7 @@ func (d *ArrayDeque[T]) Size() int {
 	return d.size
 }
 
-func (d *ArrayDeque[T]) isEmpty() bool {
+func (d *ArrayDeque[T]) Empty() bool {
 	return d.size == 0
 }
 

@@ -1,6 +1,9 @@
 package collections
 
-import "github.com/lock14/collections/iterator"
+import (
+	"github.com/lock14/collections/iterator"
+	"github.com/lock14/collections/pair"
+)
 
 // Iterable denotes a type that can be iterated over
 // by using the Iterator supplied using the Iterator method.
@@ -22,6 +25,7 @@ type Iterable[T any] interface {
 type Collection[T any] interface {
 	Iterable[T]
 	Size() int
+	Empty() bool
 }
 
 type Queue[T any] interface {
@@ -43,4 +47,19 @@ type Deque[T any] interface {
 	RemoveFront() T
 	AddBack(t T)
 	RemoveBack() T
+}
+
+type Set[T any] interface {
+	Collection[T]
+}
+
+type Map[K any, V any] interface {
+	Put(K, V)
+	Get(K) (V, bool)
+	Remove(K)
+	Size() int
+	Empty() bool
+	Entries() iterator.Iterator[*pair.Pair[K, V]]
+	Keys() iterator.Iterator[K]
+	Values() iterator.Iterator[V]
 }

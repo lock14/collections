@@ -14,7 +14,7 @@ func TestDefaultConstruction(t *testing.T) {
 	if size := s.Size(); size != 0 {
 		t.Errorf("new hashset has non-zero size: %d", size)
 	}
-	if !s.isEmpty() {
+	if !s.Empty() {
 		t.Error("new hashset reports not empty")
 	}
 	if str := s.String(); str != "[]" {

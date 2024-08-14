@@ -2,12 +2,14 @@ package hashset
 
 import (
 	"fmt"
+	"github.com/lock14/collections/hashmap"
+	"github.com/lock14/collections/iterator"
 	"strings"
 )
 
 // HashSet represents a set of elements of type T.
 type HashSet[T comparable] struct {
-	m map[T]struct{}
+	m *hashmap.HashMap[T, struct{}]
 }
 
 // Config holds the values for configuring a HashSet.
@@ -23,45 +25,53 @@ func New[T comparable](opts ...Option) *HashSet[T] {
 		option(config)
 	}
 	return &HashSet[T]{
-		m: make(map[T]struct{}),
+		m: hashmap.New[T, struct{}](),
 	}
 }
 
 func (s *HashSet[T]) Add(item T) {
-	s.m[item] = struct{}{}
+	s.m.Put(item, struct{}{})
 }
 
 func (s *HashSet[T]) Remove(item T) {
-	delete(s.m, item)
+	s.m.Remove(item)
 }
 
 func (s *HashSet[T]) Contains(item T) bool {
-	_, present := s.m[item]
+	_, present := s.m.Get(item)
 	return present
 }
 
 func (s *HashSet[T]) Size() int {
-	return len(s.m)
+	return s.m.Size()
 }
 
-func (s *HashSet[T]) isEmpty() bool {
-	return s.Size() == 0
+func (s *HashSet[T]) Empty() bool {
+	return s.m.Empty()
 }
 
 func (s *HashSet[T]) String() string {
 	vals := make([]string, s.Size())
 	i := 0
-	for item := range s.m {
+	for item := range iterator.Elements(s.m.Keys()) {
 		vals[i] = fmt.Sprintf("%+v", item)
 		i++
 	}
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 
+func (s *HashSet[T]) Iterator() iterator.Iterator[T] {
+	return s.m.Keys()
+}
+
+func (s *HashSet[T]) Elements() chan T {
+	return iterator.Elements(s.Iterator())
+}
+
 func (s *HashSet[T]) ToSlice() []T {
 	slice := make([]T, s.Size())
 	i := 0
-	for item := range s.m {
+	for item := range iterator.Elements(s.m.Keys()) {
 		slice[i] = item
 		i++
 	}

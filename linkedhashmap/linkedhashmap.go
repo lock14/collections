@@ -1,6 +1,11 @@
 package linkedhashmap
 
-import "math"
+import (
+	"fmt"
+	"github.com/lock14/collections/iterator"
+	"github.com/lock14/collections/pair"
+	"math"
+)
 
 type KeyOrder bool
 
@@ -95,6 +100,25 @@ func (hm *LinkedHashMap[K, V]) Empty() bool {
 	return hm.Size() == 0
 }
 
+func (hm *LinkedHashMap[K, V]) Entries() iterator.Iterator[*pair.Pair[K, V]] {
+	return &entryIterator[K, V]{
+		hashMap: hm,
+		current: hm.list.next,
+	}
+}
+
+func (hm *LinkedHashMap[K, V]) Keys() iterator.Iterator[K] {
+	return &keyIterator[K, V]{
+		ei: hm.Entries(),
+	}
+}
+
+func (hm *LinkedHashMap[K, V]) Values() iterator.Iterator[V] {
+	return &valueIterator[K, V]{
+		ei: hm.Entries(),
+	}
+}
+
 func (hm *LinkedHashMap[K, V]) removeEldest() bool {
 	return hm.Size() > hm.maxElements
 }
@@ -134,4 +158,58 @@ func unlink[K, V any](n *node[K, V]) {
 	n.next.prev = n.prev
 	n.prev = nil
 	n.next = nil
+}
+
+// iterator stuff
+
+type entryIterator[K comparable, V any] struct {
+	hashMap *LinkedHashMap[K, V]
+	current *node[K, V]
+}
+
+func (ei *entryIterator[K, V]) Empty() bool {
+	return ei.current == ei.hashMap.list
+}
+
+func (ei *entryIterator[K, V]) Next() (*pair.Pair[K, V], error) {
+	if ei.Empty() {
+		return nil, fmt.Errorf("iterator is empty")
+	}
+	cur := ei.current
+	ei.current = ei.current.next
+	return pair.New(cur.key, cur.value), nil
+}
+
+type keyIterator[K any, V any] struct {
+	ei iterator.Iterator[*pair.Pair[K, V]]
+}
+
+func (ki *keyIterator[K, V]) Empty() bool {
+	return ki.ei.Empty()
+}
+
+func (ki *keyIterator[K, V]) Next() (K, error) {
+	p, err := ki.ei.Next()
+	if err != nil {
+		var k K
+		return k, err
+	}
+	return p.Fst(), err
+}
+
+type valueIterator[K any, V any] struct {
+	ei iterator.Iterator[*pair.Pair[K, V]]
+}
+
+func (vi *valueIterator[K, V]) Empty() bool {
+	return vi.ei.Empty()
+}
+
+func (vi *valueIterator[K, V]) Next() (V, error) {
+	p, err := vi.ei.Next()
+	if err != nil {
+		var v V
+		return v, err
+	}
+	return p.Snd(), err
 }

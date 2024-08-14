@@ -60,6 +60,10 @@ func (l *ArrayList[T]) Size() int {
 	return len(l.slice)
 }
 
+func (l *ArrayList[T]) Empty() bool {
+	return l.Size() == 0
+}
+
 func (l *ArrayList[T]) Get(index int) T {
 	return l.slice[index]
 }

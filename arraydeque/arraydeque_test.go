@@ -13,7 +13,7 @@ func TestNew(t *testing.T) {
 	if size := d.Size(); size != 0 {
 		t.Errorf("new deque has non-zero size: %d", size)
 	}
-	if !d.isEmpty() {
+	if !d.Empty() {
 		t.Error("new deque reports not empty")
 	}
 	if str := d.String(); str != "[]" {

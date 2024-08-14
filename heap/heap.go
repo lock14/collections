@@ -91,6 +91,10 @@ func (h *Heap[T]) Size() int {
 	return h.size
 }
 
+func (h *Heap[T]) Empty() bool {
+	return h.Size() == 0
+}
+
 func defaultConfig[T any]() *Config[T] {
 	return &Config[T]{
 		capacity: DefaultCapacity,

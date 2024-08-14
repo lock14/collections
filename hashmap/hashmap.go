@@ -98,6 +98,10 @@ func (hm *HashMap[K, V]) Size() int {
 	return hm.size
 }
 
+func (hm *HashMap[K, V]) Empty() bool {
+	return hm.Size() == 0
+}
+
 func (hm *HashMap[K, V]) Entries() iterator.Iterator[*pair.Pair[K, V]] {
 	ei := &entryIterator[K, V]{
 		hashMap: hm,
