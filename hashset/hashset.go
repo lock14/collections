@@ -69,11 +69,9 @@ func (s *HashSet[T]) Elements() chan T {
 }
 
 func (s *HashSet[T]) ToSlice() []T {
-	slice := make([]T, s.Size())
-	i := 0
+	slice := make([]T, 0, s.Size())
 	for item := range iterator.Elements(s.m.Keys()) {
-		slice[i] = item
-		i++
+		slice = append(slice, item)
 	}
 	return slice
 }

@@ -1,8 +1,7 @@
 package hashset
 
 import (
-	"slices"
-	"strings"
+	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -27,22 +26,22 @@ func TestAdd(t *testing.T) {
 	cases := []struct {
 		name  string
 		items []int
-		want  string
+		want  []int
 	}{
 		{
 			name:  "add_none",
 			items: []int{},
-			want:  "[]",
+			want:  []int{},
 		},
 		{
 			name:  "add_one",
 			items: []int{1},
-			want:  "[1]",
+			want:  []int{1},
 		},
 		{
 			name:  "add_duplicates",
 			items: []int{1, 2, 2, 1, 2, 1, 1},
-			want:  "[1, 2]",
+			want:  []int{1, 2},
 		},
 	}
 	for _, tc := range cases {
@@ -53,12 +52,8 @@ func TestAdd(t *testing.T) {
 			for _, item := range tc.items {
 				s.Add(item)
 			}
-			got := s.String()
-			parts := strings.Split(got[1:len(got)-1], ",")
-			slices.SortFunc(parts, func(a, b string) int {
-				return strings.Compare(b, a)
-			})
-			got = strings.Join([]string{"[", "]"}, strings.Join(parts, ","))
+			got := s.ToSlice()
+			sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}

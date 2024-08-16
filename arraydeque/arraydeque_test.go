@@ -26,27 +26,27 @@ func TestArrayDeque_Add(t *testing.T) {
 	cases := []struct {
 		name  string
 		items []int
-		want  string
+		want  []int
 	}{
 		{
 			name:  "add_none",
 			items: []int{},
-			want:  "[]",
+			want:  []int{},
 		},
 		{
 			name:  "add_one",
 			items: []int{1},
-			want:  "[1]",
+			want:  []int{1},
 		},
 		{
 			name:  "add_up_to_default_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
+			want:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		},
 		{
 			name:  "add_double_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]",
+			want:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 		},
 	}
 	for _, tc := range cases {
@@ -57,7 +57,7 @@ func TestArrayDeque_Add(t *testing.T) {
 			for _, item := range tc.items {
 				d.Add(item)
 			}
-			got := d.String()
+			got := d.ToSlice()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -70,27 +70,27 @@ func TestArrayDeque_Push(t *testing.T) {
 	cases := []struct {
 		name  string
 		items []int
-		want  string
+		want  []int
 	}{
 		{
 			name:  "push_none",
 			items: []int{},
-			want:  "[]",
+			want:  []int{},
 		},
 		{
 			name:  "push_one",
 			items: []int{1},
-			want:  "[1]",
+			want:  []int{1},
 		},
 		{
 			name:  "push_up_to_default_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			want:  "[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+			want:  []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		},
 		{
 			name:  "push_double_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-			want:  "[20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+			want:  []int{20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		},
 	}
 	for _, tc := range cases {
@@ -101,7 +101,7 @@ func TestArrayDeque_Push(t *testing.T) {
 			for _, item := range tc.items {
 				d.Push(item)
 			}
-			got := d.String()
+			got := d.ToSlice()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -114,27 +114,27 @@ func TestArrayDeque_AddFront(t *testing.T) {
 	cases := []struct {
 		name  string
 		items []int
-		want  string
+		want  []int
 	}{
 		{
 			name:  "add_front_none",
 			items: []int{},
-			want:  "[]",
+			want:  []int{},
 		},
 		{
 			name:  "add_front_one",
 			items: []int{1},
-			want:  "[1]",
+			want:  []int{1},
 		},
 		{
 			name:  "add_front_up_to_default_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			want:  "[10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+			want:  []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		},
 		{
 			name:  "add_front_double_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-			want:  "[20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]",
+			want:  []int{20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
 		},
 	}
 	for _, tc := range cases {
@@ -145,7 +145,7 @@ func TestArrayDeque_AddFront(t *testing.T) {
 			for _, item := range tc.items {
 				d.AddFront(item)
 			}
-			got := d.String()
+			got := d.ToSlice()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -158,27 +158,27 @@ func TestArrayDeque_AddBack(t *testing.T) {
 	cases := []struct {
 		name  string
 		items []int
-		want  string
+		want  []int
 	}{
 		{
 			name:  "add_back_none",
 			items: []int{},
-			want:  "[]",
+			want:  []int{},
 		},
 		{
 			name:  "add_back_one",
 			items: []int{1},
-			want:  "[1]",
+			want:  []int{1},
 		},
 		{
 			name:  "add_back_up_to_default_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
+			want:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 		},
 		{
 			name:  "add_back_double_capacity",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
-			want:  "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]",
+			want:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
 		},
 	}
 	for _, tc := range cases {
@@ -189,7 +189,7 @@ func TestArrayDeque_AddBack(t *testing.T) {
 			for _, item := range tc.items {
 				d.Add(item)
 			}
-			got := d.String()
+			got := d.ToSlice()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -202,27 +202,27 @@ func TestArrayDeque_Rotate(t *testing.T) {
 	cases := []struct {
 		name  string
 		items []int
-		want  string
+		want  []int
 	}{
 		{
 			name:  "rotate_none",
 			items: []int{},
-			want:  "[]",
+			want:  []int{},
 		},
 		{
 			name:  "rotate_one",
 			items: []int{1},
-			want:  "[1]",
+			want:  []int{1},
 		},
 		{
 			name:  "rotate_even",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
-			want:  "[6, 7, 8, 9, 10, 1, 2, 3, 4, 5]",
+			want:  []int{6, 7, 8, 9, 10, 1, 2, 3, 4, 5},
 		},
 		{
 			name:  "rotate_odd",
 			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9},
-			want:  "[5, 6, 7, 8, 9, 1, 2, 3, 4]",
+			want:  []int{5, 6, 7, 8, 9, 1, 2, 3, 4},
 		},
 	}
 	for _, tc := range cases {
@@ -236,7 +236,7 @@ func TestArrayDeque_Rotate(t *testing.T) {
 			for i := 0; i < d.Size()/2; i++ {
 				d.Add(d.Remove())
 			}
-			got := d.String()
+			got := d.ToSlice()
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}

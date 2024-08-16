@@ -132,7 +132,7 @@ func (d *ArrayDeque[T]) Elements() chan T {
 }
 
 func (d *ArrayDeque[T]) ToSlice() []T {
-	slice := make([]T, d.Size())
+	slice := make([]T, 0, d.Size())
 	for t := range d.Elements() {
 		slice = append(slice, t)
 	}
