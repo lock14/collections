@@ -182,7 +182,7 @@ func TestBitSetPrimeGen(t *testing.T) {
 		name     string
 		lessThan int
 		want     []int
-	}, 0)
+	}, 0, len(first100Primes))
 	for i := 0; i < len(first100Primes); i++ {
 		lessThan := first100Primes[i] + 1
 		cases = append(cases, struct {
