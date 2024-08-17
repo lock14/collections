@@ -7,6 +7,11 @@ import (
 	"math"
 )
 
+const (
+	InsertionOrder = false
+	AccessOrder    = true
+)
+
 type KeyOrder bool
 
 type Config struct {
@@ -14,19 +19,25 @@ type Config struct {
 	maxElements int
 }
 
-func WithAccessOrder() KeyOrder {
-	return true
-}
-
-func WithInsertionOrder() KeyOrder {
-	return false
-}
-
-func WithMaxElements(max int) int {
-	return max
-}
-
 type Opt func(*Config)
+
+func WithAccessOrder() Opt {
+	return func(config *Config) {
+		config.keyOrder = AccessOrder
+	}
+}
+
+func WithInsertionOrder() Opt {
+	return func(config *Config) {
+		config.keyOrder = InsertionOrder
+	}
+}
+
+func WithMaxElements(max int) Opt {
+	return func(config *Config) {
+		config.maxElements = max
+	}
+}
 
 // public functions/receivers
 
