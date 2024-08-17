@@ -78,16 +78,17 @@ func (hm *HashMap[K, V]) Put(key K, value V) {
 }
 
 func (hm *HashMap[K, V]) Remove(key K) {
+	var prev *hashNode[K, V]
 	index := hm.fix(hm.hashBytes(key))
 	node := hm.hashtable[index]
-	var prev *hashNode[K, V]
 	for node != nil {
 		if node.key == key {
 			if prev == nil {
-				hm.hashtable[index] = nil
+				hm.hashtable[index] = node.next
 			} else {
 				prev.next = node.next
 			}
+			node.next = nil
 			hm.size--
 			return
 		}
