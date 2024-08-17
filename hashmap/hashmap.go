@@ -72,7 +72,8 @@ func (hm *HashMap[K, V]) Put(key K, value V) {
 	if n := hm.get(key); n != nil {
 		n.value = value
 	} else {
-		hm.insert(key, value)
+		hm.insert(&hashNode[K, V]{key: key, value: value})
+		hm.size++
 	}
 }
 
@@ -87,6 +88,7 @@ func (hm *HashMap[K, V]) Remove(key K) {
 			} else {
 				prev.next = node.next
 			}
+			hm.size--
 			return
 		}
 		prev = node
@@ -137,27 +139,20 @@ func (hm *HashMap[K, V]) get(key K) *hashNode[K, V] {
 	return node
 }
 
-func (hm *HashMap[K, V]) insert(key K, value V) {
+func (hm *HashMap[K, V]) insert(node *hashNode[K, V]) {
 	if hm.loadFactor() > hm.maxLoadFactor {
 		hm.resize()
 	}
-	index := hm.fix(hm.hashBytes(key))
+	index := hm.fix(hm.hashBytes(node.key))
 	current := hm.hashtable[index]
 	if current == nil {
-		hm.hashtable[index] = &hashNode[K, V]{
-			key:   key,
-			value: value,
-		}
+		hm.hashtable[index] = node
 	} else {
 		for current.next != nil {
 			current = current.next
 		}
-		current.next = &hashNode[K, V]{
-			key:   key,
-			value: value,
-		}
+		current.next = node
 	}
-	hm.size++
 }
 
 func (hm *HashMap[K, V]) fix(hash uint64) uint64 {
@@ -183,8 +178,10 @@ func (hm *HashMap[K, V]) resize() {
 	hm.hashtable = make([]*hashNode[K, V], 2*cap(oldHashTable))
 	for _, node := range oldHashTable {
 		for node != nil {
-			hm.Put(node.key, node.value)
-			node = node.next
+			next := node.next
+			node.next = nil
+			hm.insert(node)
+			node = next
 		}
 	}
 }
