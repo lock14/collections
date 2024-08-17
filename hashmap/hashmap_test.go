@@ -12,19 +12,25 @@ type Person struct {
 	Foo  Foo
 }
 
-func GetAndPutSameAsBuiltInTestCase[K comparable, V comparable](entries map[K]V) func(t *testing.T) {
+func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries map[K]V) func(t *testing.T) {
 	return func(t *testing.T) {
 		t.Parallel()
-		built := make(map[K]V)
+		builtIn := make(map[K]V)
 		hashMap := New[K, V]()
 
 		for k, v := range entries {
-			built[k] = v
+			builtIn[k] = v
 			hashMap.Put(k, v)
+			if got, want := hashMap.Size(), len(builtIn); got != want {
+				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+			}
 		}
-		for k := range built {
+		if got, want := hashMap.Size(), len(builtIn); got != want {
+			t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+		}
+		for k := range entries {
 			gotV, gotOk := hashMap.Get(k)
-			wantV, wantOK := built[k]
+			wantV, wantOK := builtIn[k]
 			if gotOk != wantOK {
 				t.Errorf("got %v, want %v", gotOk, wantOK)
 			}
@@ -32,10 +38,20 @@ func GetAndPutSameAsBuiltInTestCase[K comparable, V comparable](entries map[K]V)
 				t.Errorf("got %v, want %v", gotV, wantV)
 			}
 		}
+		for k := range entries {
+			delete(builtIn, k)
+			hashMap.Remove(k)
+			if got, want := hashMap.Size(), len(builtIn); got != want {
+				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+			}
+		}
+		if got, want := hashMap.Size(), len(builtIn); got != want {
+			t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+		}
 	}
 }
 
-func TestGetAndPutSameAsBuiltInMapInt(t *testing.T) {
+func TestGetPutAndRemoveSameAsBuiltInMapInt(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name    string
@@ -67,11 +83,11 @@ func TestGetAndPutSameAsBuiltInMapInt(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.name, GetAndPutSameAsBuiltInTestCase(tc.entries))
+		t.Run(tc.name, GetPutAndRemoveSameAsBuiltInTestCase(tc.entries))
 	}
 }
 
-func TestGetAndPutSameAsBuiltInMapFloat(t *testing.T) {
+func TestGetPutAndRemoveSameAsBuiltInMapFloat(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name    string
@@ -103,11 +119,11 @@ func TestGetAndPutSameAsBuiltInMapFloat(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.name, GetAndPutSameAsBuiltInTestCase(tc.entries))
+		t.Run(tc.name, GetPutAndRemoveSameAsBuiltInTestCase(tc.entries))
 	}
 }
 
-func TestGetAndPutSameAsBuiltInMapString(t *testing.T) {
+func TestGetPutAndRemoveSameAsBuiltInMapString(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name    string
@@ -139,11 +155,11 @@ func TestGetAndPutSameAsBuiltInMapString(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.name, GetAndPutSameAsBuiltInTestCase(tc.entries))
+		t.Run(tc.name, GetPutAndRemoveSameAsBuiltInTestCase(tc.entries))
 	}
 }
 
-func TestGetAndPutSameAsBuiltInMapStruct(t *testing.T) {
+func TestGetPutAndRemoveSameAsBuiltInMapStruct(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name    string
@@ -177,11 +193,11 @@ func TestGetAndPutSameAsBuiltInMapStruct(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.name, GetAndPutSameAsBuiltInTestCase(tc.entries))
+		t.Run(tc.name, GetPutAndRemoveSameAsBuiltInTestCase(tc.entries))
 	}
 }
 
-func TestGetAndPutSameAsBuiltInMapStructPointers(t *testing.T) {
+func TestGetPutAndRemoveSameAsBuiltInMapStructPointers(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name    string
@@ -215,6 +231,6 @@ func TestGetAndPutSameAsBuiltInMapStructPointers(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		t.Run(tc.name, GetAndPutSameAsBuiltInTestCase(tc.entries))
+		t.Run(tc.name, GetPutAndRemoveSameAsBuiltInTestCase(tc.entries))
 	}
 }
