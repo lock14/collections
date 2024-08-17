@@ -1,6 +1,9 @@
 package hashmap
 
-import "testing"
+import (
+	"github.com/lock14/collections/iterator"
+	"testing"
+)
 
 type Foo struct {
 	bar int
@@ -24,6 +27,29 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 			if got, want := hashMap.Size(), len(builtIn); got != want {
 				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
 			}
+			biEntries := make([]struct {
+				k K
+				v V
+			}, 0, len(builtIn))
+			for k, v := range builtIn {
+				biEntries = append(biEntries, struct {
+					k K
+					v V
+				}{k: k, v: v})
+			}
+			hmEntries := make([]struct {
+				k K
+				v V
+			}, 0, len(builtIn))
+			for p := range iterator.Elements(hashMap.Entries()) {
+				hmEntries = append(hmEntries, struct {
+					k K
+					v V
+				}{k: p.Fst(), v: p.Snd()})
+			}
+			if got, want := len(hmEntries), len(biEntries); got != want {
+				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+			}
 		}
 		if got, want := hashMap.Size(), len(builtIn); got != want {
 			t.Errorf("unexpected number of entries: got %d, want %d", got, want)
@@ -37,11 +63,63 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 			if gotV != wantV {
 				t.Errorf("got %v, want %v", gotV, wantV)
 			}
+			if got, want := hashMap.Size(), len(builtIn); got != want {
+				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+			}
+			biEntries := make([]struct {
+				k K
+				v V
+			}, 0, len(builtIn))
+			for k, v := range builtIn {
+				biEntries = append(biEntries, struct {
+					k K
+					v V
+				}{k: k, v: v})
+			}
+			hmEntries := make([]struct {
+				k K
+				v V
+			}, 0, hashMap.Size())
+			for p := range iterator.Elements(hashMap.Entries()) {
+				hmEntries = append(hmEntries, struct {
+					k K
+					v V
+				}{k: p.Fst(), v: p.Snd()})
+			}
+			if got, want := len(hmEntries), len(biEntries); got != want {
+				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+			}
+		}
+		if got, want := hashMap.Size(), len(builtIn); got != want {
+			t.Errorf("unexpected number of entries: got %d, want %d", got, want)
 		}
 		for k := range entries {
 			delete(builtIn, k)
 			hashMap.Remove(k)
 			if got, want := hashMap.Size(), len(builtIn); got != want {
+				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
+			}
+			biEntries := make([]struct {
+				k K
+				v V
+			}, 0, len(builtIn))
+			for k, v := range builtIn {
+				biEntries = append(biEntries, struct {
+					k K
+					v V
+				}{k: k, v: v})
+			}
+			hmEntries := make([]struct {
+				k K
+				v V
+			}, 0, hashMap.Size())
+			for p := range iterator.Elements(hashMap.Entries()) {
+				hmEntries = append(hmEntries, struct {
+					k K
+					v V
+				}{k: p.Fst(), v: p.Snd()})
+			}
+			if got, want := len(hmEntries), len(biEntries); got != want {
 				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
 			}
 		}
