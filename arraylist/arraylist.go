@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
 	"iter"
+	"slices"
 	"strings"
 )
 
@@ -22,11 +23,6 @@ type Option func(*Config)
 
 type ArrayList[T any] struct {
 	slice []T
-}
-
-type listIterator[T any] struct {
-	slice []T
-	index int
 }
 
 // public functions/recievers
@@ -82,13 +78,7 @@ func (l *ArrayList[T]) String() string {
 }
 
 func (l *ArrayList[T]) All() iter.Seq[T] {
-	return func(yield func(T) bool) {
-		for i := 0; i < l.Size(); i++ {
-			if !yield(l.slice[i]) {
-				return
-			}
-		}
-	}
+	return slices.Values(l.slice[0:l.Size()])
 }
 
 func (l *ArrayList[T]) Stream() chan T {

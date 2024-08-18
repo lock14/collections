@@ -2,15 +2,15 @@ package hashset
 
 import (
 	"fmt"
-	"github.com/lock14/collections/hashmap"
 	"github.com/lock14/collections/iterator"
 	"iter"
+	"maps"
 	"strings"
 )
 
 // HashSet represents a set of elements of type T.
 type HashSet[T comparable] struct {
-	m *hashmap.HashMap[T, struct{}]
+	m map[T]struct{}
 }
 
 // Config holds the values for configuring a HashSet.
@@ -26,35 +26,35 @@ func New[T comparable](opts ...Option) *HashSet[T] {
 		option(config)
 	}
 	return &HashSet[T]{
-		m: hashmap.New[T, struct{}](),
+		m: make(map[T]struct{}),
 	}
 }
 
 func (s *HashSet[T]) Add(item T) {
-	s.m.Put(item, struct{}{})
+	s.m[item] = struct{}{}
 }
 
 func (s *HashSet[T]) Remove(item T) {
-	s.m.Remove(item)
+	delete(s.m, item)
 }
 
 func (s *HashSet[T]) Contains(item T) bool {
-	_, present := s.m.Get(item)
+	_, present := s.m[item]
 	return present
 }
 
 func (s *HashSet[T]) Size() int {
-	return s.m.Size()
+	return len(s.m)
 }
 
 func (s *HashSet[T]) Empty() bool {
-	return s.m.Empty()
+	return s.Size() == 0
 }
 
 func (s *HashSet[T]) String() string {
 	vals := make([]string, s.Size())
 	i := 0
-	for item := range iterator.Stream(s.m.Keys()) {
+	for item := range maps.Keys(s.m) {
 		vals[i] = fmt.Sprintf("%+v", item)
 		i++
 	}
@@ -62,7 +62,7 @@ func (s *HashSet[T]) String() string {
 }
 
 func (s *HashSet[T]) All() iter.Seq[T] {
-	return s.m.Keys()
+	return maps.Keys(s.m)
 }
 
 func (s *HashSet[T]) Stream() chan T {
