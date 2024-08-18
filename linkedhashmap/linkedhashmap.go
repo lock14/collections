@@ -2,8 +2,8 @@ package linkedhashmap
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"github.com/lock14/collections/pair"
+	"iter"
 	"math"
 )
 
@@ -111,22 +111,35 @@ func (hm *LinkedHashMap[K, V]) Empty() bool {
 	return hm.Size() == 0
 }
 
-func (hm *LinkedHashMap[K, V]) Entries() iterator.Iterator[*pair.Pair[K, V]] {
-	return &entryIterator[K, V]{
-		hashMap: hm,
-		current: hm.list.next,
+func (hm *LinkedHashMap[K, V]) Entries() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		ei := entryIterator[K, V]{
+			hashMap: hm,
+			current: hm.list.next,
+		}
+		for ei.current != hm.list && yield(ei.current.key, ei.current.value) {
+			ei.current = ei.current.next
+		}
 	}
 }
 
-func (hm *LinkedHashMap[K, V]) Keys() iterator.Iterator[K] {
-	return &keyIterator[K, V]{
-		ei: hm.Entries(),
+func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k, _ := range hm.Entries() {
+			if !yield(k) {
+				return
+			}
+		}
 	}
 }
 
-func (hm *LinkedHashMap[K, V]) Values() iterator.Iterator[V] {
-	return &valueIterator[K, V]{
-		ei: hm.Entries(),
+func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range hm.Entries() {
+			if !yield(v) {
+				return
+			}
+		}
 	}
 }
 
@@ -189,38 +202,4 @@ func (ei *entryIterator[K, V]) Next() (*pair.Pair[K, V], error) {
 	cur := ei.current
 	ei.current = ei.current.next
 	return pair.New(cur.key, cur.value), nil
-}
-
-type keyIterator[K any, V any] struct {
-	ei iterator.Iterator[*pair.Pair[K, V]]
-}
-
-func (ki *keyIterator[K, V]) Empty() bool {
-	return ki.ei.Empty()
-}
-
-func (ki *keyIterator[K, V]) Next() (K, error) {
-	p, err := ki.ei.Next()
-	if err != nil {
-		var k K
-		return k, err
-	}
-	return p.Fst(), err
-}
-
-type valueIterator[K any, V any] struct {
-	ei iterator.Iterator[*pair.Pair[K, V]]
-}
-
-func (vi *valueIterator[K, V]) Empty() bool {
-	return vi.ei.Empty()
-}
-
-func (vi *valueIterator[K, V]) Next() (V, error) {
-	p, err := vi.ei.Next()
-	if err != nil {
-		var v V
-		return v, err
-	}
-	return p.Snd(), err
 }

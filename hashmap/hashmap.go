@@ -2,9 +2,9 @@ package hashmap
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"github.com/lock14/collections/pair"
 	"hash/maphash"
+	"iter"
 	"unsafe"
 )
 
@@ -105,24 +105,36 @@ func (hm *HashMap[K, V]) Empty() bool {
 	return hm.Size() == 0
 }
 
-func (hm *HashMap[K, V]) Entries() iterator.Iterator[*pair.Pair[K, V]] {
-	ei := &entryIterator[K, V]{
-		hashMap: hm,
-		index:   0,
-	}
-	ei.current = ei.getNext(nil)
-	return ei
-}
-
-func (hm *HashMap[K, V]) Keys() iterator.Iterator[K] {
-	return &keyIterator[K, V]{
-		ei: hm.Entries(),
+func (hm *HashMap[K, V]) Entries() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		ei := entryIterator[K, V]{
+			hashMap: hm,
+			index:   0,
+		}
+		ei.current = ei.getNext(nil)
+		for ei.current != nil && yield(ei.current.key, ei.current.value) {
+			ei.current = ei.getNext(ei.current.next)
+		}
 	}
 }
 
-func (hm *HashMap[K, V]) Values() iterator.Iterator[V] {
-	return &valueIterator[K, V]{
-		ei: hm.Entries(),
+func (hm *HashMap[K, V]) Keys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k, _ := range hm.Entries() {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+func (hm *HashMap[K, V]) Values() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range hm.Entries() {
+			if !yield(v) {
+				return
+			}
+		}
 	}
 }
 
@@ -226,38 +238,4 @@ func (ei *entryIterator[K, V]) getNext(next *hashNode[K, V]) *hashNode[K, V] {
 		}
 	}
 	return next
-}
-
-type keyIterator[K any, V any] struct {
-	ei iterator.Iterator[*pair.Pair[K, V]]
-}
-
-func (ki *keyIterator[K, V]) Empty() bool {
-	return ki.ei.Empty()
-}
-
-func (ki *keyIterator[K, V]) Next() (K, error) {
-	p, err := ki.ei.Next()
-	if err != nil {
-		var k K
-		return k, err
-	}
-	return p.Fst(), err
-}
-
-type valueIterator[K any, V any] struct {
-	ei iterator.Iterator[*pair.Pair[K, V]]
-}
-
-func (vi *valueIterator[K, V]) Empty() bool {
-	return vi.ei.Empty()
-}
-
-func (vi *valueIterator[K, V]) Next() (V, error) {
-	p, err := vi.ei.Next()
-	if err != nil {
-		var v V
-		return v, err
-	}
-	return p.Snd(), err
 }

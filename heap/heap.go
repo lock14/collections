@@ -2,8 +2,8 @@ package heap
 
 import (
 	"cmp"
-	"fmt"
 	"github.com/lock14/collections/iterator"
+	"iter"
 )
 
 const (
@@ -141,9 +141,9 @@ func (h *Heap[T]) heapCondition(i, j int) bool {
 }
 
 func (h *Heap[T]) increaseCapacity() {
-	newElemements := make([]T, len(h.elements)+(len(h.elements)>>1))
-	copy(newElemements, h.elements)
-	h.elements = newElemements
+	newElements := make([]T, len(h.elements)+(len(h.elements)>>1))
+	copy(newElements, h.elements)
+	h.elements = newElements
 }
 
 func (h *Heap[T]) swap(i, j int) {
@@ -174,34 +174,34 @@ func right(index int) int {
 	return 2*index + 2
 }
 
-func (h *Heap[T]) Iterator() iterator.Iterator[T] {
-	return &heapIterator[T]{
-		heap:  h,
-		index: 0,
+func (h *Heap[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		hi := heapIterator[T]{
+			heap:  h,
+			index: 0,
+		}
+		for !hi.empty() && yield(hi.next()) {
+		}
 	}
 }
 
-func (h *Heap[T]) Elements() chan T {
-	return iterator.Elements(h.Iterator())
+func (h *Heap[T]) Stream() chan T {
+	return iterator.Stream(h.All())
 }
 
-// Iterator
+// All
 
 type heapIterator[T any] struct {
 	heap  *Heap[T]
 	index int
 }
 
-func (hi *heapIterator[T]) Empty() bool {
+func (hi *heapIterator[T]) empty() bool {
 	return hi.index >= hi.heap.Size()
 }
 
-func (hi *heapIterator[T]) Next() (T, error) {
-	var t T
-	if hi.Empty() {
-		return t, fmt.Errorf("cannot call Next() on an empty iterator")
-	}
-	t = hi.heap.elements[hi.index]
+func (hi *heapIterator[T]) next() T {
+	t := hi.heap.elements[hi.index]
 	hi.index++
-	return t, nil
+	return t
 }

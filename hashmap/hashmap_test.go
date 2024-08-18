@@ -1,7 +1,6 @@
 package hashmap
 
 import (
-	"github.com/lock14/collections/iterator"
 	"testing"
 )
 
@@ -41,11 +40,11 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 				k K
 				v V
 			}, 0, len(builtIn))
-			for p := range iterator.Elements(hashMap.Entries()) {
+			for k, v := range hashMap.Entries() {
 				hmEntries = append(hmEntries, struct {
 					k K
 					v V
-				}{k: p.Fst(), v: p.Snd()})
+				}{k: k, v: v})
 			}
 			if got, want := len(hmEntries), len(biEntries); got != want {
 				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
@@ -80,11 +79,11 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 				k K
 				v V
 			}, 0, hashMap.Size())
-			for p := range iterator.Elements(hashMap.Entries()) {
+			for k, v := range hashMap.Entries() {
 				hmEntries = append(hmEntries, struct {
 					k K
 					v V
-				}{k: p.Fst(), v: p.Snd()})
+				}{k: k, v: v})
 			}
 			if got, want := len(hmEntries), len(biEntries); got != want {
 				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
@@ -113,11 +112,11 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 				k K
 				v V
 			}, 0, hashMap.Size())
-			for p := range iterator.Elements(hashMap.Entries()) {
+			for k, v := range hashMap.Entries() {
 				hmEntries = append(hmEntries, struct {
 					k K
 					v V
-				}{k: p.Fst(), v: p.Snd()})
+				}{k: k, v: v})
 			}
 			if got, want := len(hmEntries), len(biEntries); got != want {
 				t.Errorf("unexpected number of entries: got %d, want %d", got, want)
