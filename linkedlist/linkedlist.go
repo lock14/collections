@@ -2,6 +2,7 @@ package linked_list
 
 import (
 	"fmt"
+	"github.com/lock14/collections"
 	"iter"
 	"strings"
 )
@@ -72,6 +73,12 @@ func (l *LinkedList[T]) Pop() T {
 
 func (l *LinkedList[T]) Size() int {
 	return l.size
+}
+
+func (l *LinkedList[T]) AddAll(other collections.Collection[T]) {
+	for t := range other.All() {
+		l.Add(t)
+	}
 }
 
 func (l *LinkedList[T]) Empty() bool {

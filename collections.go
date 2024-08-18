@@ -17,6 +17,13 @@ type Collection[T any] interface {
 	Empty() bool
 }
 
+type List[T any] interface {
+	Collection[T]
+	Add(t T)
+	Remove() T
+	AddAll(collection Collection[T])
+}
+
 type Queue[T any] interface {
 	Collection[T]
 	Add(t T)
@@ -40,6 +47,11 @@ type Deque[T any] interface {
 
 type Set[T any] interface {
 	Collection[T]
+	Add(t T)
+	Remove(t T)
+	AddAll(collection Collection[T])
+	RemoveAll(collection Collection[T])
+	RetainAll(collection Collection[T])
 }
 
 type Map[K any, V any] interface {

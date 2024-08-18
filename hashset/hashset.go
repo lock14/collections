@@ -2,6 +2,7 @@ package hashset
 
 import (
 	"fmt"
+	"github.com/lock14/collections"
 	"iter"
 	"maps"
 	"strings"
@@ -40,6 +41,26 @@ func (s *HashSet[T]) Remove(item T) {
 func (s *HashSet[T]) Contains(item T) bool {
 	_, present := s.m[item]
 	return present
+}
+
+func (s *HashSet[T]) AddAll(other collections.Collection[T]) {
+	for t := range other.All() {
+		s.Add(t)
+	}
+}
+
+func (s *HashSet[T]) RemoveAll(other collections.Collection[T]) {
+	for t := range other.All() {
+		s.Remove(t)
+	}
+}
+
+func (s *HashSet[T]) RetainAll(other collections.Collection[T]) {
+	for t := range other.All() {
+		if !s.Contains(t) {
+			s.Remove(t)
+		}
+	}
 }
 
 func (s *HashSet[T]) Size() int {

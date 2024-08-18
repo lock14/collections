@@ -2,6 +2,7 @@ package arraylist
 
 import (
 	"fmt"
+	"github.com/lock14/collections"
 	"iter"
 	"slices"
 	"strings"
@@ -48,8 +49,31 @@ func From[T any](slice []T) *ArrayList[T] {
 	}
 }
 
-func (l *ArrayList[T]) Add(items ...T) {
-	l.slice = append(l.slice, items...)
+func (l *ArrayList[T]) Add(t T) {
+	l.slice = append(l.slice, t)
+}
+
+func (l *ArrayList[T]) Remove() T {
+	if l.Empty() {
+		panic("cannot remove from an empty list")
+	}
+	t := l.slice[l.Size()-1]
+	l.slice = l.slice[0 : l.Size()-1]
+	return t
+}
+
+func (l *ArrayList[T]) Push(t T) {
+	l.Add(t)
+}
+
+func (l *ArrayList[T]) Pop() T {
+	return l.Remove()
+}
+
+func (l *ArrayList[T]) AddAll(other collections.Collection[T]) {
+	for t := range other.All() {
+		l.Add(t)
+	}
 }
 
 func (l *ArrayList[T]) Size() int {
