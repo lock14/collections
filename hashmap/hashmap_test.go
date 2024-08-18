@@ -40,7 +40,7 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 				k K
 				v V
 			}, 0, len(builtIn))
-			for k, v := range hashMap.Entries() {
+			for k, v := range hashMap.All() {
 				hmEntries = append(hmEntries, struct {
 					k K
 					v V
@@ -79,7 +79,7 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 				k K
 				v V
 			}, 0, hashMap.Size())
-			for k, v := range hashMap.Entries() {
+			for k, v := range hashMap.All() {
 				hmEntries = append(hmEntries, struct {
 					k K
 					v V
@@ -112,7 +112,7 @@ func GetPutAndRemoveSameAsBuiltInTestCase[K comparable, V comparable](entries ma
 				k K
 				v V
 			}, 0, hashMap.Size())
-			for k, v := range hashMap.Entries() {
+			for k, v := range hashMap.All() {
 				hmEntries = append(hmEntries, struct {
 					k K
 					v V

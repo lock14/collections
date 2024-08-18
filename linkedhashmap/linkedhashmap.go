@@ -109,7 +109,7 @@ func (hm *LinkedHashMap[K, V]) Empty() bool {
 	return hm.Size() == 0
 }
 
-func (hm *LinkedHashMap[K, V]) Entries() iter.Seq2[K, V] {
+func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		cur := hm.list.next
 		for cur != hm.list && yield(cur.key, cur.value) {
@@ -120,7 +120,7 @@ func (hm *LinkedHashMap[K, V]) Entries() iter.Seq2[K, V] {
 
 func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for k, _ := range hm.Entries() {
+		for k, _ := range hm.All() {
 			if !yield(k) {
 				return
 			}
@@ -130,7 +130,7 @@ func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 
 func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
-		for _, v := range hm.Entries() {
+		for _, v := range hm.All() {
 			if !yield(v) {
 				return
 			}

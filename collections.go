@@ -48,7 +48,7 @@ type Map[K any, V any] interface {
 	Remove(K)
 	Size() int
 	Empty() bool
-	Entries() iter.Seq2[K, V]
+	All() iter.Seq2[K, V]
 	Keys() iter.Seq[K]
 	Values() iter.Seq[V]
 }
