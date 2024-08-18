@@ -2,7 +2,6 @@ package arraylist
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"iter"
 	"slices"
 	"strings"
@@ -79,10 +78,6 @@ func (l *ArrayList[T]) String() string {
 
 func (l *ArrayList[T]) All() iter.Seq[T] {
 	return slices.Values(l.slice[0:l.Size()])
-}
-
-func (l *ArrayList[T]) Stream() chan T {
-	return iterator.Stream(l.All())
 }
 
 // private functions/receivers

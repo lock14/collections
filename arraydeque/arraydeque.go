@@ -2,7 +2,6 @@ package arraydeque
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"iter"
 	"strings"
 )
@@ -130,10 +129,6 @@ func (d *ArrayDeque[T]) All() iter.Seq[T] {
 		for !di.empty() && yield(di.next()) {
 		}
 	}
-}
-
-func (d *ArrayDeque[T]) Stream() chan T {
-	return iterator.Stream(d.All())
 }
 
 func (d *ArrayDeque[T]) ToSlice() []T {

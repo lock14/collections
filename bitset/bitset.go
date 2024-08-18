@@ -2,7 +2,6 @@ package bitset
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"iter"
 	"math/bits"
 	"strings"
@@ -206,18 +205,27 @@ func (b *BitSet) String() string {
 	return strings.Join(s, "")
 }
 
-func (b *BitSet) Stream() chan int {
-	return iterator.Stream(b.SetBits())
+func (b *BitSet) All() iter.Seq[int] {
+	return func(yield func(int) bool) {
+		bitIndex := 0
+		for bitIndex < b.Size() && yield(bitIndex) {
+			bitIndex++
+		}
+	}
 }
 
 // SetBits returns an iterator that iterates over the set bits of this BitSet
 func (b *BitSet) SetBits() iter.Seq[int] {
 	return func(yield func(int) bool) {
-		bi := &setBitIterator{
-			bitSet: b,
+		bitIndex := 0
+		for bitIndex < b.Size() && !b.Get(bitIndex) {
+			bitIndex++
 		}
-		bi.bitIndex = bi.getNextSetIndex(0)
-		for !bi.empty() && yield(bi.next()) {
+		for bitIndex < b.Size() && yield(bitIndex) {
+			bitIndex++
+			for bitIndex < b.Size() && !b.Get(bitIndex) {
+				bitIndex++
+			}
 		}
 	}
 }
@@ -225,11 +233,15 @@ func (b *BitSet) SetBits() iter.Seq[int] {
 // UnsetBits returns an iterator that iterates over the unset bits of this BitSet
 func (b *BitSet) UnsetBits() iter.Seq[int] {
 	return func(yield func(int) bool) {
-		bi := &unSetBitIterator{
-			bitSet: b,
+		bitIndex := 0
+		for bitIndex < b.Size() && b.Get(bitIndex) {
+			bitIndex++
 		}
-		bi.bitIndex = bi.getNextUnSetIndex(0)
-		for !bi.empty() && yield(bi.next()) {
+		for bitIndex < b.Size() && yield(bitIndex) {
+			bitIndex++
+			for bitIndex < b.Size() && b.Get(bitIndex) {
+				bitIndex++
+			}
 		}
 	}
 }
@@ -264,40 +276,4 @@ func ensureNonNegative(i int) {
 	if i < 0 {
 		panic(fmt.Sprintf("runtime error: index out of range [%d]", i))
 	}
-}
-
-// All stuff
-
-func (bi *setBitIterator) empty() bool {
-	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
-}
-
-func (bi *setBitIterator) next() int {
-	v := bi.bitIndex
-	bi.bitIndex = bi.getNextSetIndex(bi.bitIndex + 1)
-	return v
-}
-
-func (bi *setBitIterator) getNextSetIndex(start int) int {
-	for start < bi.bitSet.Size() && !bi.bitSet.Get(start) {
-		start++
-	}
-	return start
-}
-
-func (bi *unSetBitIterator) empty() bool {
-	return bi.bitIndex >= len(bi.bitSet.bits)*wordSize
-}
-
-func (bi *unSetBitIterator) next() int {
-	v := bi.bitIndex
-	bi.bitIndex = bi.getNextUnSetIndex(bi.bitIndex + 1)
-	return v
-}
-
-func (bi *unSetBitIterator) getNextUnSetIndex(start int) int {
-	for start < bi.bitSet.Size() && bi.bitSet.Get(start) {
-		start++
-	}
-	return start
 }

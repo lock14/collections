@@ -2,7 +2,6 @@ package hashset
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"iter"
 	"maps"
 	"strings"
@@ -63,10 +62,6 @@ func (s *HashSet[T]) String() string {
 
 func (s *HashSet[T]) All() iter.Seq[T] {
 	return maps.Keys(s.m)
-}
-
-func (s *HashSet[T]) Stream() chan T {
-	return iterator.Stream(s.All())
 }
 
 func (s *HashSet[T]) ToSlice() []T {

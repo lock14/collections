@@ -2,7 +2,6 @@ package linked_list
 
 import (
 	"fmt"
-	"github.com/lock14/collections/iterator"
 	"iter"
 	"strings"
 )
@@ -96,10 +95,6 @@ func (l *LinkedList[T]) All() iter.Seq[T] {
 		for !li.empty() && yield(li.next()) {
 		}
 	}
-}
-
-func (l *LinkedList[T]) Stream() chan T {
-	return iterator.Stream(l.All())
 }
 
 func (l *LinkedList[T]) ToSlice() []T {

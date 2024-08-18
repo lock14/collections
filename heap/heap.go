@@ -2,7 +2,6 @@ package heap
 
 import (
 	"cmp"
-	"github.com/lock14/collections/iterator"
 	"iter"
 )
 
@@ -183,10 +182,6 @@ func (h *Heap[T]) All() iter.Seq[T] {
 		for !hi.empty() && yield(hi.next()) {
 		}
 	}
-}
-
-func (h *Heap[T]) Stream() chan T {
-	return iterator.Stream(h.All())
 }
 
 // All
