@@ -1,8 +1,6 @@
 package linkedhashmap
 
 import (
-	"fmt"
-	"github.com/lock14/collections/pair"
 	"iter"
 	"math"
 )
@@ -113,12 +111,9 @@ func (hm *LinkedHashMap[K, V]) Empty() bool {
 
 func (hm *LinkedHashMap[K, V]) Entries() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		ei := entryIterator[K, V]{
-			hashMap: hm,
-			current: hm.list.next,
-		}
-		for ei.current != hm.list && yield(ei.current.key, ei.current.value) {
-			ei.current = ei.current.next
+		cur := hm.list.next
+		for cur != hm.list && yield(cur.key, cur.value) {
+			cur = cur.next
 		}
 	}
 }
@@ -182,24 +177,4 @@ func unlink[K, V any](n *node[K, V]) {
 	n.next.prev = n.prev
 	n.prev = nil
 	n.next = nil
-}
-
-// iterator stuff
-
-type entryIterator[K comparable, V any] struct {
-	hashMap *LinkedHashMap[K, V]
-	current *node[K, V]
-}
-
-func (ei *entryIterator[K, V]) Empty() bool {
-	return ei.current == ei.hashMap.list
-}
-
-func (ei *entryIterator[K, V]) Next() (*pair.Pair[K, V], error) {
-	if ei.Empty() {
-		return nil, fmt.Errorf("iterator is empty")
-	}
-	cur := ei.current
-	ei.current = ei.current.next
-	return pair.New(cur.key, cur.value), nil
 }

@@ -3,6 +3,7 @@ package heap
 import (
 	"cmp"
 	"iter"
+	"slices"
 )
 
 const (
@@ -174,29 +175,5 @@ func right(index int) int {
 }
 
 func (h *Heap[T]) All() iter.Seq[T] {
-	return func(yield func(T) bool) {
-		hi := heapIterator[T]{
-			heap:  h,
-			index: 0,
-		}
-		for !hi.empty() && yield(hi.next()) {
-		}
-	}
-}
-
-// All
-
-type heapIterator[T any] struct {
-	heap  *Heap[T]
-	index int
-}
-
-func (hi *heapIterator[T]) empty() bool {
-	return hi.index >= hi.heap.Size()
-}
-
-func (hi *heapIterator[T]) next() T {
-	t := hi.heap.elements[hi.index]
-	hi.index++
-	return t
+	return slices.Values(h.elements[0:h.Size()])
 }

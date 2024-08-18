@@ -88,11 +88,9 @@ func (l *LinkedList[T]) String() string {
 
 func (l *LinkedList[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		li := linkedListIterator[T]{
-			cur: l.list.next,
-			end: &l.list,
-		}
-		for !li.empty() && yield(li.next()) {
+		cur := l.list.next
+		for cur != &l.list && yield(cur.data) {
+			cur = cur.next
 		}
 	}
 }
@@ -127,21 +125,4 @@ func sentinel[T any]() node[T] {
 	n.next = &n
 	n.prev = &n
 	return n
-}
-
-// All
-
-type linkedListIterator[T any] struct {
-	cur *node[T]
-	end *node[T]
-}
-
-func (itr *linkedListIterator[T]) empty() bool {
-	return itr.cur == itr.end
-}
-
-func (itr *linkedListIterator[T]) next() T {
-	t := itr.cur.data
-	itr.cur = itr.cur.next
-	return t
 }

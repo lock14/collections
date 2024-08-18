@@ -122,11 +122,9 @@ func (d *ArrayDeque[T]) String() string {
 
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		di := dequeIterator[T]{
-			deque: d,
-			index: 0,
-		}
-		for !di.empty() && yield(di.next()) {
+		i := 0
+		for i < d.Size() && yield(d.slice[(i+d.front)%len(d.slice)]) {
+			i++
 		}
 	}
 }
@@ -157,22 +155,4 @@ func defaultConfig() *Config {
 	return &Config{
 		Capacity: DefaultCapacity,
 	}
-}
-
-// All
-
-type dequeIterator[T any] struct {
-	deque *ArrayDeque[T]
-	index int
-}
-
-func (itr *dequeIterator[T]) empty() bool {
-	return itr.index >= itr.deque.Size()
-}
-
-func (itr *dequeIterator[T]) next() T {
-	i := (itr.index + itr.deque.front) % len(itr.deque.slice)
-	t := itr.deque.slice[i]
-	itr.index++
-	return t
 }

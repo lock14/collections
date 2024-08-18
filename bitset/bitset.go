@@ -34,18 +34,6 @@ func NumBits(n int) Option {
 	}
 }
 
-// iterator over the set bits
-type setBitIterator struct {
-	bitSet   *BitSet
-	bitIndex int
-}
-
-// iterator over the unset bits
-type unSetBitIterator struct {
-	bitSet   *BitSet
-	bitIndex int
-}
-
 // New creates a BitSet whose initial size is large enough to explicitly
 // represent bits with indices in the range 0 through NumBits-1. If no
 // configuration is used the DefaultNumBits is used as the number of bits.
