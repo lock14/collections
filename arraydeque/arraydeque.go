@@ -3,6 +3,7 @@ package arraydeque
 import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
+	"iter"
 	"strings"
 )
 
@@ -114,26 +115,30 @@ func (d *ArrayDeque[T]) Empty() bool {
 
 func (d *ArrayDeque[T]) String() string {
 	str := make([]string, 0, d.Size())
-	for t := range d.Elements() {
+	for t := range d.All() {
 		str = append(str, fmt.Sprintf("%+v", t))
 	}
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
-func (d *ArrayDeque[T]) Iterator() iterator.Iterator[T] {
-	return &dequeIterator[T]{
-		deque: d,
-		index: 0,
+func (d *ArrayDeque[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		di := dequeIterator[T]{
+			deque: d,
+			index: 0,
+		}
+		for !di.empty() && yield(di.next()) {
+		}
 	}
 }
 
-func (d *ArrayDeque[T]) Elements() chan T {
-	return iterator.Elements(d.Iterator())
+func (d *ArrayDeque[T]) Stream() chan T {
+	return iterator.Stream(d.All())
 }
 
 func (d *ArrayDeque[T]) ToSlice() []T {
 	slice := make([]T, 0, d.Size())
-	for t := range d.Elements() {
+	for t := range d.All() {
 		slice = append(slice, t)
 	}
 	return slice
@@ -143,7 +148,7 @@ func (d *ArrayDeque[T]) resize() {
 	newCap := len(d.slice) + (len(d.slice) / 2)
 	slice := make([]T, newCap)
 	i := 0
-	for t := range d.Elements() {
+	for t := range d.All() {
 		slice[i] = t
 		i++
 	}
@@ -159,24 +164,20 @@ func defaultConfig() *Config {
 	}
 }
 
-// Iterator
+// All
 
 type dequeIterator[T any] struct {
 	deque *ArrayDeque[T]
 	index int
 }
 
-func (itr *dequeIterator[T]) Empty() bool {
+func (itr *dequeIterator[T]) empty() bool {
 	return itr.index >= itr.deque.Size()
 }
 
-func (itr *dequeIterator[T]) Next() (T, error) {
-	var t T
-	if itr.Empty() {
-		return t, fmt.Errorf("cannot call Next() on an empty Iterator")
-	}
+func (itr *dequeIterator[T]) next() T {
 	i := (itr.index + itr.deque.front) % len(itr.deque.slice)
-	t = itr.deque.slice[i]
+	t := itr.deque.slice[i]
 	itr.index++
-	return t, nil
+	return t
 }

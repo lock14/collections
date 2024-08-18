@@ -1,25 +1,24 @@
 package collections
 
 import (
-	"github.com/lock14/collections/iterator"
-	"github.com/lock14/collections/pair"
+	"iter"
 )
 
 // Iterable denotes a type that can be iterated over
 // by using the Iterator supplied using the Iterator method.
 type Iterable[T any] interface {
-	// Iterator returns an Iterator over the elements of this Iterable.
-	Iterator() iterator.Iterator[T]
-	// Elements returns a channel containing the elements of this Iterable.
+	// All returns an Iterator over all the elements of this Iterable.
+	All() iter.Seq[T]
+	// Stream returns a channel containing the elements of this Iterable.
 	// The channel provided will be closed automatically after all elements
 	// have been read from the channel. If all elements from the channel
 	// are not read, then the channel will not be closed. This method is
 	// intended to be used primarily with the for...range construct.
 	//
-	//   for e := range i.Elements() {
+	//   for e := range i.Stream() {
 	//      // do something with e
 	//   }
-	Elements() chan T
+	Stream() chan T
 }
 
 type Collection[T any] interface {
@@ -59,7 +58,7 @@ type Map[K any, V any] interface {
 	Remove(K)
 	Size() int
 	Empty() bool
-	Entries() iterator.Iterator[*pair.Pair[K, V]]
-	Keys() iterator.Iterator[K]
-	Values() iterator.Iterator[V]
+	Entries() iter.Seq2[K, V]
+	Keys() iter.Seq[K]
+	Values() iter.Seq[V]
 }

@@ -3,6 +3,7 @@ package arraylist
 import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
+	"iter"
 	"strings"
 )
 
@@ -80,29 +81,18 @@ func (l *ArrayList[T]) String() string {
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 
-func (l *ArrayList[T]) Iterator() iterator.Iterator[T] {
-	return &listIterator[T]{
-		slice: l.slice,
-		index: 0,
+func (l *ArrayList[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for i := 0; i < l.Size(); i++ {
+			if !yield(l.slice[i]) {
+				return
+			}
+		}
 	}
 }
 
-func (l *ArrayList[T]) Elements() chan T {
-	return iterator.Elements(l.Iterator())
-}
-
-func (itr *listIterator[T]) Empty() bool {
-	return itr.index >= len(itr.slice)
-}
-
-func (itr *listIterator[T]) Next() (T, error) {
-	var t T
-	if itr.Empty() {
-		return t, fmt.Errorf("listIterator is empty")
-	}
-	t = itr.slice[itr.index]
-	itr.index++
-	return t, nil
+func (l *ArrayList[T]) Stream() chan T {
+	return iterator.Stream(l.All())
 }
 
 // private functions/receivers

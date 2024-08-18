@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/lock14/collections/hashmap"
 	"github.com/lock14/collections/iterator"
+	"iter"
 	"strings"
 )
 
@@ -53,24 +54,24 @@ func (s *HashSet[T]) Empty() bool {
 func (s *HashSet[T]) String() string {
 	vals := make([]string, s.Size())
 	i := 0
-	for item := range iterator.Elements(s.m.Keys()) {
+	for item := range iterator.Stream(s.m.Keys()) {
 		vals[i] = fmt.Sprintf("%+v", item)
 		i++
 	}
 	return "[" + strings.Join(vals, ", ") + "]"
 }
 
-func (s *HashSet[T]) Iterator() iterator.Iterator[T] {
+func (s *HashSet[T]) All() iter.Seq[T] {
 	return s.m.Keys()
 }
 
-func (s *HashSet[T]) Elements() chan T {
-	return iterator.Elements(s.Iterator())
+func (s *HashSet[T]) Stream() chan T {
+	return iterator.Stream(s.All())
 }
 
 func (s *HashSet[T]) ToSlice() []T {
 	slice := make([]T, 0, s.Size())
-	for item := range iterator.Elements(s.m.Keys()) {
+	for item := range s.All() {
 		slice = append(slice, item)
 	}
 	return slice

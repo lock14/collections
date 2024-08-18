@@ -3,6 +3,7 @@ package linked_list
 import (
 	"fmt"
 	"github.com/lock14/collections/iterator"
+	"iter"
 	"strings"
 )
 
@@ -80,26 +81,30 @@ func (l *LinkedList[T]) Empty() bool {
 
 func (l *LinkedList[T]) String() string {
 	str := make([]string, 0, l.Size())
-	for t := range l.Elements() {
+	for t := range l.All() {
 		str = append(str, fmt.Sprintf("%+v", t))
 	}
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
-func (l *LinkedList[T]) Iterator() iterator.Iterator[T] {
-	return &linkedListIterator[T]{
-		cur: l.list.next,
-		end: &l.list,
+func (l *LinkedList[T]) All() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		li := linkedListIterator[T]{
+			cur: l.list.next,
+			end: &l.list,
+		}
+		for !li.empty() && yield(li.next()) {
+		}
 	}
 }
 
-func (l *LinkedList[T]) Elements() chan T {
-	return iterator.Elements(l.Iterator())
+func (l *LinkedList[T]) Stream() chan T {
+	return iterator.Stream(l.All())
 }
 
 func (l *LinkedList[T]) ToSlice() []T {
 	slice := make([]T, l.Size())
-	for t := range l.Elements() {
+	for t := range l.All() {
 		slice = append(slice, t)
 	}
 	return slice
@@ -129,23 +134,19 @@ func sentinel[T any]() node[T] {
 	return n
 }
 
-// Iterator
+// All
 
 type linkedListIterator[T any] struct {
 	cur *node[T]
 	end *node[T]
 }
 
-func (itr *linkedListIterator[T]) Empty() bool {
+func (itr *linkedListIterator[T]) empty() bool {
 	return itr.cur == itr.end
 }
 
-func (itr *linkedListIterator[T]) Next() (T, error) {
-	var t T
-	if itr.Empty() {
-		return t, fmt.Errorf("cannot call Next() on an empty Iterator")
-	}
-	t = itr.cur.data
+func (itr *linkedListIterator[T]) next() T {
+	t := itr.cur.data
 	itr.cur = itr.cur.next
-	return t, nil
+	return t
 }
