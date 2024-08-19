@@ -111,8 +111,7 @@ func (hm *LinkedHashMap[K, V]) Empty() bool {
 
 func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		cur := hm.list.next
-		for cur != hm.list && yield(cur.key, cur.value) {
+		for cur := hm.list.next; cur != hm.list && yield(cur.key, cur.value); {
 			cur = cur.next
 		}
 	}

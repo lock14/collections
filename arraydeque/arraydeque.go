@@ -122,8 +122,7 @@ func (d *ArrayDeque[T]) String() string {
 
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		i := 0
-		for i < d.Size() && yield(d.slice[(i+d.front)%len(d.slice)]) {
+		for i := 0; i < d.Size() && yield(d.slice[(i+d.front)%len(d.slice)]); {
 			i++
 		}
 	}

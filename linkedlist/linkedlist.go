@@ -95,8 +95,7 @@ func (l *LinkedList[T]) String() string {
 
 func (l *LinkedList[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		cur := l.list.next
-		for cur != &l.list && yield(cur.data) {
+		for cur := l.list.next; cur != &l.list && yield(cur.data); {
 			cur = cur.next
 		}
 	}

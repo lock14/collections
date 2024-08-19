@@ -195,8 +195,7 @@ func (b *BitSet) String() string {
 
 func (b *BitSet) All() iter.Seq[int] {
 	return func(yield func(int) bool) {
-		bitIndex := 0
-		for bitIndex < b.Size() && yield(bitIndex) {
+		for bitIndex := 0; bitIndex < b.Size() && yield(bitIndex); {
 			bitIndex++
 		}
 	}
