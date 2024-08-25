@@ -95,6 +95,30 @@ func (h *Heap[T]) Empty() bool {
 	return h.Size() == 0
 }
 
+// implement heap.Interface for compatibility
+
+func (h *Heap[T]) Len() int {
+	return h.Size()
+}
+
+func (h *Heap[T]) Less(i, j int) bool {
+	return h.comparator(h.elements[i], h.elements[j]) < 0
+}
+
+func (h *Heap[T]) Swap(i, j int) {
+	h.elements[i], h.elements[j] = h.elements[j], h.elements[i]
+}
+
+func (h *Heap[T]) Push(x any) {
+	h.Add(x.(T))
+}
+
+func (h *Heap[T]) Pop() any {
+	return h.Remove()
+}
+
+// Private Functions
+
 func defaultConfig[T any]() *Config[T] {
 	return &Config[T]{
 		capacity: DefaultCapacity,
