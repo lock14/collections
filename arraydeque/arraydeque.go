@@ -7,10 +7,18 @@ import (
 )
 
 const (
-	DefaultCapacity = 10
+	// DefaultCapacity is the capacity assigned if no other is provided.
+	DefaultCapacity = 1
+	// if an arraydeque's capacity is under this amount it's capacity
+	// will double when it needs to be resized.
+	doublingThreshold = 512
+	// if an arraydeque's capacity is under this amount it's capacity
+	// will increase by 50% when it needs to be resized.
+	fiftyPercentThreshold = 2048
 )
 
 // ArrayDeque represents a deque of elements of type T backed by an array.
+// The zero value for ArrayDeque is an empty deque ready to use.
 type ArrayDeque[T any] struct {
 	slice []T
 	front int
@@ -58,7 +66,7 @@ func (d *ArrayDeque[T]) Pop() T {
 }
 
 func (d *ArrayDeque[T]) AddFront(t T) {
-	if d.size == cap(d.slice) {
+	if d.size == len(d.slice) {
 		d.resize()
 	}
 	index := (d.front - 1) % len(d.slice)
@@ -112,6 +120,13 @@ func (d *ArrayDeque[T]) Empty() bool {
 	return d.size == 0
 }
 
+func (d *ArrayDeque[T]) Clear() {
+	d.slice = nil
+	d.front = 0
+	d.back = 0
+	d.size = 0
+}
+
 func (d *ArrayDeque[T]) String() string {
 	str := make([]string, 0, d.Size())
 	for t := range d.All() {
@@ -137,17 +152,27 @@ func (d *ArrayDeque[T]) ToSlice() []T {
 }
 
 func (d *ArrayDeque[T]) resize() {
-	if d.size <= 1024 {
-		s := make([]T, len(d.slice)*2)
-		copy(s, d.slice)
-		d.slice = s
-		d.back = d.front + d.size
+	var newCap int
+	if d.slice == nil {
+		newCap = DefaultCapacity
+	} else if d.size < doublingThreshold {
+		newCap = len(d.slice) << 1
+	} else if d.size < fiftyPercentThreshold {
+		newCap = len(d.slice)
+		newCap += len(d.slice) >> 1
 	} else {
-		s := make([]T, len(d.slice)+(len(d.slice)>>2))
-		copy(s, d.slice)
-		d.slice = s
-		d.back = (d.front + d.size) % len(d.slice)
+		newCap = len(d.slice)
+		newCap += len(d.slice) >> 2
 	}
+	s := make([]T, newCap)
+	m := copy(s, d.slice[d.front:len(d.slice)])
+	n := copy(s[m:], d.slice[0:d.front])
+	if m+n != d.size {
+		panic("resize algorithm incorrect")
+	}
+	d.slice = s
+	d.front = 0
+	d.back = d.size
 }
 
 func defaultConfig() *Config {
