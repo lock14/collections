@@ -58,7 +58,7 @@ func (d *ArrayDeque[T]) Pop() T {
 }
 
 func (d *ArrayDeque[T]) AddFront(t T) {
-	if d.size > 0 && d.front == d.back {
+	if d.size == cap(d.slice) {
 		d.resize()
 	}
 	index := (d.front - 1) % len(d.slice)
@@ -122,7 +122,7 @@ func (d *ArrayDeque[T]) String() string {
 
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for i := 0; i < d.Size() && yield(d.slice[(i+d.front)%len(d.slice)]); {
+		for i := 0; i < d.Size() && yield(d.slice[(d.front+i)%len(d.slice)]); {
 			i++
 		}
 	}
@@ -137,17 +137,17 @@ func (d *ArrayDeque[T]) ToSlice() []T {
 }
 
 func (d *ArrayDeque[T]) resize() {
-	newCap := len(d.slice) + (len(d.slice) / 2)
-	slice := make([]T, newCap)
-	i := 0
-	for t := range d.All() {
-		slice[i] = t
-		i++
+	if d.size <= 1024 {
+		s := make([]T, len(d.slice)*2)
+		copy(s, d.slice)
+		d.slice = s
+		d.back = d.front + d.size
+	} else {
+		s := make([]T, len(d.slice)+(len(d.slice)>>2))
+		copy(s, d.slice)
+		d.slice = s
+		d.back = (d.front + d.size) % len(d.slice)
 	}
-	d.slice = slice
-	d.front = 0
-	d.back = i
-	d.size = i
 }
 
 func defaultConfig() *Config {
