@@ -85,14 +85,6 @@ func (s *HashSet[T]) All() iter.Seq[T] {
 	return maps.Keys(s.m)
 }
 
-func (s *HashSet[T]) ToSlice() []T {
-	slice := make([]T, 0, s.Size())
-	for item := range s.All() {
-		slice = append(slice, item)
-	}
-	return slice
-}
-
 func defaultConfig() *Config {
 	return &Config{}
 }

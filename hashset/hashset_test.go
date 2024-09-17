@@ -1,6 +1,7 @@
 package hashset
 
 import (
+	"slices"
 	"sort"
 	"testing"
 
@@ -31,7 +32,7 @@ func TestAdd(t *testing.T) {
 		{
 			name:  "add_none",
 			items: []int{},
-			want:  []int{},
+			want:  nil,
 		},
 		{
 			name:  "add_one",
@@ -52,7 +53,7 @@ func TestAdd(t *testing.T) {
 			for _, item := range tc.items {
 				s.Add(item)
 			}
-			got := s.ToSlice()
+			got := slices.Collect(s.All())
 			sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)

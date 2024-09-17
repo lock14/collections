@@ -2,6 +2,7 @@ package arraydeque
 
 import (
 	"github.com/lock14/collections"
+	"slices"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -31,7 +32,7 @@ func TestArrayDeque_Add(t *testing.T) {
 		{
 			name:  "add_none",
 			items: []int{},
-			want:  []int{},
+			want:  nil,
 		},
 		{
 			name:  "add_one",
@@ -57,7 +58,7 @@ func TestArrayDeque_Add(t *testing.T) {
 			for _, item := range tc.items {
 				d.Add(item)
 			}
-			got := d.ToSlice()
+			got := slices.Collect(d.All())
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -75,7 +76,7 @@ func TestArrayDeque_Push(t *testing.T) {
 		{
 			name:  "push_none",
 			items: []int{},
-			want:  []int{},
+			want:  nil,
 		},
 		{
 			name:  "push_one",
@@ -101,7 +102,7 @@ func TestArrayDeque_Push(t *testing.T) {
 			for _, item := range tc.items {
 				d.Push(item)
 			}
-			got := d.ToSlice()
+			got := slices.Collect(d.All())
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -119,7 +120,7 @@ func TestArrayDeque_AddFront(t *testing.T) {
 		{
 			name:  "add_front_none",
 			items: []int{},
-			want:  []int{},
+			want:  nil,
 		},
 		{
 			name:  "add_front_one",
@@ -145,7 +146,7 @@ func TestArrayDeque_AddFront(t *testing.T) {
 			for _, item := range tc.items {
 				d.AddFront(item)
 			}
-			got := d.ToSlice()
+			got := slices.Collect(d.All())
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -163,7 +164,7 @@ func TestArrayDeque_AddBack(t *testing.T) {
 		{
 			name:  "add_back_none",
 			items: []int{},
-			want:  []int{},
+			want:  nil,
 		},
 		{
 			name:  "add_back_one",
@@ -189,7 +190,7 @@ func TestArrayDeque_AddBack(t *testing.T) {
 			for _, item := range tc.items {
 				d.Add(item)
 			}
-			got := d.ToSlice()
+			got := slices.Collect(d.All())
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}
@@ -207,7 +208,7 @@ func TestArrayDeque_Rotate(t *testing.T) {
 		{
 			name:  "rotate_none",
 			items: []int{},
-			want:  []int{},
+			want:  nil,
 		},
 		{
 			name:  "rotate_one",
@@ -236,7 +237,7 @@ func TestArrayDeque_Rotate(t *testing.T) {
 			for i := 0; i < d.Size()/2; i++ {
 				d.Add(d.Remove())
 			}
-			got := d.ToSlice()
+			got := slices.Collect(d.All())
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
 			}

@@ -101,14 +101,6 @@ func (l *LinkedList[T]) All() iter.Seq[T] {
 	}
 }
 
-func (l *LinkedList[T]) ToSlice() []T {
-	slice := make([]T, l.Size())
-	for t := range l.All() {
-		slice = append(slice, t)
-	}
-	return slice
-}
-
 func insertBefore[T any](n *node[T], t T) {
 	newNode := node[T]{
 		data: t,

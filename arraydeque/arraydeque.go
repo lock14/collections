@@ -9,10 +9,10 @@ import (
 const (
 	// DefaultCapacity is the capacity assigned if no other is provided.
 	DefaultCapacity = 1
-	// if an arraydeque's capacity is under this amount it's capacity
+	// if an arraydeque's capacity is under this amount its capacity
 	// will double when it needs to be resized.
 	doublingThreshold = 512
-	// if an arraydeque's capacity is under this amount it's capacity
+	// if an arraydeque's capacity is under this amount its capacity
 	// will increase by 50% when it needs to be resized.
 	fiftyPercentThreshold = 2048
 )
@@ -158,14 +158,6 @@ func (d *ArrayDeque[T]) All() iter.Seq[T] {
 			count++
 		}
 	}
-}
-
-func (d *ArrayDeque[T]) ToSlice() []T {
-	slice := make([]T, 0, d.Size())
-	for t := range d.All() {
-		slice = append(slice, t)
-	}
-	return slice
 }
 
 func (d *ArrayDeque[T]) resize() {
