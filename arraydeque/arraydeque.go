@@ -69,12 +69,11 @@ func (d *ArrayDeque[T]) AddFront(t T) {
 	if d.size == len(d.slice) {
 		d.resize()
 	}
-	index := (d.front - 1) % len(d.slice)
-	if index < 0 {
-		index += len(d.slice)
+	d.front--
+	if d.front == -1 {
+		d.front = len(d.slice) - 1
 	}
-	d.slice[index] = t
-	d.front = index
+	d.slice[d.front] = t
 	d.size++
 }
 
@@ -85,17 +84,23 @@ func (d *ArrayDeque[T]) RemoveFront() T {
 	var zero T
 	t := d.slice[d.front]
 	d.slice[d.front] = zero
-	d.front = (d.front + 1) % len(d.slice)
+	d.front++
+	if d.front == len(d.slice) {
+		d.front = 0
+	}
 	d.size--
 	return t
 }
 
 func (d *ArrayDeque[T]) AddBack(t T) {
-	if d.size > 0 && d.front == d.back {
+	if d.size == len(d.slice) {
 		d.resize()
 	}
 	d.slice[d.back] = t
-	d.back = (d.back + 1) % len(d.slice)
+	d.back++
+	if d.back == len(d.slice) {
+		d.back = 0
+	}
 	d.size++
 }
 
@@ -104,10 +109,12 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 		panic("cannot remove from an empty ArrayDeque")
 	}
 	var zero T
-	index := (d.back - 1) % len(d.slice)
-	t := d.slice[index]
-	d.slice[index] = zero
-	d.back = index
+	d.back--
+	if d.back == -1 {
+		d.back = len(d.slice) - 1
+	}
+	t := d.slice[d.back]
+	d.slice[d.back] = zero
 	d.size--
 	return t
 }
@@ -137,8 +144,13 @@ func (d *ArrayDeque[T]) String() string {
 
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for i := 0; i < d.Size() && yield(d.slice[(d.front+i)%len(d.slice)]); {
+		cur := d.front
+		for i := 0; i < d.Size() && yield(d.slice[cur]); {
 			i++
+			cur++
+			if cur == len(d.slice) {
+				cur = 0
+			}
 		}
 	}
 }
@@ -160,7 +172,7 @@ func (d *ArrayDeque[T]) resize() {
 	} else if d.size < fiftyPercentThreshold {
 		newCap = len(d.slice)
 		newCap += len(d.slice) >> 1
-	} else {
+	} else { // grow by 25%
 		newCap = len(d.slice)
 		newCap += len(d.slice) >> 2
 	}
