@@ -144,13 +144,18 @@ func (d *ArrayDeque[T]) String() string {
 
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		cur := d.front
-		for i := 0; i < d.Size() && yield(d.slice[cur]); {
-			i++
-			cur++
-			if cur == len(d.slice) {
-				cur = 0
+		count := 0
+		for i := d.front; i < len(d.slice); i++ {
+			if count == d.size || !yield(d.slice[i]) {
+				return
 			}
+			count++
+		}
+		for i := 0; i < d.front; i++ {
+			if count == d.size || !yield(d.slice[i]) {
+				return
+			}
+			count++
 		}
 	}
 }
