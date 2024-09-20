@@ -1,6 +1,7 @@
 package hashset
 
 import (
+	"github.com/lock14/collections"
 	"slices"
 	"sort"
 	"testing"
@@ -61,3 +62,11 @@ func TestAdd(t *testing.T) {
 		})
 	}
 }
+
+func TestType(t *testing.T) {
+	t.Parallel()
+
+	setType(New[int]())
+}
+
+func setType[T any](_ collections.Set[T]) {}

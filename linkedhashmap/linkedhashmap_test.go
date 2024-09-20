@@ -1,4 +1,4 @@
-package arraylist
+package linkedhashmap
 
 import (
 	"github.com/lock14/collections"
@@ -8,7 +8,7 @@ import (
 func TestType(t *testing.T) {
 	t.Parallel()
 
-	listType(Wrap(make([]int, 0)))
+	mapType(New[int, int]())
 }
 
-func listType[T any](_ collections.List[T]) {}
+func mapType[K, V any](_ collections.Map[K, V]) {}

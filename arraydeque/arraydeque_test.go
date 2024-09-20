@@ -246,8 +246,15 @@ func TestArrayDeque_Rotate(t *testing.T) {
 }
 
 func TestType(t *testing.T) {
-	l := New[int]()
-	testType[int](l)
+	t.Parallel()
+
+	queueType[int](New[int]())
+	stackType[int](New[int]())
+	dequeType[int](New[int]())
 }
 
-func testType[T any](deque collections.Deque[T]) {}
+func queueType[T any](_ collections.Queue[T]) {}
+
+func stackType[T any](_ collections.Stack[T]) {}
+
+func dequeType[T any](_ collections.Deque[T]) {}

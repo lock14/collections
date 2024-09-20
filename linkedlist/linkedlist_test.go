@@ -6,8 +6,12 @@ import (
 )
 
 func TestType(t *testing.T) {
-	l := New[int]()
-	testType[int](l)
+	t.Parallel()
+
+	listType(New[int]())
+	dequeType[int](New[int]())
 }
 
-func testType[T any](deque collections.Deque[T]) {}
+func listType[T any](_ collections.List[T]) {}
+
+func dequeType[T any](_ collections.Deque[T]) {}

@@ -1,6 +1,7 @@
 package hashmap
 
 import (
+	"github.com/lock14/collections"
 	"testing"
 )
 
@@ -311,3 +312,11 @@ func TestGetPutAndRemoveSameAsBuiltInMapStructPointers(t *testing.T) {
 		t.Run(tc.name, GetPutAndRemoveSameAsBuiltInTestCase(tc.entries))
 	}
 }
+
+func TestType(t *testing.T) {
+	t.Parallel()
+
+	mapType(New[int, int]())
+}
+
+func mapType[K, V any](_ collections.Map[K, V]) {}

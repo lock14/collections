@@ -6,9 +6,11 @@ import (
 )
 
 func TestHeapImplementsQueue(t *testing.T) {
-	queue[int](New[int]())
+	t.Parallel()
+
+	queueType(New[int]())
 }
 
-func queue[T any](q collections.Queue[T]) collections.Queue[T] {
+func queueType[T any](q collections.Queue[T]) collections.Queue[T] {
 	return q
 }
