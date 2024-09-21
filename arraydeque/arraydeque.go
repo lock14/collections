@@ -174,7 +174,7 @@ func (d *ArrayDeque[T]) resize() {
 		newCap += len(d.slice) >> 2
 	}
 	s := make([]T, newCap)
-	m := copy(s, d.slice[d.front:len(d.slice)])
+	m := copy(s, d.slice[d.front:])
 	n := copy(s[m:], d.slice[0:d.front])
 	if m+n != d.size {
 		panic("resize algorithm incorrect")
