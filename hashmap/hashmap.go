@@ -2,7 +2,6 @@ package hashmap
 
 import (
 	"fmt"
-	"github.com/lock14/collections/pair"
 	"hash/maphash"
 	"iter"
 	"unsafe"
@@ -107,13 +106,14 @@ func (hm *HashMap[K, V]) Empty() bool {
 
 func (hm *HashMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		ei := entryIterator[K, V]{
-			hashMap: hm,
-			index:   0,
-		}
-		ei.current = ei.getNext(nil)
-		for ei.current != nil && yield(ei.current.key, ei.current.value) {
-			ei.current = ei.getNext(ei.current.next)
+		for i := 0; i < len(hm.hashtable); i++ {
+			cur := hm.hashtable[i]
+			for cur != nil {
+				if !yield(cur.key, cur.value) {
+					return
+				}
+				cur = cur.next
+			}
 		}
 	}
 }
@@ -204,38 +204,4 @@ func defaultConfig() *Config {
 		capacity:   DefaultCapacity,
 		loadFactor: DefaultLoadFactor,
 	}
-}
-
-// iterator stuff
-
-type entryIterator[K comparable, V any] struct {
-	hashMap *HashMap[K, V]
-	index   int
-	current *hashNode[K, V]
-}
-
-func (ei *entryIterator[K, V]) Empty() bool {
-	return ei.current == nil
-}
-
-func (ei *entryIterator[K, V]) Next() (*pair.Pair[K, V], error) {
-	if ei.Empty() {
-		return nil, fmt.Errorf("iterator is empty")
-	}
-	cur := ei.current
-	ei.current = ei.getNext(ei.current.next)
-	return pair.New(cur.key, cur.value), nil
-}
-
-func (ei *entryIterator[K, V]) getNext(next *hashNode[K, V]) *hashNode[K, V] {
-	if next == nil {
-		for ei.index < cap(ei.hashMap.hashtable) && ei.hashMap.hashtable[ei.index] == nil {
-			ei.index++
-		}
-		if ei.index < cap(ei.hashMap.hashtable) {
-			next = ei.hashMap.hashtable[ei.index]
-			ei.index++
-		}
-	}
-	return next
 }
