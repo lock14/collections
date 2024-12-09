@@ -53,8 +53,8 @@ func (g *LabeledGraph[V, L]) AddVertex(v V) {
 func (g *LabeledGraph[V, L]) AddEdge(u, v V, l L) {
 	g.AddVertex(u)
 	g.AddVertex(v)
-	g.graph[u].AddSuccessor(v, l)
-	g.graph[v].AddPredecessor(u, l)
+	g.graph[u].addSuccessor(v, l)
+	g.graph[v].addPredecessor(u, l)
 	g.edgeCount++
 }
 
@@ -62,7 +62,7 @@ func (g *LabeledGraph[V, L]) AddEdge(u, v V, l L) {
 func (g *LabeledGraph[V, L]) ContainsEdge(u, v V) bool {
 	return g.ContainsVertex(u) &&
 		g.ContainsVertex(v) &&
-		g.graph[u].ContainsSuccessor(v)
+		g.graph[u].containsSuccessor(v)
 }
 
 // ContainsVertex returns whether the given vertex is contained in the graph.
@@ -71,7 +71,7 @@ func (g *LabeledGraph[V, L]) ContainsVertex(v V) bool {
 	return ok
 }
 
-// Directed returns whether or not this graph is directed.
+// Directed returns whether this graph is directed.
 func (g *LabeledGraph[V, L]) Directed() bool {
 	return g.directed
 }
@@ -81,58 +81,86 @@ func (g *LabeledGraph[V, L]) Order() int {
 	return len(g.graph)
 }
 
-// Size returns the number of vertices in the graph.
+// Size returns the number of edges in the graph.
 func (g *LabeledGraph[V, L]) Size() int {
 	return g.edgeCount
 }
 
-// Label returns the label for edge (u, v) if the edge exists in the graph.
-// If no such edge exists, the zero value for L is returned.
+// Label returns the label for edge (u, v) and true if the edge exists in the graph.
+// If no such edge exists, the zero value and false are returned.
 func (g *LabeledGraph[V, L]) Label(u, v V) (L, bool) {
 	var l L
 	var ok bool
 	if g.ContainsVertex(u) {
-		l, ok = g.graph[u].Label(v)
+		l, ok = g.graph[u].label(v)
 	}
 	return l, ok
 }
 
-// InDegree return the number of edges coming into the specified vertex in the graph and true.
-// If no such vertex exists, the zero value and false are returned.
+// Degree return the number of edges coming into or out of the given vertex
+// and true if the vertex exists in the graph. If the given vertex is not in
+// the graph, an empty iterator is returned.
+//   - For directed graphs, Degree is the sum of InDegree and OutDegree.
+//   - For undirected graphs, Degree, InDegree, and OutDegree are all synonymous.
+func (g *LabeledGraph[V, L]) Degree(u V) (int, bool) {
+	if g.directed {
+		var degree int
+		var ok bool
+		if g.ContainsVertex(u) {
+			degree = g.graph[u].inDegree() + g.graph[u].outDegree()
+			ok = true
+		}
+		return degree, ok
+	} else {
+		return g.OutDegree(u)
+	}
+}
+
+// InDegree return the number of edges coming into the given vertex
+// and true if the vertex exists in the graph.
 func (g *LabeledGraph[V, L]) InDegree(u V) (int, bool) {
 	var degree int
 	var ok bool
 	if g.ContainsVertex(u) {
-		degree = g.graph[u].InDegree()
+		degree = g.graph[u].inDegree()
 		ok = true
 	}
 	return degree, ok
 }
 
-// OutDegree return the number of edges coming out of the specified vertex in the graph and true.
-// If no such vertex exists, the zero value and false are returned.
+// OutDegree return the number of edges coming out of the given vertex
+// and true if the vertex exists in the graph. If no such vertex exists,
+// the zero value and false are returned.
 func (g *LabeledGraph[V, L]) OutDegree(u V) (int, bool) {
 	var degree int
 	var ok bool
 	if g.ContainsVertex(u) {
-		degree = g.graph[u].OutDegree()
+		degree = g.graph[u].outDegree()
 		ok = true
 	}
 	return degree, ok
 }
 
-// Vertices returns an iterator over the vertices of the graph.
+// Vertices returns an iterator over all vertices in the graph.
 func (g *LabeledGraph[V, L]) Vertices() iter.Seq[V] {
 	return maps.Keys(g.graph)
 }
 
+// Neighbors is an alias for Successors.
+func (g *LabeledGraph[V, L]) Neighbors(v V) iter.Seq[V] {
+	return g.Successors(v)
+}
+
 // Successors returns an iterator over the successors of the given vertex in the graph.
-// If the vertex does not exist in the graph an empty iterator is returned.
-func (g *LabeledGraph[V, L]) Successors(v V) iter.Seq[V] {
+// If the given vertex is not in the graph, an empty iterator is returned.
+//   - For directed graphs, Successors is the set of vertices u, such that (u, v) is
+//     an edge in the graph for the given vertex u.
+//   - For undirected graphs, Predecessors, Successors, and Neighbors are all synonymous.
+func (g *LabeledGraph[V, L]) Successors(u V) iter.Seq[V] {
 	return func(yield func(V) bool) {
-		if g.ContainsVertex(v) {
-			for u := range g.graph[v].Successors() {
-				if !yield(u) {
+		if g.ContainsVertex(u) {
+			for v := range g.graph[u].successors() {
+				if !yield(v) {
 					return
 				}
 			}
@@ -141,11 +169,14 @@ func (g *LabeledGraph[V, L]) Successors(v V) iter.Seq[V] {
 }
 
 // Predecessors returns an iterator over the predecessors of the given vertex in the graph.
-// If the vertex does not exist in the graph an empty iterator is returned.
+// If the given vertex is not in the graph, an empty iterator is returned.
+//   - For directed graphs, Predecessors is the set of vertices u, such that (u, v) is
+//     an edge in the graph for the given vertex v.
+//   - For undirected graphs, Predecessors, Successors, and Neighbors are all synonymous.
 func (g *LabeledGraph[V, L]) Predecessors(v V) iter.Seq[V] {
 	return func(yield func(V) bool) {
 		if g.ContainsVertex(v) {
-			for u := range g.graph[v].Predecessors() {
+			for u := range g.graph[v].predecessors() {
 				if !yield(u) {
 					return
 				}
@@ -154,7 +185,7 @@ func (g *LabeledGraph[V, L]) Predecessors(v V) iter.Seq[V] {
 	}
 }
 
-// Edges returns an iterator over the edges of the graph.
+// Edges returns an iterator over all edges in the graph.
 func (g *LabeledGraph[V, L]) Edges() iter.Seq2[V, V] {
 	return func(yield func(V, V) bool) {
 		for u := range g.Vertices() {
@@ -167,11 +198,36 @@ func (g *LabeledGraph[V, L]) Edges() iter.Seq2[V, V] {
 	}
 }
 
-// IncidentEdgesIn returns an iterator over the edges coming into the given vertex of the graph.
-// if no such vertex exists, then an empty iterator is returned.
-func (g *LabeledGraph[V, L]) IncidentEdgesIn(u V) iter.Seq2[V, V] {
+// IncidentEdges returns all edges that are incident to the given vertex in the graph.
+// If the given vertex is not in the graph, an empty iterator is returned.
+//   - For directed graphs, IncidentEdges is the union of InIncidentEdges and OutIncidentEdges.
+//   - For undirected graphs, IncidentEdges, InIncidentEdges, and OutIncidentEdges are all synonymous.
+func (g *LabeledGraph[V, L]) IncidentEdges(v V) iter.Seq2[V, V] {
+	if g.directed {
+		return func(yield func(V, V) bool) {
+			for u, v := range g.IncidentEdges(v) {
+				if !yield(u, v) {
+					return
+				}
+			}
+			for u, v := range g.OutIncidentEdges(v) {
+				if !yield(u, v) {
+					return
+				}
+			}
+		}
+	} else {
+		return g.OutIncidentEdges(v)
+	}
+}
+
+// InIncidentEdges returns an iterator over the edges coming into the given vertex of the graph.
+// If the given vertex is not in the graph, an empty iterator is returned.
+//   - For directed graphs, this is the set of edges that terminate at the given vertex.
+//   - For undirected graphs, IncidentEdges, InIncidentEdges, and OutIncidentEdges are all synonymous.
+func (g *LabeledGraph[V, L]) InIncidentEdges(v V) iter.Seq2[V, V] {
 	return func(yield func(V, V) bool) {
-		for v := range g.Successors(u) {
+		for u := range g.Predecessors(v) {
 			if !yield(u, v) {
 				return
 			}
@@ -179,11 +235,13 @@ func (g *LabeledGraph[V, L]) IncidentEdgesIn(u V) iter.Seq2[V, V] {
 	}
 }
 
-// IncidentEdgesOut returns an iterator over the edges coming out of the given vertex of the graph.
-// if no such vertex exists, then an empty iterator is returned.
-func (g *LabeledGraph[V, L]) IncidentEdgesOut(v V) iter.Seq2[V, V] {
+// OutIncidentEdges returns an iterator over the edges coming out of the given vertex of the graph.
+// If the given vertex is not in the graph, an empty iterator is returned.
+//   - For directed graphs, this is the set of edges that originate at the given vertex.
+//   - For undirected graphs, IncidentEdges, InIncidentEdges, and OutIncidentEdges are all synonymous.
+func (g *LabeledGraph[V, L]) OutIncidentEdges(u V) iter.Seq2[V, V] {
 	return func(yield func(V, V) bool) {
-		for u := range g.Predecessors(v) {
+		for v := range g.Successors(u) {
 			if !yield(u, v) {
 				return
 			}
@@ -195,7 +253,7 @@ func (g *LabeledGraph[V, L]) nodeData() nodeData[V, L] {
 	if g.directed {
 		return &directedNodeData[V, L]{
 			successorLabels: make(map[V]L),
-			predecessors:    hashset.New[V](),
+			preds:           hashset.New[V](),
 		}
 	} else {
 		return &undirectedNodeData[V, L]{
@@ -211,68 +269,68 @@ func defaultConfig() *Config {
 }
 
 type nodeData[V, L any] interface {
-	AddPredecessor(V, L)
-	AddSuccessor(V, L)
-	ContainsPredecessor(V) bool
-	ContainsSuccessor(V) bool
-	InDegree() int
-	Label(V) (L, bool)
-	OutDegree() int
-	Predecessors() iter.Seq[V]
-	RemovePredecessor(V)
-	RemoveSuccessor(V)
-	Successors() iter.Seq[V]
+	addPredecessor(V, L)
+	addSuccessor(V, L)
+	containsPredecessor(V) bool
+	containsSuccessor(V) bool
+	inDegree() int
+	label(V) (L, bool)
+	outDegree() int
+	predecessors() iter.Seq[V]
+	removePredecessor(V)
+	removeSuccessor(V)
+	successors() iter.Seq[V]
 }
 
 type directedNodeData[V comparable, L any] struct {
 	successorLabels map[V]L
-	predecessors    *hashset.HashSet[V]
+	preds           *hashset.HashSet[V]
 }
 
-func (d *directedNodeData[V, L]) AddPredecessor(v V, l L) {
+func (d *directedNodeData[V, L]) addPredecessor(v V, l L) {
 	// only successors store the label
-	d.predecessors.Add(v)
+	d.preds.Add(v)
 }
 
-func (d *directedNodeData[V, L]) AddSuccessor(v V, l L) {
+func (d *directedNodeData[V, L]) addSuccessor(v V, l L) {
 	d.successorLabels[v] = l
 }
 
-func (d *directedNodeData[V, L]) ContainsPredecessor(v V) bool {
-	return d.predecessors.Contains(v)
+func (d *directedNodeData[V, L]) containsPredecessor(v V) bool {
+	return d.preds.Contains(v)
 }
 
-func (d *directedNodeData[V, L]) ContainsSuccessor(v V) bool {
+func (d *directedNodeData[V, L]) containsSuccessor(v V) bool {
 	_, ok := d.successorLabels[v]
 	return ok
 }
 
-func (d *directedNodeData[V, L]) InDegree() int {
-	return d.predecessors.Size()
+func (d *directedNodeData[V, L]) inDegree() int {
+	return d.preds.Size()
 }
 
-func (d *directedNodeData[V, L]) Label(v V) (L, bool) {
+func (d *directedNodeData[V, L]) label(v V) (L, bool) {
 	l, ok := d.successorLabels[v]
 	return l, ok
 }
 
-func (d *directedNodeData[V, L]) OutDegree() int {
+func (d *directedNodeData[V, L]) outDegree() int {
 	return len(d.successorLabels)
 }
 
-func (d *directedNodeData[V, L]) Predecessors() iter.Seq[V] {
-	return d.predecessors.All()
+func (d *directedNodeData[V, L]) predecessors() iter.Seq[V] {
+	return d.preds.All()
 }
 
-func (d *directedNodeData[V, L]) RemovePredecessor(v V) {
-	d.predecessors.Remove(v)
+func (d *directedNodeData[V, L]) removePredecessor(v V) {
+	d.preds.Remove(v)
 }
 
-func (d *directedNodeData[V, L]) RemoveSuccessor(v V) {
+func (d *directedNodeData[V, L]) removeSuccessor(v V) {
 	delete(d.successorLabels, v)
 }
 
-func (d *directedNodeData[V, L]) Successors() iter.Seq[V] {
+func (d *directedNodeData[V, L]) successors() iter.Seq[V] {
 	return maps.Keys(d.successorLabels)
 }
 
@@ -280,48 +338,48 @@ type undirectedNodeData[V comparable, L any] struct {
 	adjacentLabels map[V]L
 }
 
-func (u *undirectedNodeData[V, L]) AddPredecessor(v V, l L) {
-	u.AddSuccessor(v, l)
+func (u *undirectedNodeData[V, L]) addPredecessor(v V, l L) {
+	u.addSuccessor(v, l)
 }
 
-func (u *undirectedNodeData[V, L]) AddSuccessor(v V, l L) {
+func (u *undirectedNodeData[V, L]) addSuccessor(v V, l L) {
 	u.adjacentLabels[v] = l
 }
 
-func (u *undirectedNodeData[V, L]) ContainsPredecessor(v V) bool {
-	return u.ContainsSuccessor(v)
+func (u *undirectedNodeData[V, L]) containsPredecessor(v V) bool {
+	return u.containsSuccessor(v)
 }
 
-func (u *undirectedNodeData[V, L]) ContainsSuccessor(v V) bool {
+func (u *undirectedNodeData[V, L]) containsSuccessor(v V) bool {
 	_, ok := u.adjacentLabels[v]
 	return ok
 }
 
-func (u *undirectedNodeData[V, L]) InDegree() int {
-	return u.OutDegree()
+func (u *undirectedNodeData[V, L]) inDegree() int {
+	return u.outDegree()
 }
 
-func (u *undirectedNodeData[V, L]) Label(v V) (L, bool) {
+func (u *undirectedNodeData[V, L]) label(v V) (L, bool) {
 	l, ok := u.adjacentLabels[v]
 	return l, ok
 }
 
-func (u *undirectedNodeData[V, L]) OutDegree() int {
+func (u *undirectedNodeData[V, L]) outDegree() int {
 	return len(u.adjacentLabels)
 }
 
-func (u *undirectedNodeData[V, L]) Predecessors() iter.Seq[V] {
-	return u.Successors()
+func (u *undirectedNodeData[V, L]) predecessors() iter.Seq[V] {
+	return u.successors()
 }
 
-func (u *undirectedNodeData[V, L]) RemovePredecessor(v V) {
-	u.RemoveSuccessor(v)
+func (u *undirectedNodeData[V, L]) removePredecessor(v V) {
+	u.removeSuccessor(v)
 }
 
-func (u *undirectedNodeData[V, L]) RemoveSuccessor(v V) {
+func (u *undirectedNodeData[V, L]) removeSuccessor(v V) {
 	delete(u.adjacentLabels, v)
 }
 
-func (u *undirectedNodeData[V, L]) Successors() iter.Seq[V] {
+func (u *undirectedNodeData[V, L]) successors() iter.Seq[V] {
 	return maps.Keys(u.adjacentLabels)
 }
