@@ -42,11 +42,37 @@ func New[V comparable, L any](opts ...Opt) *LabeledGraph[V, L] {
 	}
 }
 
+// ContainsVertex returns whether the given vertex is contained in the graph.
+func (g *LabeledGraph[V, L]) ContainsVertex(v V) bool {
+	_, ok := g.graph[v]
+	return ok
+}
+
 // AddVertex adds the given vertex to the graph.
 func (g *LabeledGraph[V, L]) AddVertex(v V) {
 	if !g.ContainsVertex(v) {
 		g.graph[v] = g.nodeData()
 	}
+}
+
+// RemoveVertex removes the vertex and all incident edges from the graph.
+func (g *LabeledGraph[V, L]) RemoveVertex(v V) {
+	if !g.ContainsVertex(v) {
+		for u := range g.graph[v].predecessors() {
+			g.graph[u].removeSuccessor(v)
+		}
+		for u := range g.graph[v].successors() {
+			g.graph[u].removePredecessor(v)
+		}
+		delete(g.graph, v)
+	}
+}
+
+// ContainsEdge returns whether the given edge is contained in the graph.
+func (g *LabeledGraph[V, L]) ContainsEdge(u, v V) bool {
+	return g.ContainsVertex(u) &&
+		g.ContainsVertex(v) &&
+		g.graph[u].containsSuccessor(v)
 }
 
 // AddEdge adds the given edge with the given label to the graph.
@@ -58,17 +84,22 @@ func (g *LabeledGraph[V, L]) AddEdge(u, v V, l L) {
 	g.edgeCount++
 }
 
-// ContainsEdge returns whether the given edge is contained in the graph.
-func (g *LabeledGraph[V, L]) ContainsEdge(u, v V) bool {
-	return g.ContainsVertex(u) &&
-		g.ContainsVertex(v) &&
-		g.graph[u].containsSuccessor(v)
+// RemoveEdge removes the given edge from the graph.
+func (g *LabeledGraph[V, L]) RemoveEdge(u, v V) {
+	if g.ContainsVertex(u) {
+		g.graph[u].removeSuccessor(v)
+	}
+	if g.ContainsVertex(v) {
+		g.graph[v].removePredecessor(u)
+	}
 }
 
-// ContainsVertex returns whether the given vertex is contained in the graph.
-func (g *LabeledGraph[V, L]) ContainsVertex(v V) bool {
-	_, ok := g.graph[v]
-	return ok
+// SetLabel assigns the given label to the given edge in the graph.
+func (g *LabeledGraph[V, L]) SetLabel(u, v V, label L) {
+	if g.ContainsEdge(u, v) {
+		g.graph[u].setSuccessorLabel(v, label)
+		g.graph[v].setPredecessorLabel(u, label)
+	}
 }
 
 // Directed returns whether this graph is directed.
@@ -279,6 +310,8 @@ type nodeData[V, L any] interface {
 	predecessors() iter.Seq[V]
 	removePredecessor(V)
 	removeSuccessor(V)
+	setPredecessorLabel(V, L)
+	setSuccessorLabel(V, L)
 	successors() iter.Seq[V]
 }
 
@@ -330,6 +363,14 @@ func (d *directedNodeData[V, L]) removeSuccessor(v V) {
 	delete(d.successorLabels, v)
 }
 
+func (d *directedNodeData[V, L]) setPredecessorLabel(v V, label L) {
+	// no op
+}
+
+func (d *directedNodeData[V, L]) setSuccessorLabel(v V, label L) {
+	d.successorLabels[v] = label
+}
+
 func (d *directedNodeData[V, L]) successors() iter.Seq[V] {
 	return maps.Keys(d.successorLabels)
 }
@@ -378,6 +419,14 @@ func (u *undirectedNodeData[V, L]) removePredecessor(v V) {
 
 func (u *undirectedNodeData[V, L]) removeSuccessor(v V) {
 	delete(u.adjacentLabels, v)
+}
+
+func (u *undirectedNodeData[V, L]) setPredecessorLabel(v V, label L) {
+	u.setSuccessorLabel(v, label)
+}
+
+func (u *undirectedNodeData[V, L]) setSuccessorLabel(v V, label L) {
+	u.adjacentLabels[v] = label
 }
 
 func (u *undirectedNodeData[V, L]) successors() iter.Seq[V] {
