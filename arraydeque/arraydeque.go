@@ -45,26 +45,41 @@ func New[T any](opts ...Option) *ArrayDeque[T] {
 	}
 }
 
-// Add is an alias
+// Peek is an alias for PeekFront
+func (d *ArrayDeque[T]) Peek() T {
+	return d.PeekFront()
+}
+
+// Add is an alias for AddBack
 func (d *ArrayDeque[T]) Add(t T) {
 	d.AddBack(t)
 }
 
-// Remove is an alias
+// Remove is an alias for RemoveFront
 func (d *ArrayDeque[T]) Remove() T {
 	return d.RemoveFront()
 }
 
-// Push is an alias
+// Push is an alias for AddFront
 func (d *ArrayDeque[T]) Push(t T) {
 	d.AddFront(t)
 }
 
-// Pop is an alias
+// Pop is an alias for RemoveFront
 func (d *ArrayDeque[T]) Pop() T {
 	return d.RemoveFront()
 }
 
+// PeekFront returns the element at the front of this deque.
+// If this deque is empty, PeekFront panics.
+func (d *ArrayDeque[T]) PeekFront() T {
+	if d.Empty() {
+		panic("cannot peek from an empty Deque")
+	}
+	return d.slice[d.front]
+}
+
+// AddFront adds the given element to the front of this deque.
 func (d *ArrayDeque[T]) AddFront(t T) {
 	if d.size == len(d.slice) {
 		d.resize()
@@ -77,6 +92,8 @@ func (d *ArrayDeque[T]) AddFront(t T) {
 	d.size++
 }
 
+// RemoveFront removes the given element at the front of this deque
+// and returns it. If this deque is empty, RemoveFront panics.
 func (d *ArrayDeque[T]) RemoveFront() T {
 	if d.Empty() {
 		panic("cannot remove from an empty ArrayDeque")
@@ -92,6 +109,20 @@ func (d *ArrayDeque[T]) RemoveFront() T {
 	return t
 }
 
+// PeekBack returns the element at the back of this deque.
+// If this deque is empty, PeekBack panics.
+func (d *ArrayDeque[T]) PeekBack() T {
+	if d.Empty() {
+		panic("cannot peek from an empty Deque")
+	}
+	i := d.back - 1
+	if i < 0 {
+		i = len(d.slice) - 1
+	}
+	return d.slice[i]
+}
+
+// AddBack adds the given element to the back of this deque.
 func (d *ArrayDeque[T]) AddBack(t T) {
 	if d.size == len(d.slice) {
 		d.resize()
@@ -104,6 +135,8 @@ func (d *ArrayDeque[T]) AddBack(t T) {
 	d.size++
 }
 
+// RemoveBack removes the given element at the back of this deque
+// and returns it. If this deque is empty, RemoveBack panics.
 func (d *ArrayDeque[T]) RemoveBack() T {
 	if d.Empty() {
 		panic("cannot remove from an empty ArrayDeque")
@@ -119,14 +152,20 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 	return t
 }
 
+// Size returns the number of elements in this deque.
 func (d *ArrayDeque[T]) Size() int {
 	return d.size
 }
 
+// Empty returns true if this deque contains no elements.
+// Otherwise, returns false.
 func (d *ArrayDeque[T]) Empty() bool {
 	return d.size == 0
 }
 
+// Clear removes all elements from this deque and
+// releases any memory in use by this deque for garbage
+// collection.
 func (d *ArrayDeque[T]) Clear() {
 	d.slice = nil
 	d.front = 0
@@ -134,6 +173,7 @@ func (d *ArrayDeque[T]) Clear() {
 	d.size = 0
 }
 
+// String returns a string representation of this deque.
 func (d *ArrayDeque[T]) String() string {
 	str := make([]string, 0, d.Size())
 	for t := range d.All() {
@@ -142,18 +182,41 @@ func (d *ArrayDeque[T]) String() string {
 	return "[" + strings.Join(str, ", ") + "]"
 }
 
+// All returns an iterator over all elements,
+// going from front to back in this deque.
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
 		count := 0
-		for i := d.front; i < len(d.slice); i++ {
-			if count == d.size || !yield(d.slice[i]) {
-				return
+		i := d.front
+		for count < d.size {
+			if !yield(d.slice[i]) {
+				break
+			}
+			i++
+			if i == len(d.slice) {
+				i = 0
 			}
 			count++
 		}
-		for i := 0; i < d.front; i++ {
-			if count == d.size || !yield(d.slice[i]) {
+	}
+}
+
+// Backward returns an iterator over all elements,
+// going from back to front in this deque.
+func (d *ArrayDeque[T]) Backward() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		count := 0
+		i := d.back - 1
+		if i < 0 {
+			i = len(d.slice) - 1
+		}
+		for count < d.size {
+			if !yield(d.slice[i]) {
 				return
+			}
+			i--
+			if i < 0 {
+				i = len(d.slice) - 1
 			}
 			count++
 		}
