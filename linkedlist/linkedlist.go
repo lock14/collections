@@ -8,6 +8,7 @@ import (
 )
 
 var _ collections.MutableList[int] = (*LinkedList[int])(nil)
+var _ collections.MutableDeque[int] = (*LinkedList[int])(nil)
 
 type LinkedList[T any] struct {
 	list node[T]
@@ -55,6 +56,24 @@ func (l *LinkedList[T]) RemoveBack() T {
 	unlink(n)
 	l.size--
 	return n.data
+}
+
+func (l *LinkedList[T]) Peek() T {
+	return l.PeekFront()
+}
+
+func (l *LinkedList[T]) PeekFront() T {
+	if l.Empty() {
+		panic("cannot peek from an empty list")
+	}
+	return l.list.next.data
+}
+
+func (l *LinkedList[T]) PeekBack() T {
+	if l.Empty() {
+		panic("cannot peek from an empty list")
+	}
+	return l.list.prev.data
 }
 
 func (l *LinkedList[T]) Add(t T) {

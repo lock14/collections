@@ -356,7 +356,7 @@ func (d *directedNodeData[V, L]) predecessors() iter.Seq[V] {
 }
 
 func (d *directedNodeData[V, L]) removePredecessor(v V) {
-	d.preds.Remove(v)
+	d.preds.RemoveElement(v)
 }
 
 func (d *directedNodeData[V, L]) removeSuccessor(v V) {
