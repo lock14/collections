@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var _ collections.MutableList[int] = (*LinkedList[int])(nil)
+
 type LinkedList[T any] struct {
 	list node[T]
 	size int
@@ -67,6 +69,20 @@ func (l *LinkedList[T]) Push(t T) {
 	l.AddFront(t)
 }
 
+func (l *LinkedList[T]) Get(idx int) T {
+	if n := l.get(idx); n != nil {
+		return n.data
+	}
+	panic("cannot get an element from an empty list")
+}
+
+func (l *LinkedList[T]) Set(idx int, t T) {
+	if n := l.get(idx); n != nil {
+		n.data = t
+	}
+	panic("cannot set an element from an empty list")
+}
+
 func (l *LinkedList[T]) Pop() T {
 	return l.RemoveFront()
 }
@@ -99,6 +115,18 @@ func (l *LinkedList[T]) All() iter.Seq[T] {
 			cur = cur.next
 		}
 	}
+}
+
+func (l *LinkedList[T]) get(idx int) *node[T] {
+	count := 0
+	cur := l.list.next
+	for cur != &l.list {
+		if count == idx {
+			return cur
+		}
+		count++
+	}
+	return nil
 }
 
 func insertBefore[T any](n *node[T], t T) {

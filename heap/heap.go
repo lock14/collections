@@ -2,6 +2,7 @@ package heap
 
 import (
 	"cmp"
+	"github.com/lock14/collections"
 	"iter"
 	"slices"
 )
@@ -9,6 +10,8 @@ import (
 const (
 	DefaultCapacity = 10
 )
+
+var _ collections.MutableQueue[int] = (*Heap[int])(nil)
 
 type Comparator[T any] func(t1, t2 T) int
 
@@ -77,14 +80,20 @@ func (h *Heap[T]) Add(t T) {
 	h.siftUp(h.size - 1)
 }
 
+func (h *Heap[T]) AddAll(other collections.Collection[T]) {
+	for t := range other.All() {
+		h.Add(t)
+	}
+}
+
 func (h *Heap[T]) Remove() T {
 	t := h.elements[0]
 	h.delete(0)
 	return t
 }
 
-func (h *Heap[T]) Peek() *T {
-	return &h.elements[0]
+func (h *Heap[T]) Peek() T {
+	return h.elements[0]
 }
 
 func (h *Heap[T]) Size() int {

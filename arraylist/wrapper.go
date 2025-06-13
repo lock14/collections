@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+var _ collections.MutableList[int] = (*SliceWrapper[int])(nil)
+
 type SliceWrapper[T any] struct {
 	slice []T
 }
