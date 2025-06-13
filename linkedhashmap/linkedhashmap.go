@@ -1,6 +1,7 @@
 package linkedhashmap
 
 import (
+	"github.com/lock14/collections"
 	"iter"
 	"math"
 )
@@ -9,6 +10,8 @@ const (
 	InsertionOrder = false
 	AccessOrder    = true
 )
+
+var _ collections.MutableMap[int, int] = (*LinkedHashMap[int, int])(nil)
 
 type KeyOrder bool
 
@@ -99,6 +102,11 @@ func (hm *LinkedHashMap[K, V]) Remove(key K) {
 		unlink(n)
 		delete(hm.hashtable, key)
 	}
+}
+
+func (hm *LinkedHashMap[K, V]) ContainsKey(key K) bool {
+	_, ok := hm.hashtable[key]
+	return ok
 }
 
 func (hm *LinkedHashMap[K, V]) Size() int {

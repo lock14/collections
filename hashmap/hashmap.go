@@ -2,6 +2,7 @@ package hashmap
 
 import (
 	"fmt"
+	"github.com/lock14/collections"
 	"hash/maphash"
 	"iter"
 	"unsafe"
@@ -11,6 +12,8 @@ const (
 	DefaultCapacity   = 10
 	DefaultLoadFactor = 0.75
 )
+
+var _ collections.MutableMap[int, int] = (*HashMap[int, int])(nil)
 
 type Config struct {
 	capacity   int
@@ -56,6 +59,10 @@ func New[K comparable, V any](opts ...Opt) *HashMap[K, V] {
 		size:          0,
 		maxLoadFactor: config.loadFactor,
 	}
+}
+
+func (hm *HashMap[K, V]) ContainsKey(key K) bool {
+	return hm.get(key) != nil
 }
 
 func (hm *HashMap[K, V]) Get(key K) (V, bool) {

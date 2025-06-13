@@ -2,6 +2,7 @@ package arraydeque
 
 import (
 	"fmt"
+	"github.com/lock14/collections"
 	"iter"
 	"strings"
 )
@@ -17,6 +18,9 @@ const (
 	fiftyPercentThreshold = 2048
 )
 
+// ensure ArrayDeque implements a MutableDeque
+var _ collections.MutableDeque[int] = (*ArrayDeque[int])(nil)
+
 // ArrayDeque represents a deque of elements of type T backed by an array.
 // The zero value for ArrayDeque is an empty deque ready to use.
 type ArrayDeque[T any] struct {
@@ -24,6 +28,11 @@ type ArrayDeque[T any] struct {
 	front int
 	back  int
 	size  int
+}
+
+func (d *ArrayDeque[T]) AddAll(c collections.Collection[T]) {
+	//TODO implement me
+	panic("implement me")
 }
 
 // Config holds the values for configuring a ArrayDeque.
