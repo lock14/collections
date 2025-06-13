@@ -5,12 +5,12 @@ import (
 	"iter"
 )
 
-// Config holds configuration values for New to use when contracting a LabeledGraph.
+// Config holds configuration values for New to use when contracting a Graph.
 type Config struct {
 	delegateOps []labeldgraph.Opt
 }
 
-// Opt represents a configuration option for constructing a LabeledGraph.
+// Opt represents a configuration option for constructing a Graph.
 type Opt func(g *Config)
 
 // Directed is an option that configures New to return a directed graph.
@@ -27,7 +27,7 @@ type Graph[V comparable] struct {
 	delegate *labeldgraph.LabeledGraph[V, void]
 }
 
-// New returns a new LabeledGraph constructed according to the given options.
+// New returns a new Graph constructed according to the given options.
 func New[V comparable](opts ...Opt) *Graph[V] {
 	config := defaultConfig()
 	for _, opt := range opts {
