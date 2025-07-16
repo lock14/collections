@@ -13,8 +13,10 @@ const (
 	// if an arraydeque's capacity is under this amount its capacity
 	// will double when it needs to be resized.
 	doublingThreshold = 512
-	// if an arraydeque's capacity is under this amount its capacity
-	// will increase by 50% when it needs to be resized.
+	// if an arraydeque's capacity over the doublingThreshhold but under
+	// this amount, then the capacity will increase by 50% when it needs
+	// to be resized. Otherwise, if if an arraydeque's capacity over this
+	// amount then the capacity will increase by 25%.
 	fiftyPercentThreshold = 2048
 )
 
@@ -200,7 +202,7 @@ func (d *ArrayDeque[T]) All() iter.Seq[T] {
 		i := d.front
 		for count < d.size {
 			if !yield(d.slice[i]) {
-				break
+				return
 			}
 			i++
 			if i == len(d.slice) {
