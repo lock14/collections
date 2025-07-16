@@ -80,8 +80,8 @@ func (h *Heap[T]) Add(t T) {
 	h.siftUp(h.size - 1)
 }
 
-func (h *Heap[T]) AddAll(other collections.Collection[T]) {
-	for t := range other.All() {
+func (h *Heap[T]) AddAll(sequence iter.Seq[T]) {
+	for t := range sequence {
 		h.Add(t)
 	}
 }

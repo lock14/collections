@@ -41,8 +41,8 @@ func (l *SliceWrapper[T]) Pop() T {
 	return l.Remove()
 }
 
-func (l *SliceWrapper[T]) AddAll(other collections.Collection[T]) {
-	for t := range other.All() {
+func (l *SliceWrapper[T]) AddAll(sequence iter.Seq[T]) {
+	for t := range sequence {
 		l.Add(t)
 	}
 }

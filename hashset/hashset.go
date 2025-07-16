@@ -63,8 +63,8 @@ func (s *HashSet[T]) ContainsAll(other collections.Collection[T]) bool {
 	return true
 }
 
-func (s *HashSet[T]) AddAll(other collections.Collection[T]) {
-	for t := range other.All() {
+func (s *HashSet[T]) AddAll(sequence iter.Seq[T]) {
+	for t := range sequence {
 		s.Add(t)
 	}
 }

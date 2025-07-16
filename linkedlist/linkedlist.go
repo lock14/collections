@@ -110,8 +110,8 @@ func (l *LinkedList[T]) Size() int {
 	return l.size
 }
 
-func (l *LinkedList[T]) AddAll(other collections.Collection[T]) {
-	for t := range other.All() {
+func (l *LinkedList[T]) AddAll(sequence iter.Seq[T]) {
+	for t := range sequence {
 		l.Add(t)
 	}
 }

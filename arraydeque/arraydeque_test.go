@@ -2,7 +2,6 @@ package arraydeque
 
 import (
 	"github.com/lock14/collections"
-	"iter"
 	"slices"
 	"testing"
 
@@ -284,7 +283,7 @@ func TestArrayDeque_AddAll(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			d := New[int]()
-			d.AddAll(&sliceCollection[int]{tc.items})
+			d.AddAll(slices.Values(tc.items))
 			got := slices.Collect(d.All())
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("wrong string value, -got,+want: %s", diff)
@@ -294,19 +293,3 @@ func TestArrayDeque_AddAll(t *testing.T) {
 }
 
 func testType[T any](deque collections.Deque[T]) {}
-
-type sliceCollection[T any] struct {
-	s []T
-}
-
-func (sc *sliceCollection[T]) All() iter.Seq[T] {
-	return slices.Values(sc.s)
-}
-
-func (sc *sliceCollection[T]) Size() int {
-	return len(sc.s)
-}
-
-func (sc *sliceCollection[T]) Empty() bool {
-	return sc.Size() == 0
-}
