@@ -2,6 +2,7 @@ package arraydeque
 
 import (
 	"github.com/lock14/collections"
+    "iter"
 	"slices"
 	"testing"
 
@@ -250,4 +251,62 @@ func TestType(t *testing.T) {
 	testType[int](l)
 }
 
+func TestArrayDeque_AddAll(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		items []int
+		want  []int
+	}{
+		{
+			name:  "add_none",
+			items: []int{},
+			want:  nil,
+		},
+		{
+			name:  "add_one",
+			items: []int{1},
+			want:  []int{1},
+		},
+		{
+			name:  "add_up_to_default_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			want:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+		},
+		{
+			name:  "add_double_capacity",
+			items: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+			want:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+            d.AddAll(&sliceCollection[int]{tc.items})
+			got := slices.Collect(d.All())
+			if diff := cmp.Diff(got, tc.want); diff != "" {
+				t.Errorf("wrong string value, -got,+want: %s", diff)
+			}
+		})
+	}
+}
+
 func testType[T any](deque collections.Deque[T]) {}
+
+type sliceCollection[T any] struct {
+    s []T
+}
+
+func (sc *sliceCollection[T]) All() iter.Seq[T] {
+    return slices.Values(sc.s)
+}
+
+func (sc *sliceCollection[T]) Size() int {
+    return len(sc.s)
+}
+
+func (sc *sliceCollection[T]) Empty() bool {
+    return sc.Size() == 0
+}
