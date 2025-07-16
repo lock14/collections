@@ -157,9 +157,9 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 }
 
 func (d *ArrayDeque[T]) AddAll(c collections.Collection[T]) {
-    for t := range c.All() {
-        d.Add(t)
-    }
+	for t := range c.All() {
+		d.Add(t)
+	}
 }
 
 // Size returns the number of elements in this deque.
