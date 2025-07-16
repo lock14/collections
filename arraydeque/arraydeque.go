@@ -156,8 +156,8 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 	return t
 }
 
-func (d *ArrayDeque[T]) AddAll(c collections.Collection[T]) {
-	for t := range c.All() {
+func (d *ArrayDeque[T]) AddAll(sequence iter.Seq[T]) {
+	for t := range sequence {
 		d.Add(t)
 	}
 }

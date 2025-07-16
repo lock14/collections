@@ -21,7 +21,7 @@ type MutableCollection[T any] interface {
 	Collection[T]
 	Add(t T)
 	Remove() T
-	AddAll(Collection[T])
+	AddAll(iter.Seq[T])
 }
 
 type List[T any] interface {
