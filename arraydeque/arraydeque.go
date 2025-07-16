@@ -30,11 +30,6 @@ type ArrayDeque[T any] struct {
 	size  int
 }
 
-func (d *ArrayDeque[T]) AddAll(c collections.Collection[T]) {
-	//TODO implement me
-	panic("implement me")
-}
-
 // Config holds the values for configuring a ArrayDeque.
 type Config struct {
 	Capacity int
@@ -159,6 +154,12 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 	d.slice[d.back] = zero
 	d.size--
 	return t
+}
+
+func (d *ArrayDeque[T]) AddAll(c collections.Collection[T]) {
+	for t := range c.All() {
+		d.Add(t)
+	}
 }
 
 // Size returns the number of elements in this deque.
