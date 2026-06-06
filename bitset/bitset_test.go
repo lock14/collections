@@ -1,10 +1,10 @@
 package bitset
 
 import (
+	"bytes"
 	"fmt"
+	"slices"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // https://oeis.org/A000040
@@ -84,8 +84,8 @@ func TestString(t *testing.T) {
 			t.Parallel()
 			b := tc.bitSetInitFunc()
 			got := b.String()
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Errorf("b.String() mismatch (-got, +want):\n%s", diff)
+			if got != tc.want {
+				t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, tc.want)
 			}
 		})
 	}
@@ -131,14 +131,14 @@ func TestFromBytesToBytes(t *testing.T) {
 			t.Parallel()
 			b := FromBytes(tc.input)
 			got := b.ToBytes()
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Errorf("unexpected result (-got, +want):\n%s", diff)
+			if !bytes.Equal(got, tc.want) {
+				t.Errorf("unexpected result got:\n%v\nwant:\n%v", got, tc.want)
 			}
 			for n := 0; n < b.Length(); n++ {
 				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
 				wantSetBit := b.Get(n)
-				if diff := cmp.Diff(gotSetBit, wantSetBit); diff != "" {
-					t.Errorf("unexpected result (-got, +want):\n%s", diff)
+				if gotSetBit != wantSetBit {
+					t.Errorf("unexpected result for bit %d, got: %v, want: %v", n, gotSetBit, wantSetBit)
 				}
 			}
 		})
@@ -168,8 +168,8 @@ func TestFlipRange(t *testing.T) {
 			b := New()
 			b.FlipRange(tc.start, tc.end)
 			got := b.Size()
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Errorf("unexpected result (-got, +want):\n%s", diff)
+			if got != tc.want {
+				t.Errorf("unexpected result got: %d, want: %d", got, tc.want)
 			}
 		})
 	}
@@ -204,8 +204,8 @@ func TestBitSetPrimeGen(t *testing.T) {
 			for n := range b.SetBits() {
 				primes = append(primes, n)
 			}
-			if diff := cmp.Diff(primes, tc.want); diff != "" {
-				t.Errorf("unexpected result (-got, +want): %s", diff)
+			if !slices.Equal(primes, tc.want) {
+				t.Errorf("unexpected result got: %v, want: %v", primes, tc.want)
 			}
 		})
 	}
