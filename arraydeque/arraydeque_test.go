@@ -10,15 +10,73 @@ import (
 
 func TestNew(t *testing.T) {
 	t.Parallel()
-	d := New[int]()
-	if size := d.Size(); size != 0 {
-		t.Errorf("new deque has non-zero size: %d", size)
+	cases := []struct {
+		name  string
+		opts  []Option
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "default",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				if size := d.Size(); size != 0 {
+					t.Errorf("new deque has non-zero size: %d", size)
+				}
+				if !d.Empty() {
+					t.Error("new deque reports not empty")
+				}
+				if str := d.String(); str != "[]" {
+					t.Errorf("new deque has wrong String(): %s", str)
+				}
+			},
+		},
+		{
+			name: "zero_capacity",
+			opts: []Option{func(c *Config) { c.Capacity = 0 }},
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.Add(1) // Should not panic
+				if size := d.Size(); size != 1 {
+					t.Errorf("expected size 1, got: %d", size)
+				}
+			},
+		},
 	}
-	if !d.Empty() {
-		t.Error("new deque reports not empty")
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int](tc.opts...)
+			tc.check(t, d)
+		})
 	}
-	if str := d.String(); str != "[]" {
-		t.Errorf("new deque has wrong String(): %s", str)
+}
+
+func TestArrayDeque_Clear(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "clear_and_add",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.Add(1)
+				d.Clear()
+				d.Add(2) // Should not panic
+				if size := d.Size(); size != 1 {
+					t.Errorf("expected size 1 after clear and add, got %d", size)
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
 	}
 }
 
