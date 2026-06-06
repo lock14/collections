@@ -237,7 +237,7 @@ func (d *ArrayDeque[T]) Backward() iter.Seq[T] {
 
 func (d *ArrayDeque[T]) resize() {
 	var newCap int
-	if d.slice == nil {
+	if len(d.slice) == 0 {
 		newCap = DefaultCapacity
 	} else if d.size < doublingThreshold {
 		newCap = len(d.slice) << 1
