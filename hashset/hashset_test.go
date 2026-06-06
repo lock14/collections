@@ -4,8 +4,6 @@ import (
 	"slices"
 	"sort"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestDefaultConstruction(t *testing.T) {
@@ -55,8 +53,8 @@ func TestAdd(t *testing.T) {
 			}
 			got := slices.Collect(s.All())
 			sort.Slice(got, func(i, j int) bool { return got[i] < got[j] })
-			if diff := cmp.Diff(got, tc.want); diff != "" {
-				t.Errorf("wrong string value, -got,+want: %s", diff)
+			if !slices.Equal(got, tc.want) {
+				t.Errorf("wrong slice value, got: %v, want: %v", got, tc.want)
 			}
 		})
 	}
