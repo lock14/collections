@@ -126,6 +126,32 @@ func TestArrayDeque_Add(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "add_fifty_percent_threshold",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				want := make([]int, 600)
+				for i := 0; i < 600; i++ {
+					want[i] = i
+					d.Add(i)
+				}
+				if got := slices.Collect(d.All()); !slices.Equal(got, want) {
+					t.Errorf("wrong slice value")
+				}
+			},
+		},
+		{
+			name: "add_twenty_five_percent_threshold",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				want := make([]int, 2500)
+				for i := 0; i < 2500; i++ {
+					want[i] = i
+					d.Add(i)
+				}
+				if got := slices.Collect(d.All()); !slices.Equal(got, want) {
+					t.Errorf("wrong slice value")
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -450,3 +476,423 @@ func TestArrayDeque_AddAll(t *testing.T) {
 }
 
 func testType[T any](deque collections.Deque[T]) {}
+
+func TestArrayDeque_PeekFront(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "peek_empty_panics",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic")
+					}
+				}()
+				d.PeekFront()
+			},
+		},
+		{
+			name: "peek_one",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				if got := d.PeekFront(); got != 1 {
+					t.Errorf("expected 1, got %d", got)
+				}
+				if size := d.Size(); size != 1 {
+					t.Errorf("PeekFront should not remove element")
+				}
+			},
+		},
+		{
+			name: "peek_after_adds",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				d.AddBack(2)
+				d.AddFront(0)
+				if got := d.PeekFront(); got != 0 {
+					t.Errorf("expected 0, got %d", got)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_PeekBack(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "peek_empty_panics",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic")
+					}
+				}()
+				d.PeekBack()
+			},
+		},
+		{
+			name: "peek_one",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddFront(1)
+				if got := d.PeekBack(); got != 1 {
+					t.Errorf("expected 1, got %d", got)
+				}
+				if size := d.Size(); size != 1 {
+					t.Errorf("PeekBack should not remove element")
+				}
+			},
+		},
+		{
+			name: "peek_after_adds",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddFront(1)
+				d.AddFront(0)
+				d.AddBack(2)
+				if got := d.PeekBack(); got != 2 {
+					t.Errorf("expected 2, got %d", got)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_RemoveFront(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "remove_empty_panics",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic")
+					}
+				}()
+				d.RemoveFront()
+			},
+		},
+		{
+			name: "remove_one",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				if got := d.RemoveFront(); got != 1 {
+					t.Errorf("expected 1, got %d", got)
+				}
+				if size := d.Size(); size != 0 {
+					t.Errorf("expected size 0, got %d", size)
+				}
+			},
+		},
+		{
+			name: "remove_multiple",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				items := []int{1, 2, 3}
+				d.AddAll(slices.Values(items))
+				for _, want := range items {
+					if got := d.RemoveFront(); got != want {
+						t.Errorf("expected %d, got %d", want, got)
+					}
+				}
+				if !d.Empty() {
+					t.Errorf("expected empty")
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_RemoveBack(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "remove_empty_panics",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic")
+					}
+				}()
+				d.RemoveBack()
+			},
+		},
+		{
+			name: "remove_one",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddFront(1)
+				if got := d.RemoveBack(); got != 1 {
+					t.Errorf("expected 1, got %d", got)
+				}
+				if size := d.Size(); size != 0 {
+					t.Errorf("expected size 0, got %d", size)
+				}
+			},
+		},
+		{
+			name: "remove_multiple",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				items := []int{1, 2, 3} // front to back
+				d.AddAll(slices.Values(items))
+				// remove back should be 3, 2, 1
+				wantReverse := []int{3, 2, 1}
+				for _, want := range wantReverse {
+					if got := d.RemoveBack(); got != want {
+						t.Errorf("expected %d, got %d", want, got)
+					}
+				}
+				if !d.Empty() {
+					t.Errorf("expected empty")
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_Aliases(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "Peek_is_PeekFront",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				d.AddBack(2)
+				if d.Peek() != d.PeekFront() {
+					t.Errorf("Peek != PeekFront")
+				}
+			},
+		},
+		{
+			name: "Remove_is_RemoveFront",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				if d.Remove() != 1 {
+					t.Errorf("Remove did not act as RemoveFront")
+				}
+			},
+		},
+		{
+			name: "Pop_is_RemoveFront",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				if d.Pop() != 1 {
+					t.Errorf("Pop did not act as RemoveFront")
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_Backward(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "backward_none",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				if got := slices.Collect(d.Backward()); !slices.Equal(got, nil) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, nil)
+				}
+			},
+		},
+		{
+			name: "backward_one",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddBack(1)
+				want := []int{1}
+				if got := slices.Collect(d.Backward()); !slices.Equal(got, want) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+			},
+		},
+		{
+			name: "backward_multiple",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				items := []int{1, 2, 3, 4, 5}
+				d.AddAll(slices.Values(items))
+				want := []int{5, 4, 3, 2, 1}
+				if got := slices.Collect(d.Backward()); !slices.Equal(got, want) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+			},
+		},
+		{
+			name: "backward_wrapped",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				// Capacity is small, wrap around
+				d.AddAll(slices.Values([]int{1, 2, 3, 4})) // Cap becomes 4
+				d.RemoveFront()                            // size 3, front 1
+				d.RemoveFront()                            // size 2, front 2
+				d.AddBack(5)                               // size 3, back 1 (wrapped)
+				d.AddBack(6)                               // size 4, back 2 (wrapped)
+				// d is [3, 4, 5, 6]
+				want := []int{6, 5, 4, 3}
+				if got := slices.Collect(d.Backward()); !slices.Equal(got, want) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_All_Wrapped(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "all_wrapped",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddAll(slices.Values([]int{1, 2, 3, 4})) // Cap becomes 4
+				d.RemoveFront()                            // size 3, front 1
+				d.RemoveFront()                            // size 2, front 2
+				d.AddBack(5)                               // size 3, back 1 (wrapped)
+				d.AddBack(6)                               // size 4, back 2 (wrapped)
+				want := []int{3, 4, 5, 6}
+				if got := slices.Collect(d.All()); !slices.Equal(got, want) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_All_Break(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "all_break",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddAll(slices.Values([]int{1, 2, 3, 4}))
+				got := []int{}
+				for v := range d.All() {
+					got = append(got, v)
+					if v == 2 {
+						break
+					}
+				}
+				want := []int{1, 2}
+				if !slices.Equal(got, want) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
+
+func TestArrayDeque_Backward_Break(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *ArrayDeque[int])
+	}{
+		{
+			name: "backward_break",
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				d.AddAll(slices.Values([]int{1, 2, 3, 4}))
+				got := []int{}
+				for v := range d.Backward() {
+					got = append(got, v)
+					if v == 3 {
+						break
+					}
+				}
+				want := []int{4, 3}
+				if !slices.Equal(got, want) {
+					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			d := New[int]()
+			tc.check(t, d)
+		})
+	}
+}
