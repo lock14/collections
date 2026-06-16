@@ -896,3 +896,37 @@ func TestArrayDeque_Backward_Break(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkArrayDeque_AddFront(b *testing.B) {
+	d := New[int]()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		d.AddFront(i)
+	}
+}
+
+func BenchmarkArrayDeque_AddBack(b *testing.B) {
+	d := New[int]()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		d.AddBack(i)
+	}
+}
+
+func BenchmarkArrayDeque_PushPop(b *testing.B) {
+	d := New[int]()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		d.Push(i)
+		d.Pop()
+	}
+}
+
+func BenchmarkArrayDeque_AddRemove(b *testing.B) {
+	d := New[int]()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		d.AddBack(i)
+		d.RemoveFront()
+	}
+}

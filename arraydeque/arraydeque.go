@@ -9,7 +9,7 @@ import (
 
 const (
 	// DefaultCapacity is the capacity assigned if no other is provided.
-	DefaultCapacity = 1
+	DefaultCapacity = 16
 	// if an arraydeque's capacity is under this amount its capacity
 	// will double when it needs to be resized.
 	doublingThreshold = 512
