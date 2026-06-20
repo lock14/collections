@@ -53,9 +53,11 @@ func New(opts ...Option) *BitSet {
 // Clear sets the bit specified by the index to false.
 func (b *BitSet) Clear(bit int) {
 	index, shift := convert(bit)
-	b.ensureSize(index)
+	if index >= len(b.bits) {
+		return
+	}
 	b.bits[index] &= ^(1 << shift)
-	if index == b.maxWordInUse && b.bits[index] == 0 {
+	if index == b.maxWordInUse-1 && b.bits[index] == 0 {
 		b.maxWordInUse = b.lastNonZeroWord() + 1
 	}
 }
@@ -65,15 +67,17 @@ func (b *BitSet) Set(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	b.bits[index] |= 1 << shift
-	if index > b.maxWordInUse {
-		b.maxWordInUse = index
+	if index+1 > b.maxWordInUse {
+		b.maxWordInUse = index + 1
 	}
 }
 
 // Get returns the value of the bit with the specified index.
 func (b *BitSet) Get(bit int) bool {
 	index, shift := convert(bit)
-	b.ensureSize(index)
+	if index >= len(b.bits) {
+		return false
+	}
 	return (b.bits[index]>>shift)&1 == 1
 }
 
@@ -193,41 +197,18 @@ func (b *BitSet) String() string {
 	return strings.Join(s, "")
 }
 
-func (b *BitSet) All() iter.Seq[int] {
-	return func(yield func(int) bool) {
-		for bitIndex := 0; bitIndex < b.Size() && yield(bitIndex); {
-			bitIndex++
-		}
-	}
-}
-
-// SetBits returns an iterator that iterates over the set bits of this BitSet
+// SetBits returns an iterator that iterates over the set bits of this BitSet.
+// It uses word-level iteration with bits.TrailingZeros64 for efficiency.
 func (b *BitSet) SetBits() iter.Seq[int] {
 	return func(yield func(int) bool) {
-		bitIndex := 0
-		for bitIndex < b.Size() && !b.Get(bitIndex) {
-			bitIndex++
-		}
-		for bitIndex < b.Size() && yield(bitIndex) {
-			bitIndex++
-			for bitIndex < b.Size() && !b.Get(bitIndex) {
-				bitIndex++
-			}
-		}
-	}
-}
-
-// UnsetBits returns an iterator that iterates over the unset bits of this BitSet
-func (b *BitSet) UnsetBits() iter.Seq[int] {
-	return func(yield func(int) bool) {
-		bitIndex := 0
-		for bitIndex < b.Size() && b.Get(bitIndex) {
-			bitIndex++
-		}
-		for bitIndex < b.Size() && yield(bitIndex) {
-			bitIndex++
-			for bitIndex < b.Size() && b.Get(bitIndex) {
-				bitIndex++
+		for i := 0; i < len(b.bits); i++ {
+			word := b.bits[i]
+			for word != 0 {
+				tz := bits.TrailingZeros64(word)
+				if !yield(i*wordSize + tz) {
+					return
+				}
+				word &= word - 1 // clear lowest set bit
 			}
 		}
 	}
@@ -245,8 +226,10 @@ func defaultConfig() *Config {
 }
 
 func (b *BitSet) ensureSize(index int) {
-	for index >= len(b.bits) {
-		b.bits = append(b.bits, 0)
+	if index >= len(b.bits) {
+		newBits := make([]uint64, index+1)
+		copy(newBits, b.bits)
+		b.bits = newBits
 	}
 }
 
