@@ -53,7 +53,7 @@ func New(opts ...Option) *BitSet {
 // Clear sets the bit specified by the index to false.
 func (b *BitSet) Clear(bit int) {
 	index, shift := convert(bit)
-	if index >= len(b.bits) {
+	if index >= b.maxWordInUse {
 		return
 	}
 	b.bits[index] &= ^(1 << shift)
@@ -75,7 +75,7 @@ func (b *BitSet) Set(bit int) {
 // Get returns the value of the bit with the specified index.
 func (b *BitSet) Get(bit int) bool {
 	index, shift := convert(bit)
-	if index >= len(b.bits) {
+	if index >= b.maxWordInUse {
 		return false
 	}
 	return (b.bits[index]>>shift)&1 == 1
