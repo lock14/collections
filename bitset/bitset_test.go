@@ -21,215 +21,231 @@ var first100Primes = []int{
 	467, 479, 487, 491, 499, 503, 509, 521, 523, 541,
 }
 
-func TestAllBitsInitializedToZero(t *testing.T) {
-	t.Parallel()
-	n := 128
-	bitSet := New(NumBits(n))
-	for i := 0; i < n; i++ {
-		if bitSet.Get(i) {
-			t.Errorf("excepted bit %d to be unset, but it was not", i)
-		}
-	}
-}
-
-func TestSetBit(t *testing.T) {
-	t.Parallel()
-	n := 128
-	bitSet := New(NumBits(n))
-	for i := 0; i < n; i++ {
-		bitSet.Set(i)
-		if !bitSet.Get(i) {
-			t.Errorf("excepted bit %d to be set, but it was not", i)
-		}
-	}
-}
-
-func TestString(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name           string
-		bitSetInitFunc func() *BitSet
-		want           string
-	}{
-		{
-			name: "new_bit_set_all_zeros",
-			bitSetInitFunc: func() *BitSet {
-				return New()
-			},
-			want: "0000000000000000",
-		},
-		{
-			name: "new_flip_all_f",
-			bitSetInitFunc: func() *BitSet {
-				b := New()
-				b.Flip()
-				return b
-			},
-			want: "FFFFFFFFFFFFFFFF",
-		},
-		{
-			name: "two_words_bottom_word_1_top_word_2",
-			bitSetInitFunc: func() *BitSet {
-				b := New(NumBits(128))
-				b.Set(0)
-				b.Set(127)
-				return b
-			},
-			want: "80000000000000000000000000000001",
-		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			b := tc.bitSetInitFunc()
-			got := b.String()
-			if got != tc.want {
-				t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, tc.want)
-			}
-		})
-	}
-}
-
-func TestFromBytesToBytes(t *testing.T) {
+func TestNew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
-		input []byte
-		want  []byte
+		opts  []Option
+		check func(*testing.T, *BitSet)
 	}{
 		{
-			name:  "empty_slice",
-			input: []byte{},
-			want:  []byte{},
-		},
-		{
-			name:  "one_byte",
-			input: []byte{0xFF},
-			want:  []byte{0xFF},
-		},
-		{
-			name:  "eight_bytes",
-			input: []byte{0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-			want:  []byte{0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-		},
-		{
-			name:  "twelve_bytes",
-			input: []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-			want:  []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-		},
-		{
-			name:  "sixteen_bytes",
-			input: []byte{0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-			want:  []byte{0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			b := FromBytes(tc.input)
-			got := b.ToBytes()
-			if !bytes.Equal(got, tc.want) {
-				t.Errorf("unexpected result got:\n%v\nwant:\n%v", got, tc.want)
-			}
-			for n := 0; n < b.Length(); n++ {
-				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
-				wantSetBit := b.Get(n)
-				if gotSetBit != wantSetBit {
-					t.Errorf("unexpected result for bit %d, got: %v, want: %v", n, gotSetBit, wantSetBit)
+			name: "default_capacity",
+			check: func(t *testing.T, b *BitSet) {
+				if got := b.Size(); got != 64 {
+					t.Errorf("expected Size 64, got %d", got)
 				}
-			}
+				if got := b.Length(); got != 0 {
+					t.Errorf("expected Length 0, got %d", got)
+				}
+				for i := 0; i < 64; i++ {
+					if b.Get(i) {
+						t.Errorf("expected bit %d to be unset", i)
+					}
+				}
+			},
+		},
+		{
+			name: "zero_bits",
+			opts: []Option{NumBits(0)},
+			check: func(t *testing.T, b *BitSet) {
+				if got := b.Size(); got != 0 {
+					t.Errorf("expected Size 0, got %d", got)
+				}
+				b.Set(5) // should grow without panic
+				if !b.Get(5) {
+					t.Errorf("expected bit 5 to be set after growing from zero")
+				}
+			},
+		},
+		{
+			name: "exact_word_size",
+			opts: []Option{NumBits(64)},
+			check: func(t *testing.T, b *BitSet) {
+				if got := b.Size(); got != 64 {
+					t.Errorf("expected Size 64, got %d", got)
+				}
+			},
+		},
+		{
+			name: "non_exact_word_size",
+			opts: []Option{NumBits(100)},
+			check: func(t *testing.T, b *BitSet) {
+				if got := b.Size(); got != 128 { // 100 bits requires 2 words
+					t.Errorf("expected Size 128, got %d", got)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := New(tc.opts...)
+			tc.check(t, b)
 		})
 	}
 }
 
-func TestFlipRange(t *testing.T) {
+func TestGet(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
-		start int
-		end   int
-		want  int
+		check func(*testing.T, *BitSet)
 	}{
 		{
-			name:  "flip_entire_range_does_not_expand_size",
-			start: 0,
-			end:   64,
-			want:  64,
+			name: "get_out_of_range_returns_false",
+			check: func(t *testing.T, b *BitSet) {
+				if b.Get(1000) {
+					t.Errorf("expected false for out-of-range bit")
+				}
+			},
+		},
+		{
+			name: "get_out_of_range_does_not_grow",
+			check: func(t *testing.T, b *BitSet) {
+				sizeBefore := b.Size()
+				b.Get(1000)
+				if got := b.Size(); got != sizeBefore {
+					t.Errorf("Get on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				}
+			},
+		},
+		{
+			name: "get_negative_panics",
+			check: func(t *testing.T, b *BitSet) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic for negative index")
+					}
+				}()
+				b.Get(-1)
+			},
 		},
 	}
-
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			b := New()
-			b.FlipRange(tc.start, tc.end)
-			got := b.Size()
-			if got != tc.want {
-				t.Errorf("unexpected result got: %d, want: %d", got, tc.want)
-			}
+			tc.check(t, b)
 		})
 	}
 }
 
-func TestBitSetPrimeGen(t *testing.T) {
+func TestSet(t *testing.T) {
 	t.Parallel()
-	// a prime sieve is a good gamut test of a BitSet
-	cases := make([]struct {
-		name     string
-		lessThan int
-		want     []int
-	}, 0, len(first100Primes))
-	for i := 0; i < len(first100Primes); i++ {
-		lessThan := first100Primes[i] + 1
-		cases = append(cases, struct {
-			name     string
-			lessThan int
-			want     []int
-		}{
-			name:     fmt.Sprintf("primes_less_than_%d", lessThan),
-			lessThan: lessThan,
-			want:     first100Primes[:i+1],
-		})
+	cases := []struct {
+		name  string
+		check func(*testing.T, *BitSet)
+	}{
+		{
+			name: "set_single_bit",
+			check: func(t *testing.T, b *BitSet) {
+				b.Set(5)
+				if !b.Get(5) {
+					t.Errorf("expected bit 5 to be set")
+				}
+			},
+		},
+		{
+			name: "set_many_bits",
+			check: func(t *testing.T, b *BitSet) {
+				for i := 0; i < 128; i++ {
+					b.Set(i)
+					if !b.Get(i) {
+						t.Errorf("expected bit %d to be set", i)
+					}
+				}
+			},
+		},
+		{
+			name: "set_negative_panics",
+			check: func(t *testing.T, b *BitSet) {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic for negative index")
+					}
+				}()
+				b.Set(-1)
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			b := primesLessThan(tc.lessThan)
-			primes := make([]int, 0, len(tc.want))
-			for n := range b.SetBits() {
-				primes = append(primes, n)
-			}
-			if !slices.Equal(primes, tc.want) {
-				t.Errorf("unexpected result got: %v, want: %v", primes, tc.want)
-			}
+			b := New()
+			tc.check(t, b)
 		})
 	}
 }
 
-func primesLessThan(n int) *BitSet {
-	b := New(NumBits(n))
-	if n > 2 {
-		b.Set(0)
-		b.Set(1)
-		for i := 4; i < n; i += 2 {
-			b.Set(i)
-		}
-		for i := 3; (i*i) > i && (i*i) < n; i += 2 {
-			if !b.Get(i) {
-				// i is prime
-				for j := i * i; j > i && j < n; j += i {
-					b.Set(j)
+func TestClear(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *BitSet)
+	}{
+		{
+			name: "clear_set_bit",
+			check: func(t *testing.T, b *BitSet) {
+				b.Set(5)
+				b.Clear(5)
+				if b.Get(5) {
+					t.Errorf("expected bit 5 to be unset after Clear")
 				}
-			}
-		}
-		b.FlipRange(0, n)
+			},
+		},
+		{
+			name: "clear_updates_length",
+			check: func(t *testing.T, b *BitSet) {
+				b.Set(5)
+				b.Set(10)
+				b.Clear(10)
+				if got := b.Length(); got != 6 {
+					t.Errorf("expected Length 6 after clearing highest bit, got %d", got)
+				}
+			},
+		},
+		{
+			name: "clear_only_bit_in_word_0",
+			check: func(t *testing.T, b *BitSet) {
+				b.Set(3)
+				b.Clear(3)
+				if got := b.Length(); got != 0 {
+					t.Errorf("expected Length 0, got %d", got)
+				}
+			},
+		},
+		{
+			name: "clear_out_of_range_does_not_grow",
+			check: func(t *testing.T, b *BitSet) {
+				sizeBefore := b.Size()
+				b.Clear(1000)
+				if got := b.Size(); got != sizeBefore {
+					t.Errorf("Clear on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				}
+			},
+		},
+		{
+			name: "clear_unset_bit_is_noop",
+			check: func(t *testing.T, b *BitSet) {
+				b.Set(5)
+				b.Clear(3)
+				if !b.Get(5) {
+					t.Errorf("clearing an unset bit should not affect other bits")
+				}
+			},
+		},
 	}
-	return b
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := New()
+			tc.check(t, b)
+		})
+	}
 }
 
 func TestLength(t *testing.T) {
@@ -314,60 +330,32 @@ func TestLength(t *testing.T) {
 	}
 }
 
-func TestClear(t *testing.T) {
+func TestFlip(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
 		check func(*testing.T, *BitSet)
 	}{
 		{
-			name: "clear_set_bit",
+			name: "flip_empty",
+			check: func(t *testing.T, b *BitSet) {
+				b.Flip()
+				if !b.Get(0) || !b.Get(63) {
+					t.Errorf("expected all bits in default capacity to be set")
+				}
+				if b.Length() != 64 {
+					t.Errorf("expected Length 64 after flipping default size, got %d", b.Length())
+				}
+			},
+		},
+		{
+			name: "flip_twice_restores",
 			check: func(t *testing.T, b *BitSet) {
 				b.Set(5)
-				b.Clear(5)
-				if b.Get(5) {
-					t.Errorf("expected bit 5 to be unset after Clear")
-				}
-			},
-		},
-		{
-			name: "clear_updates_length",
-			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				b.Set(10)
-				b.Clear(10)
-				if got := b.Length(); got != 6 {
-					t.Errorf("expected Length 6 after clearing highest bit, got %d", got)
-				}
-			},
-		},
-		{
-			name: "clear_only_bit_in_word_0",
-			check: func(t *testing.T, b *BitSet) {
-				b.Set(3)
-				b.Clear(3)
-				if got := b.Length(); got != 0 {
-					t.Errorf("expected Length 0, got %d", got)
-				}
-			},
-		},
-		{
-			name: "clear_out_of_range_does_not_grow",
-			check: func(t *testing.T, b *BitSet) {
-				sizeBefore := b.Size()
-				b.Clear(1000)
-				if got := b.Size(); got != sizeBefore {
-					t.Errorf("Clear on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
-				}
-			},
-		},
-		{
-			name: "clear_unset_bit_is_noop",
-			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				b.Clear(3)
-				if !b.Get(5) {
-					t.Errorf("clearing an unset bit should not affect other bits")
+				b.Flip()
+				b.Flip()
+				if got := slices.Collect(b.SetBits()); !slices.Equal(got, []int{5}) {
+					t.Errorf("expected [5], got %v", got)
 				}
 			},
 		},
@@ -382,39 +370,51 @@ func TestClear(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestFlipRange(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
 		check func(*testing.T, *BitSet)
 	}{
 		{
-			name: "get_out_of_range_returns_false",
+			name: "flip_entire_range_does_not_expand_size",
 			check: func(t *testing.T, b *BitSet) {
-				if b.Get(1000) {
-					t.Errorf("expected false for out-of-range bit")
+				b.FlipRange(0, 64)
+				if got := b.Size(); got != 64 {
+					t.Errorf("unexpected size got: %d, want: %d", got, 64)
+				}
+				if got := b.Length(); got != 64 {
+					t.Errorf("unexpected length got: %d, want: %d", got, 64)
 				}
 			},
 		},
 		{
-			name: "get_out_of_range_does_not_grow",
+			name: "flip_partial_word",
 			check: func(t *testing.T, b *BitSet) {
-				sizeBefore := b.Size()
-				b.Get(1000)
-				if got := b.Size(); got != sizeBefore {
-					t.Errorf("Get on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				b.FlipRange(2, 5) // flips 2, 3, 4
+				want := []int{2, 3, 4}
+				if got := slices.Collect(b.SetBits()); !slices.Equal(got, want) {
+					t.Errorf("expected %v, got %v", want, got)
 				}
 			},
 		},
 		{
-			name: "get_negative_panics",
+			name: "flip_across_words",
 			check: func(t *testing.T, b *BitSet) {
-				defer func() {
-					if r := recover(); r == nil {
-						t.Errorf("expected panic for negative index")
-					}
-				}()
-				b.Get(-1)
+				b.FlipRange(60, 68) // flips 60-63 (word 0), 64-67 (word 1)
+				want := []int{60, 61, 62, 63, 64, 65, 66, 67}
+				if got := slices.Collect(b.SetBits()); !slices.Equal(got, want) {
+					t.Errorf("expected %v, got %v", want, got)
+				}
+			},
+		},
+		{
+			name: "flip_full_middle_words",
+			check: func(t *testing.T, b *BitSet) {
+				b.FlipRange(60, 130) // covers word 0 (partial), word 1 (full), word 2 (partial)
+				if !b.Get(60) || !b.Get(127) || !b.Get(129) || b.Get(59) || b.Get(130) {
+					t.Errorf("flip range failed for multi-word span")
+				}
 			},
 		},
 	}
@@ -428,15 +428,105 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestSet_Negative_Panics(t *testing.T) {
+func TestString(t *testing.T) {
 	t.Parallel()
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("expected panic for negative index")
-		}
-	}()
-	b := New()
-	b.Set(-1)
+	cases := []struct {
+		name  string
+		check func(*testing.T, *BitSet)
+	}{
+		{
+			name: "new_bit_set_all_zeros",
+			check: func(t *testing.T, b *BitSet) {
+				want := "0000000000000000"
+				if got := b.String(); got != want {
+					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
+				}
+			},
+		},
+		{
+			name: "new_flip_all_f",
+			check: func(t *testing.T, b *BitSet) {
+				b.Flip()
+				want := "FFFFFFFFFFFFFFFF"
+				if got := b.String(); got != want {
+					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
+				}
+			},
+		},
+		{
+			name: "two_words_bottom_word_1_top_word_2",
+			check: func(t *testing.T, b *BitSet) {
+				b.Set(0)
+				b.Set(127) // expands to 2 words
+				want := "80000000000000000000000000000001"
+				if got := b.String(); got != want {
+					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := New()
+			tc.check(t, b)
+		})
+	}
+}
+
+func TestFromBytesToBytes(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		input []byte
+		want  []byte
+	}{
+		{
+			name:  "empty_slice",
+			input: []byte{},
+			want:  []byte{},
+		},
+		{
+			name:  "one_byte",
+			input: []byte{0xFF},
+			want:  []byte{0xFF},
+		},
+		{
+			name:  "eight_bytes",
+			input: []byte{0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+			want:  []byte{0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+		},
+		{
+			name:  "twelve_bytes",
+			input: []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+			want:  []byte{0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+		},
+		{
+			name:  "sixteen_bytes",
+			input: []byte{0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+			want:  []byte{0xF0, 0xF1, 0xF2, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9, 0xFA, 0xFB, 0xFC, 0xFD, 0xFE, 0xFF},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := FromBytes(tc.input)
+			got := b.ToBytes()
+			if !bytes.Equal(got, tc.want) {
+				t.Errorf("unexpected result got:\n%v\nwant:\n%v", got, tc.want)
+			}
+			for n := 0; n < b.Length(); n++ {
+				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
+				wantSetBit := b.Get(n)
+				if gotSetBit != wantSetBit {
+					t.Errorf("unexpected result for bit %d, got: %v, want: %v", n, gotSetBit, wantSetBit)
+				}
+			}
+		})
+	}
 }
 
 func TestSetBits(t *testing.T) {
@@ -498,15 +588,59 @@ func TestSetBits(t *testing.T) {
 	}
 }
 
-func TestNew_ZeroBits(t *testing.T) {
+func TestBitSetPrimeGen(t *testing.T) {
 	t.Parallel()
-	b := New(NumBits(0))
-	if got := b.Size(); got != 0 {
-		t.Errorf("expected Size 0, got %d", got)
+	// a prime sieve is a good gamut test of a BitSet
+	cases := make([]struct {
+		name     string
+		lessThan int
+		want     []int
+	}, 0, len(first100Primes))
+	for i := 0; i < len(first100Primes); i++ {
+		lessThan := first100Primes[i] + 1
+		cases = append(cases, struct {
+			name     string
+			lessThan int
+			want     []int
+		}{
+			name:     fmt.Sprintf("primes_less_than_%d", lessThan),
+			lessThan: lessThan,
+			want:     first100Primes[:i+1],
+		})
 	}
-	b.Set(5) // should grow without panic
-	if !b.Get(5) {
-		t.Errorf("expected bit 5 to be set after growing from zero")
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			b := primesLessThan(tc.lessThan)
+			primes := make([]int, 0, len(tc.want))
+			for n := range b.SetBits() {
+				primes = append(primes, n)
+			}
+			if !slices.Equal(primes, tc.want) {
+				t.Errorf("unexpected result got: %v, want: %v", primes, tc.want)
+			}
+		})
 	}
 }
 
+func primesLessThan(n int) *BitSet {
+	b := New(NumBits(n))
+	if n > 2 {
+		b.Set(0)
+		b.Set(1)
+		for i := 4; i < n; i += 2 {
+			b.Set(i)
+		}
+		for i := 3; (i*i) > i && (i*i) < n; i += 2 {
+			if !b.Get(i) {
+				// i is prime
+				for j := i * i; j > i && j < n; j += i {
+					b.Set(j)
+				}
+			}
+		}
+		b.FlipRange(0, n)
+	}
+	return b
+}
