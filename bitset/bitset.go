@@ -201,7 +201,7 @@ func (b *BitSet) String() string {
 // It uses word-level iteration with bits.TrailingZeros64 for efficiency.
 func (b *BitSet) SetBits() iter.Seq[int] {
 	return func(yield func(int) bool) {
-		for i := 0; i < len(b.bits); i++ {
+		for i := 0; i < b.maxWordInUse; i++ {
 			word := b.bits[i]
 			for word != 0 {
 				tz := bits.TrailingZeros64(word)

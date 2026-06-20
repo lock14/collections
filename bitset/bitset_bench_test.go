@@ -65,3 +65,18 @@ func BenchmarkPrimesLessThan(b *testing.B) {
 		primesLessThan(n)
 	}
 }
+
+func BenchmarkSetBits_Sparse(b *testing.B) {
+	// Allocate 1 million bits
+	bs := New(NumBits(1_000_000))
+	// Only set a few bits at the very beginning
+	bs.Set(0)
+	bs.Set(5)
+	bs.Set(63)
+	
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		for range bs.SetBits() {
+		}
+	}
+}
