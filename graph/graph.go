@@ -1,13 +1,13 @@
 package graph
 
 import (
-	"github.com/lock14/collections/labeldgraph"
+	"github.com/lock14/collections/labeledgraph"
 	"iter"
 )
 
 // Config holds configuration values for New to use when contracting a LabeledGraph.
 type Config struct {
-	delegateOps []labeldgraph.Opt
+	delegateOps []labeledgraph.Opt
 }
 
 // Opt represents a configuration option for constructing a LabeledGraph.
@@ -16,7 +16,7 @@ type Opt func(g *Config)
 // Directed is an option that configures New to return a directed graph.
 func Directed() Opt {
 	return func(g *Config) {
-		g.delegateOps = append(g.delegateOps, labeldgraph.Directed())
+		g.delegateOps = append(g.delegateOps, labeledgraph.Directed())
 	}
 }
 
@@ -24,7 +24,7 @@ type void struct{}
 
 // Graph is a graph with vertices of type V.
 type Graph[V comparable] struct {
-	delegate *labeldgraph.LabeledGraph[V, void]
+	delegate *labeledgraph.LabeledGraph[V, void]
 }
 
 // New returns a new LabeledGraph constructed according to the given options.
@@ -34,7 +34,7 @@ func New[V comparable](opts ...Opt) *Graph[V] {
 		opt(config)
 	}
 	return &Graph[V]{
-		delegate: labeldgraph.New[V, void](config.delegateOps...),
+		delegate: labeledgraph.New[V, void](config.delegateOps...),
 	}
 }
 
@@ -164,6 +164,6 @@ func (g Graph[V]) OutIncidentEdges(u V) iter.Seq2[V, V] {
 
 func defaultConfig() *Config {
 	return &Config{
-		delegateOps: []labeldgraph.Opt{labeldgraph.Directed()},
+		delegateOps: []labeledgraph.Opt{labeledgraph.Directed()},
 	}
 }

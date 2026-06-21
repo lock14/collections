@@ -1,4 +1,4 @@
-package labeldgraph
+package labeledgraph
 
 import (
 	"github.com/lock14/collections/hashset"
@@ -57,7 +57,17 @@ func (g *LabeledGraph[V, L]) AddVertex(v V) {
 
 // RemoveVertex removes the vertex and all incident edges from the graph.
 func (g *LabeledGraph[V, L]) RemoveVertex(v V) {
-	if !g.ContainsVertex(v) {
+	if g.ContainsVertex(v) {
+		if g.directed {
+			g.edgeCount -= g.graph[v].outDegree()
+			g.edgeCount -= g.graph[v].inDegree()
+			if g.ContainsEdge(v, v) {
+				g.edgeCount++
+			}
+		} else {
+			g.edgeCount -= g.graph[v].outDegree()
+		}
+
 		for u := range g.graph[v].predecessors() {
 			g.graph[u].removeSuccessor(v)
 		}
@@ -79,18 +89,19 @@ func (g *LabeledGraph[V, L]) ContainsEdge(u, v V) bool {
 func (g *LabeledGraph[V, L]) AddEdge(u, v V, l L) {
 	g.AddVertex(u)
 	g.AddVertex(v)
+	if !g.ContainsEdge(u, v) {
+		g.edgeCount++
+	}
 	g.graph[u].addSuccessor(v, l)
 	g.graph[v].addPredecessor(u, l)
-	g.edgeCount++
 }
 
 // RemoveEdge removes the given edge from the graph.
 func (g *LabeledGraph[V, L]) RemoveEdge(u, v V) {
-	if g.ContainsVertex(u) {
+	if g.ContainsEdge(u, v) {
 		g.graph[u].removeSuccessor(v)
-	}
-	if g.ContainsVertex(v) {
 		g.graph[v].removePredecessor(u)
+		g.edgeCount--
 	}
 }
 
@@ -236,13 +247,13 @@ func (g *LabeledGraph[V, L]) Edges() iter.Seq2[V, V] {
 func (g *LabeledGraph[V, L]) IncidentEdges(v V) iter.Seq2[V, V] {
 	if g.directed {
 		return func(yield func(V, V) bool) {
-			for u, v := range g.IncidentEdges(v) {
-				if !yield(u, v) {
+			for x, y := range g.InIncidentEdges(v) {
+				if !yield(x, y) {
 					return
 				}
 			}
-			for u, v := range g.OutIncidentEdges(v) {
-				if !yield(u, v) {
+			for x, y := range g.OutIncidentEdges(v) {
+				if !yield(x, y) {
 					return
 				}
 			}
