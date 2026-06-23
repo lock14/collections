@@ -22,6 +22,7 @@ type MutableCollection[T any] interface {
 	Add(t T)
 	Remove() T
 	AddAll(iter.Seq[T])
+	Clear()
 }
 
 type List[T any] interface {
@@ -103,4 +104,5 @@ type MutableMap[K any, V any] interface {
 	Map[K, V]
 	Put(K, V)
 	Remove(K)
+	Clear()
 }
