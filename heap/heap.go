@@ -46,10 +46,15 @@ func WithComparator[T any](comparator Comparator[T]) Option[T] {
 	}
 }
 
+// Capacity configures the initial pre-allocated capacity of the heap.
+func Capacity[T any](capacity int) Option[T] {
+	return func(config *Config[T]) {
+		config.capacity = capacity
+	}
+}
+
 type Heap[T any] struct {
 	elements   []T
-	size       int
-	zero       T
 	comparator Comparator[T]
 }
 
@@ -59,6 +64,7 @@ func New[T any](opts ...Option[T]) *Heap[T] {
 		opt(config)
 	}
 	return &Heap[T]{
+		elements:   make([]T, 0, config.capacity),
 		comparator: config.comparator,
 	}
 }
@@ -72,12 +78,8 @@ func Max[T cmp.Ordered]() *Heap[T] {
 }
 
 func (h *Heap[T]) Add(t T) {
-	if h.size == len(h.elements) {
-		h.increaseCapacity()
-	}
-	h.elements[h.size] = t
-	h.size++
-	h.siftUp(h.size - 1)
+	h.elements = append(h.elements, t)
+	h.siftUp(len(h.elements) - 1)
 }
 
 func (h *Heap[T]) AddAll(sequence iter.Seq[T]) {
@@ -86,22 +88,45 @@ func (h *Heap[T]) AddAll(sequence iter.Seq[T]) {
 	}
 }
 
+// Remove removes and returns the top element from the heap.
+// Panics if the heap is empty.
 func (h *Heap[T]) Remove() T {
+	if h.Empty() {
+		panic("heap is empty")
+	}
 	t := h.elements[0]
 	h.delete(0)
 	return t
 }
 
+// Peek returns the top element from the heap without removing it.
+// Panics if the heap is empty.
 func (h *Heap[T]) Peek() T {
+	if h.Empty() {
+		panic("heap is empty")
+	}
 	return h.elements[0]
 }
 
 func (h *Heap[T]) Size() int {
-	return h.size
+	return len(h.elements)
 }
 
 func (h *Heap[T]) Empty() bool {
-	return h.Size() == 0
+	return len(h.elements) == 0
+}
+
+func (h *Heap[T]) Clear() {
+	// Zero out elements to allow GC
+	var zero T
+	for i := range h.elements {
+		h.elements[i] = zero
+	}
+	h.elements = h.elements[:0]
+}
+
+func (h *Heap[T]) All() iter.Seq[T] {
+	return slices.Values(h.elements)
 }
 
 // Private Functions
@@ -113,48 +138,50 @@ func defaultConfig[T any]() *Config[T] {
 }
 
 func (h *Heap[T]) delete(index int) {
+	last := len(h.elements) - 1
 	var zero T
-	h.size--
-	h.elements[index] = h.elements[h.size]
-	h.elements[h.size] = zero
-	if h.hasParent(index) && !h.heapCondition(parent(index), index) {
-		h.siftUp(index)
+	if index != last {
+		h.elements[index] = h.elements[last]
+		h.elements[last] = zero
+		h.elements = h.elements[:last]
+		if h.hasParent(index) && !h.heapCondition(parent(index), index) {
+			h.siftUp(index)
+		} else {
+			h.siftDown(index)
+		}
 	} else {
-		h.siftDown(index)
+		h.elements[last] = zero
+		h.elements = h.elements[:last]
 	}
-
 }
 
 func (h *Heap[T]) siftUp(cur int) {
-	for h.hasParent(cur) && h.heapCondition(parent(cur), cur) {
+	for h.hasParent(cur) && h.heapCondition(cur, parent(cur)) {
 		h.swap(parent(cur), cur)
 		cur = parent(cur)
 	}
 }
 
 func (h *Heap[T]) siftDown(cur int) {
-	heapConditionViolated := true
-	for h.hasLeft(cur) && heapConditionViolated {
-		child := left(cur)
-		if h.hasRight(cur) && h.heapCondition(right(cur), child) {
-			child = right(cur)
+	for {
+		best := cur
+		if h.hasLeft(cur) && h.heapCondition(left(cur), best) {
+			best = left(cur)
 		}
-		heapConditionViolated = !h.heapCondition(cur, child)
-		if heapConditionViolated {
-			h.swap(cur, child)
+		if h.hasRight(cur) && h.heapCondition(right(cur), best) {
+			best = right(cur)
 		}
-		cur = child
+		if best == cur {
+			break
+		}
+		h.swap(cur, best)
+		cur = best
 	}
 }
 
+// heapCondition returns true if the element at index i should be placed higher in the heap than the element at index j.
 func (h *Heap[T]) heapCondition(i, j int) bool {
 	return h.comparator(h.elements[i], h.elements[j]) <= 0
-}
-
-func (h *Heap[T]) increaseCapacity() {
-	newElements := make([]T, len(h.elements)+(len(h.elements)>>1))
-	copy(newElements, h.elements)
-	h.elements = newElements
 }
 
 func (h *Heap[T]) swap(i, j int) {
@@ -166,11 +193,11 @@ func (h *Heap[T]) hasParent(index int) bool {
 }
 
 func (h *Heap[T]) hasLeft(index int) bool {
-	return left(index) < h.size
+	return left(index) < len(h.elements)
 }
 
 func (h *Heap[T]) hasRight(index int) bool {
-	return right(index) < h.size
+	return right(index) < len(h.elements)
 }
 
 func parent(index int) int {
@@ -183,8 +210,4 @@ func left(index int) int {
 
 func right(index int) int {
 	return 2*index + 2
-}
-
-func (h *Heap[T]) All() iter.Seq[T] {
-	return slices.Values(h.elements[0:h.Size()])
 }
