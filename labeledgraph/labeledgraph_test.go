@@ -36,6 +36,16 @@ func TestNew(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "capacity",
+			opts: []Opt{Capacity(100)},
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddVertex(1)
+				if g.Order() != 1 {
+					t.Errorf("expected order 1, got %d", g.Order())
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -416,23 +426,13 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 	}
 }
 
-func TestLabeledGraph_Features(t *testing.T) {
+func TestLabeledGraph_Clear(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
 		opts  []Opt
 		check func(*testing.T, *LabeledGraph[int, string])
 	}{
-		{
-			name: "capacity",
-			opts: []Opt{Capacity(100)},
-			check: func(t *testing.T, g *LabeledGraph[int, string]) {
-				g.AddVertex(1)
-				if g.Order() != 1 {
-					t.Errorf("expected order 1, got %d", g.Order())
-				}
-			},
-		},
 		{
 			name: "clear",
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
@@ -446,6 +446,24 @@ func TestLabeledGraph_Features(t *testing.T) {
 				}
 			},
 		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := New[int, string](tc.opts...)
+			tc.check(t, g)
+		})
+	}
+}
+
+func TestLabeledGraph_Clone(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		opts  []Opt
+		check func(*testing.T, *LabeledGraph[int, string])
+	}{
 		{
 			name: "clone",
 			opts: []Opt{Directed()},
@@ -465,6 +483,24 @@ func TestLabeledGraph_Features(t *testing.T) {
 				}
 			},
 		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := New[int, string](tc.opts...)
+			tc.check(t, g)
+		})
+	}
+}
+
+func TestLabeledGraph_Equal(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		opts  []Opt
+		check func(*testing.T, *LabeledGraph[int, string])
+	}{
 		{
 			name: "equal",
 			opts: []Opt{Directed()},
@@ -488,6 +524,24 @@ func TestLabeledGraph_Features(t *testing.T) {
 				}
 			},
 		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := New[int, string](tc.opts...)
+			tc.check(t, g)
+		})
+	}
+}
+
+func TestLabeledGraph_String(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		opts  []Opt
+		check func(*testing.T, *LabeledGraph[int, string])
+	}{
 		{
 			name: "string_directed",
 			opts: []Opt{Directed()},
