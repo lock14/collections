@@ -31,31 +31,45 @@ func New[T any]() *LinkedList[T] {
 }
 
 func (l *LinkedList[T]) AddFront(t T) {
-	insertBefore(l.list.next, t)
+	n := &node[T]{
+		data: t,
+		prev: &l.list,
+		next: l.list.next,
+	}
+	l.list.next.prev = n
+	l.list.next = n
 	l.size++
 }
 
 func (l *LinkedList[T]) RemoveFront() T {
-	if l.Empty() {
+	if l.size == 0 {
 		panic("cannot remove from an empty list")
 	}
 	n := l.list.next
-	unlink(n)
+	l.list.next = n.next
+	n.next.prev = &l.list
 	l.size--
 	return n.data
 }
 
 func (l *LinkedList[T]) AddBack(t T) {
-	insertBefore(&l.list, t)
+	n := &node[T]{
+		data: t,
+		prev: l.list.prev,
+		next: &l.list,
+	}
+	l.list.prev.next = n
+	l.list.prev = n
 	l.size++
 }
 
 func (l *LinkedList[T]) RemoveBack() T {
-	if l.Empty() {
+	if l.size == 0 {
 		panic("cannot remove from an empty list")
 	}
 	n := l.list.prev
-	unlink(n)
+	l.list.prev = n.prev
+	n.prev.next = &l.list
 	l.size--
 	return n.data
 }
@@ -65,14 +79,14 @@ func (l *LinkedList[T]) Peek() T {
 }
 
 func (l *LinkedList[T]) PeekFront() T {
-	if l.Empty() {
+	if l.size == 0 {
 		panic("cannot peek from an empty list")
 	}
 	return l.list.next.data
 }
 
 func (l *LinkedList[T]) PeekBack() T {
-	if l.Empty() {
+	if l.size == 0 {
 		panic("cannot peek from an empty list")
 	}
 	return l.list.prev.data
@@ -120,7 +134,7 @@ func (l *LinkedList[T]) AddAll(sequence iter.Seq[T]) {
 }
 
 func (l *LinkedList[T]) Empty() bool {
-	return l.Size() == 0
+	return l.size == 0
 }
 
 func (l *LinkedList[T]) Clear() {
@@ -164,21 +178,6 @@ func (l *LinkedList[T]) get(idx int) *node[T] {
 	}
 }
 
-func insertBefore[T any](n *node[T], t T) {
-	newNode := &node[T]{
-		data: t,
-		prev: n.prev,
-		next: n,
-	}
-	n.prev.next = newNode
-	n.prev = newNode
-}
 
-func unlink[T any](n *node[T]) {
-	n.prev.next = n.next
-	n.next.prev = n.prev
-	n.prev = nil
-	n.next = nil
-}
 
 
