@@ -56,6 +56,17 @@ func TestNew(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "capacity",
+			opts: []Opt{WithCapacity(100)},
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				// No exposed capacity check, but verifies option doesn't panic
+				m.Put(1, 10)
+				if m.Size() != 1 {
+					t.Errorf("expected size 1")
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc

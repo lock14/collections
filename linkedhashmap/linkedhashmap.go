@@ -18,6 +18,7 @@ type KeyOrder bool
 type Config struct {
 	keyOrder    KeyOrder
 	maxElements int
+	capacity    int
 }
 
 type Opt func(*Config)
@@ -40,6 +41,12 @@ func WithMaxElements(max int) Opt {
 	}
 }
 
+func WithCapacity(capacity int) Opt {
+	return func(config *Config) {
+		config.capacity = capacity
+	}
+}
+
 // public functions/receivers
 
 type LinkedHashMap[K comparable, V any] struct {
@@ -55,7 +62,7 @@ func New[K comparable, V any](opts ...Opt) *LinkedHashMap[K, V] {
 		opt(c)
 	}
 	return &LinkedHashMap[K, V]{
-		hashtable:   make(map[K]*node[K, V]),
+		hashtable:   make(map[K]*node[K, V], c.capacity),
 		list:        sentinel[K, V](),
 		accessOrder: c.keyOrder,
 		maxElements: c.maxElements,
@@ -137,8 +144,8 @@ func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 
 func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for k, _ := range hm.All() {
-			if !yield(k) {
+		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+			if !yield(cur.key) {
 				return
 			}
 		}
@@ -147,8 +154,8 @@ func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 
 func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
-		for _, v := range hm.All() {
-			if !yield(v) {
+		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+			if !yield(cur.value) {
 				return
 			}
 		}

@@ -13,6 +13,14 @@ func BenchmarkLinkedHashMap_Put(b *testing.B) {
 	}
 }
 
+func BenchmarkLinkedHashMap_Put_Preallocated(b *testing.B) {
+	m := linkedhashmap.New[int, int](linkedhashmap.WithCapacity(b.N))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		m.Put(i, i)
+	}
+}
+
 func BenchmarkLinkedHashMap_Put_Evict(b *testing.B) {
 	m := linkedhashmap.New[int, int](linkedhashmap.WithMaxElements(1000))
 	for i := 0; i < 1000; i++ {
