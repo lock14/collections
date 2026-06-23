@@ -16,10 +16,19 @@ type HashSet[T comparable] struct {
 }
 
 // Config holds the values for configuring a HashSet.
-type Config struct{}
+type Config struct {
+	capacity int
+}
 
 // Option configures a HashSet config
 type Option func(*Config)
+
+// WithCapacity configures the initial capacity of the HashSet.
+func WithCapacity(capacity int) Option {
+	return func(c *Config) {
+		c.capacity = capacity
+	}
+}
 
 // New creates an empty HashSet.
 func New[T comparable](opts ...Option) *HashSet[T] {
@@ -28,7 +37,7 @@ func New[T comparable](opts ...Option) *HashSet[T] {
 		option(config)
 	}
 	return &HashSet[T]{
-		m: make(map[T]struct{}),
+		m: make(map[T]struct{}, config.capacity),
 	}
 }
 
@@ -37,12 +46,11 @@ func (s *HashSet[T]) Add(item T) {
 }
 
 func (s *HashSet[T]) Remove() T {
-	var t T
 	for item := range s.m {
-		t = item
-		break
+		delete(s.m, item)
+		return item
 	}
-	return t
+	panic("cannot remove from an empty set")
 }
 
 func (s *HashSet[T]) RemoveElement(item T) {
@@ -76,11 +84,17 @@ func (s *HashSet[T]) RemoveAll(other collections.Collection[T]) {
 }
 
 func (s *HashSet[T]) RetainAll(other collections.Collection[T]) {
+	newMap := make(map[T]struct{})
 	for t := range other.All() {
-		if !s.Contains(t) {
-			s.RemoveElement(t)
+		if _, ok := s.m[t]; ok {
+			newMap[t] = struct{}{}
 		}
 	}
+	s.m = newMap
+}
+
+func (s *HashSet[T]) Clear() {
+	s.m = make(map[T]struct{})
 }
 
 func (s *HashSet[T]) Size() int {
@@ -88,15 +102,13 @@ func (s *HashSet[T]) Size() int {
 }
 
 func (s *HashSet[T]) Empty() bool {
-	return s.Size() == 0
+	return len(s.m) == 0
 }
 
 func (s *HashSet[T]) String() string {
-	vals := make([]string, s.Size())
-	i := 0
-	for item := range maps.Keys(s.m) {
-		vals[i] = fmt.Sprintf("%+v", item)
-		i++
+	vals := make([]string, 0, len(s.m))
+	for item := range s.m {
+		vals = append(vals, fmt.Sprintf("%+v", item))
 	}
 	return "[" + strings.Join(vals, ", ") + "]"
 }
