@@ -896,3 +896,20 @@ func TestArrayDeque_Backward_Break(t *testing.T) {
 		})
 	}
 }
+
+func TestArrayDeque_CoveragePanics(t *testing.T) {
+	ad := New[int]()
+	assertPanics := func(f func()) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("expected panic")
+			}
+		}()
+		f()
+	}
+	assertPanics(func() { ad.RemoveFront() })
+	assertPanics(func() { ad.RemoveBack() })
+	assertPanics(func() { ad.PeekFront() })
+	assertPanics(func() { ad.PeekBack() })
+	_ = ad.String()
+}

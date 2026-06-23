@@ -333,3 +333,17 @@ func TestLinkedHashMap_Clear(t *testing.T) {
 		})
 	}
 }
+
+func TestLinkedHashMap_CoverageIters(t *testing.T) {
+	hm := New[int, int]()
+	hm.Put(1, 1)
+	hm.Put(2, 2)
+	for k := range hm.Keys() {
+		_ = k
+		break
+	}
+	for v := range hm.Values() {
+		_ = v
+		break
+	}
+}

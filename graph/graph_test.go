@@ -237,3 +237,9 @@ func TestGraph_String(t *testing.T) {
 		t.Errorf("missing edge: %s", str2)
 	}
 }
+
+func TestGraph_Coverage(t *testing.T) {
+    g := New[int]()
+    g.AddEdge(1, 2)
+    _ = g.String()
+}

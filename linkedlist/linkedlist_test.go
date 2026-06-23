@@ -218,3 +218,20 @@ func TestLinkedList_Interfaces(t *testing.T) {
 		})
 	}
 }
+
+func TestLinkedList_CoveragePanics(t *testing.T) {
+	ll := New[int]()
+	assertPanics := func(f func()) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("expected panic")
+			}
+		}()
+		f()
+	}
+	assertPanics(func() { ll.RemoveFront() })
+	assertPanics(func() { ll.RemoveBack() })
+	assertPanics(func() { ll.PeekFront() })
+	assertPanics(func() { ll.PeekBack() })
+	assertPanics(func() { ll.Get(10) })
+}
