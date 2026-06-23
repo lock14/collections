@@ -1,3 +1,4 @@
+// Package linkedlist provides a doubly-linked list implementation.
 package linked_list
 
 import (
@@ -10,6 +11,7 @@ import (
 var _ collections.MutableList[int] = (*LinkedList[int])(nil)
 var _ collections.MutableDeque[int] = (*LinkedList[int])(nil)
 
+// LinkedList is a doubly-linked list implementation.
 type LinkedList[T any] struct {
 	list node[T]
 	size int
@@ -21,6 +23,7 @@ type node[T any] struct {
 	next *node[T]
 }
 
+// New creates an empty LinkedList.
 func New[T any]() *LinkedList[T] {
 	l := &LinkedList[T]{
 		size: 0,

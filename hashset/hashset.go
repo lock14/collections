@@ -1,3 +1,4 @@
+// Package hashset provides a hash-backed set implementing MutableSet.
 package hashset
 
 import (

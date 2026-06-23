@@ -1,3 +1,4 @@
+// Package hashmap provides a wrapper for the built-in map implementing MutableMap.
 package hashmap
 
 import (
