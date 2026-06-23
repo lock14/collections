@@ -1,3 +1,4 @@
+// Package bitset provides a vector of bits that grows as needed.
 package bitset
 
 import (

@@ -1,3 +1,4 @@
+// Package arraylist provides an array-backed list and stack wrapper.
 package arraylist
 
 import (
@@ -13,10 +14,12 @@ var (
 	_ collections.MutableStack[int] = (*SliceWrapper[int])(nil)
 )
 
+// SliceWrapper is a wrapper around the built-in slice that implements collections.MutableList and collections.MutableStack.
 type SliceWrapper[T any] struct {
 	slice []T
 }
 
+// Wrap creates a new SliceWrapper around the given slice.
 func Wrap[T any](slice []T) *SliceWrapper[T] {
 	return &SliceWrapper[T]{
 		slice: slice,

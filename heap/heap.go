@@ -1,3 +1,4 @@
+// Package heap provides a binary heap priority queue.
 package heap
 
 import (
@@ -13,8 +14,10 @@ const (
 
 var _ collections.MutableQueue[int] = (*Heap[int])(nil)
 
+// Comparator is a function that compares two elements.
 type Comparator[T any] func(t1, t2 T) int
 
+// NaturalOrder returns a comparator that orders elements using their natural ordering.
 func NaturalOrder[T cmp.Ordered]() Comparator[T] {
 	return func(t1, t2 T) int {
 		if t1 < t2 {
@@ -27,19 +30,23 @@ func NaturalOrder[T cmp.Ordered]() Comparator[T] {
 	}
 }
 
+// Reversed returns a comparator that reverses the ordering of the given comparator.
 func Reversed[T any](comparator Comparator[T]) Comparator[T] {
 	return func(t1, t2 T) int {
 		return -comparator(t1, t2)
 	}
 }
 
+// Option is a function that configures a Heap.
 type Option[T any] func(config *Config[T])
 
+// Config holds the configuration for a Heap.
 type Config[T any] struct {
 	capacity   int
 	comparator Comparator[T]
 }
 
+// WithComparator configures the comparator used by the Heap.
 func WithComparator[T any](comparator Comparator[T]) Option[T] {
 	return func(config *Config[T]) {
 		config.comparator = comparator
@@ -53,11 +60,13 @@ func Capacity[T any](capacity int) Option[T] {
 	}
 }
 
+// Heap is a binary heap priority queue.
 type Heap[T any] struct {
 	elements   []T
 	comparator Comparator[T]
 }
 
+// New creates a new Heap with the given options.
 func New[T any](opts ...Option[T]) *Heap[T] {
 	config := defaultConfig[T]()
 	for _, opt := range opts {
@@ -69,10 +78,12 @@ func New[T any](opts ...Option[T]) *Heap[T] {
 	}
 }
 
+// Min creates a new Min-Heap using natural ordering.
 func Min[T cmp.Ordered]() *Heap[T] {
 	return New[T](WithComparator(NaturalOrder[T]()))
 }
 
+// Max creates a new Max-Heap using reversed natural ordering.
 func Max[T cmp.Ordered]() *Heap[T] {
 	return New[T](WithComparator(Reversed(NaturalOrder[T]())))
 }
