@@ -22,10 +22,12 @@ type node[T any] struct {
 }
 
 func New[T any]() *LinkedList[T] {
-	return &LinkedList[T]{
-		list: sentinel[T](),
+	l := &LinkedList[T]{
 		size: 0,
 	}
+	l.list.next = &l.list
+	l.list.prev = &l.list
+	return l
 }
 
 func (l *LinkedList[T]) AddFront(t T) {
@@ -92,14 +94,15 @@ func (l *LinkedList[T]) Get(idx int) T {
 	if n := l.get(idx); n != nil {
 		return n.data
 	}
-	panic("cannot get an element from an empty list")
+	panic("index out of bounds")
 }
 
 func (l *LinkedList[T]) Set(idx int, t T) {
 	if n := l.get(idx); n != nil {
 		n.data = t
+		return
 	}
-	panic("cannot set an element from an empty list")
+	panic("index out of bounds")
 }
 
 func (l *LinkedList[T]) Pop() T {
@@ -120,6 +123,12 @@ func (l *LinkedList[T]) Empty() bool {
 	return l.Size() == 0
 }
 
+func (l *LinkedList[T]) Clear() {
+	l.list.next = &l.list
+	l.list.prev = &l.list
+	l.size = 0
+}
+
 func (l *LinkedList[T]) String() string {
 	str := make([]string, 0, l.Size())
 	for t := range l.All() {
@@ -137,25 +146,32 @@ func (l *LinkedList[T]) All() iter.Seq[T] {
 }
 
 func (l *LinkedList[T]) get(idx int) *node[T] {
-	count := 0
-	cur := l.list.next
-	for cur != &l.list {
-		if count == idx {
-			return cur
-		}
-		count++
+	if idx < 0 || idx >= l.size {
+		return nil
 	}
-	return nil
+	if idx < l.size/2 {
+		cur := l.list.next
+		for i := 0; i < idx; i++ {
+			cur = cur.next
+		}
+		return cur
+	} else {
+		cur := l.list.prev
+		for i := l.size - 1; i > idx; i-- {
+			cur = cur.prev
+		}
+		return cur
+	}
 }
 
 func insertBefore[T any](n *node[T], t T) {
-	newNode := node[T]{
+	newNode := &node[T]{
 		data: t,
 		prev: n.prev,
 		next: n,
 	}
-	n.prev.next = &newNode
-	n.prev = &newNode
+	n.prev.next = newNode
+	n.prev = newNode
 }
 
 func unlink[T any](n *node[T]) {
@@ -165,9 +181,4 @@ func unlink[T any](n *node[T]) {
 	n.next = nil
 }
 
-func sentinel[T any]() node[T] {
-	var n node[T]
-	n.next = &n
-	n.prev = &n
-	return n
-}
+
