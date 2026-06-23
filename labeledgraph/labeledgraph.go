@@ -230,10 +230,20 @@ func (g *LabeledGraph[V, L]) Predecessors(v V) iter.Seq[V] {
 // Edges returns an iterator over all edges in the graph.
 func (g *LabeledGraph[V, L]) Edges() iter.Seq2[V, V] {
 	return func(yield func(V, V) bool) {
-		for u := range g.Vertices() {
-			for v := range g.Successors(u) {
-				if !yield(u, v) {
-					return
+		for u, node := range g.graph {
+			if g.directed {
+				dNode := node.(*directedNodeData[V, L])
+				for v := range dNode.successorLabels {
+					if !yield(u, v) {
+						return
+					}
+				}
+			} else {
+				uNode := node.(*undirectedNodeData[V, L])
+				for v := range uNode.adjacentLabels {
+					if !yield(u, v) {
+						return
+					}
 				}
 			}
 		}
