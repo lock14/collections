@@ -58,6 +58,7 @@ func New[K comparable, V any](opts ...Opt) *LinkedHashMap[K, V] {
 		hashtable:   make(map[K]*node[K, V]),
 		list:        sentinel[K, V](),
 		accessOrder: c.keyOrder,
+		maxElements: c.maxElements,
 	}
 }
 
@@ -88,12 +89,16 @@ func (hm *LinkedHashMap[K, V]) Put(key K, value V) {
 
 func (hm *LinkedHashMap[K, V]) Get(key K) (V, bool) {
 	n, ok := hm.hashtable[key]
-	if ok && bool(hm.accessOrder) {
+	if !ok {
+		var zero V
+		return zero, false
+	}
+	if hm.accessOrder {
 		unlink(n)
 		// make n the tail of the list
 		insertBefore(hm.list, n)
 	}
-	return n.value, ok
+	return n.value, true
 }
 
 func (hm *LinkedHashMap[K, V]) Remove(key K) {
@@ -115,6 +120,11 @@ func (hm *LinkedHashMap[K, V]) Size() int {
 
 func (hm *LinkedHashMap[K, V]) Empty() bool {
 	return hm.Size() == 0
+}
+
+func (hm *LinkedHashMap[K, V]) Clear() {
+	hm.hashtable = make(map[K]*node[K, V])
+	hm.list = sentinel[K, V]()
 }
 
 func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
