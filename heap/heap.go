@@ -144,7 +144,9 @@ func (h *Heap[T]) delete(index int) {
 		h.elements[index] = h.elements[last]
 		h.elements[last] = zero
 		h.elements = h.elements[:last]
-		if h.hasParent(index) && !h.heapCondition(parent(index), index) {
+
+		p := (index - 1) >> 1
+		if index > 0 && h.comparator(h.elements[index], h.elements[p]) <= 0 {
 			h.siftUp(index)
 		} else {
 			h.siftDown(index)
@@ -156,58 +158,36 @@ func (h *Heap[T]) delete(index int) {
 }
 
 func (h *Heap[T]) siftUp(cur int) {
-	for h.hasParent(cur) && h.heapCondition(cur, parent(cur)) {
-		h.swap(parent(cur), cur)
-		cur = parent(cur)
+	elements := h.elements
+	item := elements[cur]
+	for cur > 0 {
+		p := (cur - 1) >> 1
+		if h.comparator(item, elements[p]) <= 0 {
+			elements[cur] = elements[p]
+			cur = p
+		} else {
+			break
+		}
 	}
+	elements[cur] = item
 }
 
 func (h *Heap[T]) siftDown(cur int) {
-	for {
-		best := cur
-		if h.hasLeft(cur) && h.heapCondition(left(cur), best) {
-			best = left(cur)
+	elements := h.elements
+	n := len(elements)
+	item := elements[cur]
+	half := n >> 1
+	for cur < half {
+		child := 2*cur + 1
+		right := child + 1
+		if right < n && h.comparator(elements[right], elements[child]) <= 0 {
+			child = right
 		}
-		if h.hasRight(cur) && h.heapCondition(right(cur), best) {
-			best = right(cur)
-		}
-		if best == cur {
+		if h.comparator(item, elements[child]) <= 0 {
 			break
 		}
-		h.swap(cur, best)
-		cur = best
+		elements[cur] = elements[child]
+		cur = child
 	}
-}
-
-// heapCondition returns true if the element at index i should be placed higher in the heap than the element at index j.
-func (h *Heap[T]) heapCondition(i, j int) bool {
-	return h.comparator(h.elements[i], h.elements[j]) <= 0
-}
-
-func (h *Heap[T]) swap(i, j int) {
-	h.elements[j], h.elements[i] = h.elements[i], h.elements[j]
-}
-
-func (h *Heap[T]) hasParent(index int) bool {
-	return index > 0
-}
-
-func (h *Heap[T]) hasLeft(index int) bool {
-	return left(index) < len(h.elements)
-}
-
-func (h *Heap[T]) hasRight(index int) bool {
-	return right(index) < len(h.elements)
-}
-
-func parent(index int) int {
-	return (index - 1) >> 1
-}
-
-func left(index int) int {
-	return 2*index + 1
-}
-
-func right(index int) int {
-	return 2*index + 2
+	elements[cur] = item
 }
