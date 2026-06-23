@@ -1,14 +1,17 @@
 package labeledgraph
 
 import (
+	"fmt"
 	"github.com/lock14/collections/hashset"
 	"iter"
 	"maps"
+	"strings"
 )
 
 // Config holds configuration values for New to use when contracting a LabeledGraph.
 type Config struct {
 	directed bool
+	capacity int
 }
 
 // Opt represents a configuration option for constructing a LabeledGraph.
@@ -18,6 +21,13 @@ type Opt func(g *Config)
 func Directed() Opt {
 	return func(g *Config) {
 		g.directed = true
+	}
+}
+
+// Capacity is an option that configures New to pre-allocate the graph with the given capacity.
+func Capacity(n int) Opt {
+	return func(g *Config) {
+		g.capacity = n
 	}
 }
 
@@ -36,7 +46,7 @@ func New[V comparable, L any](opts ...Opt) *LabeledGraph[V, L] {
 		opt(config)
 	}
 	return &LabeledGraph[V, L]{
-		graph:     make(map[V]nodeData[V, L]),
+		graph:     make(map[V]nodeData[V, L], config.capacity),
 		directed:  config.directed,
 		edgeCount: 0,
 	}
@@ -299,6 +309,119 @@ func (g *LabeledGraph[V, L]) OutIncidentEdges(u V) iter.Seq2[V, V] {
 			}
 		}
 	}
+}
+
+// Clear removes all vertices and edges from the graph.
+func (g *LabeledGraph[V, L]) Clear() {
+	clear(g.graph)
+	g.edgeCount = 0
+}
+
+// Clone returns a deep copy of the graph.
+func (g *LabeledGraph[V, L]) Clone() *LabeledGraph[V, L] {
+	clone := &LabeledGraph[V, L]{
+		graph:     make(map[V]nodeData[V, L], len(g.graph)),
+		directed:  g.directed,
+		edgeCount: g.edgeCount,
+	}
+
+	for v, data := range g.graph {
+		if g.directed {
+			dNode := data.(*directedNodeData[V, L])
+			clonedSuccessors := make(map[V]L, len(dNode.successorLabels))
+			for s, l := range dNode.successorLabels {
+				clonedSuccessors[s] = l
+			}
+			clonedPreds := hashset.New[V]()
+			for p := range dNode.preds.All() {
+				clonedPreds.Add(p)
+			}
+			clone.graph[v] = &directedNodeData[V, L]{
+				successorLabels: clonedSuccessors,
+				preds:           clonedPreds,
+			}
+		} else {
+			uNode := data.(*undirectedNodeData[V, L])
+			clonedAdjacent := make(map[V]L, len(uNode.adjacentLabels))
+			for s, l := range uNode.adjacentLabels {
+				clonedAdjacent[s] = l
+			}
+			clone.graph[v] = &undirectedNodeData[V, L]{
+				adjacentLabels: clonedAdjacent,
+			}
+		}
+	}
+	return clone
+}
+
+// Equal returns true if the two graphs are structurally identical and all edge labels are equal according to the provided eq function.
+func (g *LabeledGraph[V, L]) Equal(other *LabeledGraph[V, L], eq func(L, L) bool) bool {
+	if g.directed != other.directed || g.Order() != other.Order() || g.Size() != other.Size() {
+		return false
+	}
+
+	for v := range g.Vertices() {
+		if !other.ContainsVertex(v) {
+			return false
+		}
+	}
+
+	for u, v := range g.Edges() {
+		if !other.ContainsEdge(u, v) {
+			return false
+		}
+		l1, _ := g.Label(u, v)
+		l2, _ := other.Label(u, v)
+		if !eq(l1, l2) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// String returns a string representation of the graph.
+func (g *LabeledGraph[V, L]) String() string {
+	var sb strings.Builder
+	sb.WriteString("[")
+	first := true
+
+	type edgePair struct{ u, v V }
+	seen := make(map[edgePair]bool)
+
+	for u, v := range g.Edges() {
+		if !g.directed {
+			if seen[edgePair{u, v}] || seen[edgePair{v, u}] {
+				continue
+			}
+			seen[edgePair{u, v}] = true
+		}
+		
+		if !first {
+			sb.WriteString(", ")
+		}
+		l, _ := g.Label(u, v)
+		if g.directed {
+			sb.WriteString(fmt.Sprintf("%v -> %v: %v", u, v, l))
+		} else {
+			sb.WriteString(fmt.Sprintf("%v - %v: %v", u, v, l))
+		}
+		first = false
+	}
+
+	for v := range g.Vertices() {
+		deg, _ := g.Degree(v)
+		if deg == 0 {
+			if !first {
+				sb.WriteString(", ")
+			}
+			sb.WriteString(fmt.Sprintf("%v", v))
+			first = false
+		}
+	}
+
+	sb.WriteString("]")
+	return sb.String()
 }
 
 func (g *LabeledGraph[V, L]) nodeData() nodeData[V, L] {

@@ -2,6 +2,7 @@ package labeledgraph
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -401,6 +402,115 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 				want := []int{2, 3}
 				if !slices.Equal(got, want) {
 					t.Errorf("expected neighbors %v, got %v", want, got)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := New[int, string](tc.opts...)
+			tc.check(t, g)
+		})
+	}
+}
+
+func TestLabeledGraph_Features(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		opts  []Opt
+		check func(*testing.T, *LabeledGraph[int, string])
+	}{
+		{
+			name: "capacity",
+			opts: []Opt{Capacity(100)},
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddVertex(1)
+				if g.Order() != 1 {
+					t.Errorf("expected order 1, got %d", g.Order())
+				}
+			},
+		},
+		{
+			name: "clear",
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddEdge(1, 2, "1-2")
+				g.Clear()
+				if g.Order() != 0 || g.Size() != 0 {
+					t.Errorf("expected empty graph after clear")
+				}
+				if len(slices.Collect(g.Vertices())) != 0 {
+					t.Errorf("expected no vertices")
+				}
+			},
+		},
+		{
+			name: "clone",
+			opts: []Opt{Directed()},
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddEdge(1, 2, "1->2")
+				g.AddVertex(3)
+				
+				clone := g.Clone()
+				if clone.Order() != 3 || clone.Size() != 1 {
+					t.Errorf("clone has wrong order/size")
+				}
+				
+				// Mutate original, should not affect clone
+				g.AddEdge(2, 3, "2->3")
+				if clone.Size() != 1 {
+					t.Errorf("clone was affected by mutation to original")
+				}
+			},
+		},
+		{
+			name: "equal",
+			opts: []Opt{Directed()},
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddEdge(1, 2, "A")
+				g.AddVertex(3)
+				
+				other := New[int, string](Directed())
+				other.AddEdge(1, 2, "A")
+				other.AddVertex(3)
+				
+				eqFunc := func(a, b string) bool { return a == b }
+				
+				if !g.Equal(other, eqFunc) {
+					t.Errorf("expected graphs to be equal")
+				}
+				
+				other.AddEdge(2, 3, "B")
+				if g.Equal(other, eqFunc) {
+					t.Errorf("expected graphs to not be equal")
+				}
+			},
+		},
+		{
+			name: "string_directed",
+			opts: []Opt{Directed()},
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddEdge(1, 2, "A")
+				g.AddVertex(3)
+				str := g.String()
+				// Non-deterministic map iteration means we should just check contains
+				if !strings.Contains(str, "1 -> 2: A") {
+					t.Errorf("string missing edge: %s", str)
+				}
+				if !strings.Contains(str, "3") {
+					t.Errorf("string missing isolated vertex: %s", str)
+				}
+			},
+		},
+		{
+			name: "string_undirected",
+			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				g.AddEdge(1, 2, "A")
+				str := g.String()
+				if !strings.Contains(str, "1 - 2: A") && !strings.Contains(str, "2 - 1: A") {
+					t.Errorf("string missing edge: %s", str)
 				}
 			},
 		},
