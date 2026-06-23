@@ -8,7 +8,10 @@ import (
 	"strings"
 )
 
-var _ collections.MutableList[int] = (*SliceWrapper[int])(nil)
+var (
+	_ collections.MutableList[int]  = (*SliceWrapper[int])(nil)
+	_ collections.MutableStack[int] = (*SliceWrapper[int])(nil)
+)
 
 type SliceWrapper[T any] struct {
 	slice []T
@@ -25,11 +28,14 @@ func (l *SliceWrapper[T]) Add(t T) {
 }
 
 func (l *SliceWrapper[T]) Remove() T {
-	if l.Empty() {
+	if len(l.slice) == 0 {
 		panic("cannot remove from an empty list")
 	}
-	t := l.slice[l.Size()-1]
-	l.slice = l.slice[0 : l.Size()-1]
+	idx := len(l.slice) - 1
+	t := l.slice[idx]
+	var zero T
+	l.slice[idx] = zero // avoid memory leak
+	l.slice = l.slice[:idx]
 	return t
 }
 
@@ -39,6 +45,22 @@ func (l *SliceWrapper[T]) Push(t T) {
 
 func (l *SliceWrapper[T]) Pop() T {
 	return l.Remove()
+}
+
+func (l *SliceWrapper[T]) Peek() T {
+	if len(l.slice) == 0 {
+		panic("cannot peek from an empty list")
+	}
+	return l.slice[len(l.slice)-1]
+}
+
+func (l *SliceWrapper[T]) Clear() {
+	// Zero out to avoid memory leaks
+	var zero T
+	for i := range l.slice {
+		l.slice[i] = zero
+	}
+	l.slice = l.slice[:0]
 }
 
 func (l *SliceWrapper[T]) AddAll(sequence iter.Seq[T]) {
@@ -52,7 +74,7 @@ func (l *SliceWrapper[T]) Size() int {
 }
 
 func (l *SliceWrapper[T]) Empty() bool {
-	return l.Size() == 0
+	return len(l.slice) == 0
 }
 
 func (l *SliceWrapper[T]) Get(index int) T {
