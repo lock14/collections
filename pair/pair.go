@@ -1,12 +1,15 @@
+// Package pair provides a generic 2-element tuple.
 package pair
 
 import "fmt"
 
+// Pair represents a generic 2-element tuple.
 type Pair[T1 any, T2 any] struct {
 	fst T1
 	snd T2
 }
 
+// New creates a new Pair.
 func New[T1 any, T2 any](t1 T1, t2 T2) Pair[T1, T2] {
 	return Pair[T1, T2]{
 		fst: t1,

@@ -1,3 +1,4 @@
+// Package arraydeque provides an array-backed double-ended queue.
 package arraydeque
 
 import (

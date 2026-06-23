@@ -1,3 +1,4 @@
+// Package labeledgraph provides graph data structures with edge labels.
 package labeledgraph
 
 import (

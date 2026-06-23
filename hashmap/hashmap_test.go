@@ -123,6 +123,28 @@ func TestHashMap_Operations(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "all_iterator",
+			check: func(t *testing.T, hm *HashMap[int, string]) {
+				hm.Put(1, "a")
+				hm.Put(2, "b")
+				
+				var keys []int
+				var vals []string
+				for k, v := range hm.All() {
+					keys = append(keys, k)
+					vals = append(vals, v)
+				}
+				sort.Ints(keys)
+				sort.Strings(vals)
+				if !slices.Equal(keys, []int{1, 2}) {
+					t.Errorf("keys wrong")
+				}
+				if !slices.Equal(vals, []string{"a", "b"}) {
+					t.Errorf("values wrong")
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc

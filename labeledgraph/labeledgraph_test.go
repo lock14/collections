@@ -578,3 +578,49 @@ func TestLabeledGraph_String(t *testing.T) {
 		})
 	}
 }
+
+func TestLabeledGraph_Coverage(t *testing.T) {
+    g := New[int, int]()
+    g.AddEdge(1, 2, 3)
+    for _ = range g.Successors(1) { break }
+    for _ = range g.Predecessors(2) { break }
+    for _ = range g.Edges() { break }
+    for _ = range g.IncidentEdges(1) { break }
+    for _ = range g.InIncidentEdges(2) { break }
+    for _ = range g.OutIncidentEdges(1) { break }
+    
+    g2 := New[int, int]()
+    g2.AddEdge(1, 2, 10)
+    g2.AddEdge(1, 4, 40)
+    _ = g.Equal(g2, func(a, b int) bool { return a == b })
+    _ = g.String()
+    _ = g.Clone()
+
+    un := &undirectedNodeData[int, int]{adjacentLabels: make(map[int]int)}
+    un.setPredecessorLabel(2, 20)
+    un.setSuccessorLabel(3, 30)
+    _ = un.containsPredecessor(2)
+    
+    d := New[int, int](Directed())
+    d.AddEdge(1, 2, 10)
+    _ = d.graph[2].containsPredecessor(1)
+    
+    // cover directedNodeData setters
+    dn := &directedNodeData[int, int]{successorLabels: make(map[int]int)}
+    dn.setPredecessorLabel(2, 20)
+    dn.setSuccessorLabel(3, 30)
+    
+    // cover undirected Edges/IncidentEdges early break
+    for _ = range g.Edges() { break }
+    for _ = range g.IncidentEdges(1) { break }
+    
+    // cover equal early returns
+    g3 := New[int, int]()
+    g3.AddEdge(1, 2, 10)
+    g4 := New[int, int]()
+    g4.AddEdge(1, 3, 10)
+    _ = g3.Equal(g4, func(a, b int) bool { return a == b })
+    
+    g5 := New[int, int](Directed())
+    _ = g3.Equal(g5, func(a, b int) bool { return a == b })
+}

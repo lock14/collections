@@ -198,6 +198,18 @@ func TestHashSet_BulkOperations(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "string",
+			check: func(t *testing.T, s *HashSet[int]) {
+				if s.String() != "[]" {
+					t.Errorf("expected [], got %s", s.String())
+				}
+				s.Add(1)
+				if s.String() != "[1]" {
+					t.Errorf("expected [1], got %s", s.String())
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc

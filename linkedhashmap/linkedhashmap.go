@@ -1,3 +1,4 @@
+// Package linkedhashmap provides a hash map that preserves insertion order.
 package linkedhashmap
 
 import (
@@ -13,34 +14,41 @@ const (
 
 var _ collections.MutableMap[int, int] = (*LinkedHashMap[int, int])(nil)
 
+// KeyOrder represents the iteration order of the linked hash map.
 type KeyOrder bool
 
+// Config holds the configuration for a LinkedHashMap.
 type Config struct {
 	keyOrder    KeyOrder
 	maxElements int
 	capacity    int
 }
 
+// Opt is a function that configures a LinkedHashMap.
 type Opt func(*Config)
 
+// WithAccessOrder configures the LinkedHashMap to iterate over elements in the order they were last accessed.
 func WithAccessOrder() Opt {
 	return func(config *Config) {
 		config.keyOrder = AccessOrder
 	}
 }
 
+// WithInsertionOrder configures the LinkedHashMap to iterate over elements in the order they were inserted.
 func WithInsertionOrder() Opt {
 	return func(config *Config) {
 		config.keyOrder = InsertionOrder
 	}
 }
 
+// WithMaxElements configures the maximum number of elements the LinkedHashMap can hold before evicting.
 func WithMaxElements(max int) Opt {
 	return func(config *Config) {
 		config.maxElements = max
 	}
 }
 
+// WithCapacity configures the initial capacity of the underlying map.
 func WithCapacity(capacity int) Opt {
 	return func(config *Config) {
 		config.capacity = capacity
@@ -49,6 +57,7 @@ func WithCapacity(capacity int) Opt {
 
 // public functions/receivers
 
+// LinkedHashMap is a hash map that preserves insertion or access order.
 type LinkedHashMap[K comparable, V any] struct {
 	hashtable   map[K]*node[K, V]
 	list        *node[K, V]
@@ -56,6 +65,7 @@ type LinkedHashMap[K comparable, V any] struct {
 	maxElements int
 }
 
+// New creates a new LinkedHashMap with the given options.
 func New[K comparable, V any](opts ...Opt) *LinkedHashMap[K, V] {
 	c := defaultConfig()
 	for _, opt := range opts {

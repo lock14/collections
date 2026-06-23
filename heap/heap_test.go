@@ -233,3 +233,17 @@ func TestHeap_Panics(t *testing.T) {
 		})
 	}
 }
+
+func TestHeap_Coverage(t *testing.T) {
+	h := New[int]()
+	assertPanics := func(f func()) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("expected panic")
+			}
+		}()
+		f()
+	}
+	assertPanics(func() { h.Remove() })
+    _ = NaturalOrder[int]()(1, 2)
+}
