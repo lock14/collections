@@ -1,0 +1,44 @@
+name: Benchmark Regression Check
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history is required to compare against base branch
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install cob
+        run: go install github.com/knqyf263/cob@latest
+
+      - name: Determine changed packages
+        id: changed-pkgs
+        run: |
+          GO_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- '*.go')
+          
+          if [ -z "$GO_FILES" ]; then
+            echo "No Go files changed. Skipping benchmarks."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            # Extract unique directories and prepend ./
+            PKGS=$(echo "$GO_FILES" | xargs dirname | sort -u | awk '{print "./" $0}' | tr '\n' ' ')
+            echo "Testing packages: $PKGS"
+            echo "pkgs=$PKGS" >> $GITHUB_OUTPUT
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run cob (Performance Regression Check)
+        if: steps.changed-pkgs.outputs.skip == 'false'
+        # Compares PR HEAD against the target branch
+        # Fails the pipeline if there is > 20% degradation
+        run: cob -base origin/${{ github.base_ref }} -bench-args "test -run '^$' -bench . -benchmem -benchtime=1s -timeout=30m ${{ steps.changed-pkgs.outputs.pkgs }}"
