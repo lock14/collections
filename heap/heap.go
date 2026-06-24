@@ -4,6 +4,7 @@ package heap
 import (
 	"cmp"
 	"github.com/lock14/collections"
+	"github.com/lock14/collections/comparator"
 	"iter"
 	"slices"
 )
@@ -14,42 +15,19 @@ const (
 
 var _ collections.MutableQueue[int] = (*Heap[int])(nil)
 
-// Comparator is a function that compares two elements.
-type Comparator[T any] func(t1, t2 T) int
-
-// NaturalOrder returns a comparator that orders elements using their natural ordering.
-func NaturalOrder[T cmp.Ordered]() Comparator[T] {
-	return func(t1, t2 T) int {
-		if t1 < t2 {
-			return -1
-		} else if t1 > t2 {
-			return 1
-		} else {
-			return 0
-		}
-	}
-}
-
-// Reversed returns a comparator that reverses the ordering of the given comparator.
-func Reversed[T any](comparator Comparator[T]) Comparator[T] {
-	return func(t1, t2 T) int {
-		return -comparator(t1, t2)
-	}
-}
-
 // Option is a function that configures a Heap.
 type Option[T any] func(config *Config[T])
 
 // Config holds the configuration for a Heap.
 type Config[T any] struct {
 	capacity   int
-	comparator Comparator[T]
+	comparator comparator.Comparator[T]
 }
 
 // WithComparator configures the comparator used by the Heap.
-func WithComparator[T any](comparator Comparator[T]) Option[T] {
+func WithComparator[T any](cmpFunc comparator.Comparator[T]) Option[T] {
 	return func(config *Config[T]) {
-		config.comparator = comparator
+		config.comparator = cmpFunc
 	}
 }
 
@@ -63,7 +41,7 @@ func Capacity[T any](capacity int) Option[T] {
 // Heap is a binary heap priority queue.
 type Heap[T any] struct {
 	elements   []T
-	comparator Comparator[T]
+	comparator comparator.Comparator[T]
 }
 
 // New creates a new Heap with the given options.
@@ -80,12 +58,12 @@ func New[T any](opts ...Option[T]) *Heap[T] {
 
 // Min creates a new Min-Heap using natural ordering.
 func Min[T cmp.Ordered]() *Heap[T] {
-	return New[T](WithComparator(NaturalOrder[T]()))
+	return New[T](WithComparator(comparator.NaturalOrder[T]()))
 }
 
 // Max creates a new Max-Heap using reversed natural ordering.
 func Max[T cmp.Ordered]() *Heap[T] {
-	return New[T](WithComparator(Reversed(NaturalOrder[T]())))
+	return New[T](WithComparator(comparator.Reverse(comparator.NaturalOrder[T]())))
 }
 
 func (h *Heap[T]) Add(t T) {

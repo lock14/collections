@@ -2,6 +2,7 @@ package heap
 
 import (
 	"github.com/lock14/collections"
+	"github.com/lock14/collections/comparator"
 	"slices"
 	"testing"
 )
@@ -245,5 +246,5 @@ func TestHeap_Coverage(t *testing.T) {
 		f()
 	}
 	assertPanics(func() { h.Remove() })
-    _ = NaturalOrder[int]()(1, 2)
+    _ = comparator.NaturalOrder[int]()(1, 2)
 }
