@@ -32,7 +32,7 @@ func (tm *TreeMap[K, V]) Empty() bool {
 }
 
 func (tm *TreeMap[K, V]) Clear() {
-	tm.root = newNode[K, V](true)
+	tm.root = tm.newNode(true)
 	tm.size = 0
 }
 

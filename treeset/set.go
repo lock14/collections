@@ -60,7 +60,7 @@ func (s *TreeSet[T]) RemoveAll(other collections.Collection[T]) {
 
 // RetainAll retains only the elements in this set that are contained in the specified collection.
 func (s *TreeSet[T]) RetainAll(other collections.Collection[T]) {
-	var intersection []T
+	intersection := make([]T, 0, min(s.Size(), other.Size()))
 	for t := range other.All() {
 		if s.Contains(t) {
 			intersection = append(intersection, t)
