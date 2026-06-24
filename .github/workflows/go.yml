@@ -23,6 +23,15 @@ jobs:
         with:
           go-version: '${{ env.GO_VERSION }}'
 
+      - name: Check Formatting
+        run: |
+          if [ -n "$(gofmt -s -l .)" ]; then
+            echo "The following files are not formatted properly:"
+            gofmt -s -l .
+            echo "Please run 'gofmt -s -w .' locally and commit the changes."
+            exit 1
+          fi
+
       - name: Build
         run: go build -v ./...
 

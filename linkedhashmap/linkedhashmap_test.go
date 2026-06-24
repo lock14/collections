@@ -103,7 +103,7 @@ func TestLinkedHashMap_Get(t *testing.T) {
 				if !ok || val != 10 {
 					t.Errorf("expected 10")
 				}
-				
+
 				keys := slices.Collect(m.Keys())
 				if !slices.Equal(keys, []int{1, 2}) {
 					t.Errorf("expected [1, 2], got %v", keys)
@@ -120,7 +120,7 @@ func TestLinkedHashMap_Get(t *testing.T) {
 				if !ok || val != 10 {
 					t.Errorf("expected 10")
 				}
-				
+
 				// 1 should now be the most recently accessed (at the tail)
 				keys := slices.Collect(m.Keys())
 				if !slices.Equal(keys, []int{2, 1}) {

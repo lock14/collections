@@ -73,7 +73,7 @@ func BenchmarkSetBits_Sparse(b *testing.B) {
 	bs.Set(0)
 	bs.Set(5)
 	bs.Set(63)
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for range bs.SetBits() {

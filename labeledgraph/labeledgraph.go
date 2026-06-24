@@ -397,7 +397,7 @@ func (g *LabeledGraph[V, L]) String() string {
 			}
 			seen[edgePair{u, v}] = true
 		}
-		
+
 		if !first {
 			sb.WriteString(", ")
 		}

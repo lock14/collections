@@ -36,7 +36,7 @@ func BenchmarkSliceWrapper_Set(b *testing.B) {
 	l := arraylist.Wrap(make([]int, 1000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		l.Set(i % 1000, i)
+		l.Set(i%1000, i)
 	}
 }
 
@@ -44,7 +44,7 @@ func BenchmarkSliceWrapper_IterateAll(b *testing.B) {
 	l := arraylist.Wrap(make([]int, 1000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _ = range l.All() {
+		for range l.All() {
 		}
 	}
 }

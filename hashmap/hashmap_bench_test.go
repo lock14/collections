@@ -50,7 +50,7 @@ func BenchmarkHashMap_IterateAll(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, _ = range hm.All() {
+		for range hm.All() {
 		}
 	}
 }

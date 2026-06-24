@@ -71,7 +71,7 @@ func (tm *TreeMap[K, V]) inOrder(n *node[K, V], yield func(K, V) bool) bool {
 
 func (tm *TreeMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for k, _ := range tm.All() {
+		for k := range tm.All() {
 			if !yield(k) {
 				return
 			}

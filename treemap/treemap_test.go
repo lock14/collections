@@ -310,16 +310,16 @@ func TestTreeMap_GetSuccessor(t *testing.T) {
 	tm.Put(30, 30)
 	tm.Put(40, 40)
 	tm.Put(50, 50)
-	
+
 	// Root is [20, 40].
 	// Children of 20, 40 are: [10], [30], [50] (if t=2).
 	// Let's make right child of 20 have more keys.
 	tm.Put(35, 35) // Now [30, 35]
-	
+
 	// Left child of 20 is [10] (t-1 = 1). Right child of 20 is [30, 35] (>= t = 2).
 	// If we delete 20, it should borrow from the right child (getSuccessor).
 	tm.Remove(20)
-	
+
 	if tm.ContainsKey(20) {
 		t.Errorf("20 should be removed")
 	}

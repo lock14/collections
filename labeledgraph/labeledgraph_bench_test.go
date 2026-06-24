@@ -58,7 +58,7 @@ func BenchmarkLabeledGraph_IterateVertices(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _ = range g.Vertices() {
+		for range g.Vertices() {
 		}
 	}
 }
@@ -70,7 +70,7 @@ func BenchmarkLabeledGraph_IterateEdges(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, _ = range g.Edges() {
+		for range g.Edges() {
 		}
 	}
 }
@@ -82,7 +82,7 @@ func BenchmarkLabeledGraph_IncidentEdges(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, _ = range g.IncidentEdges(0) {
+		for range g.IncidentEdges(0) {
 		}
 	}
 }

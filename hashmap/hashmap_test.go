@@ -66,7 +66,7 @@ func TestHashMap_Operations(t *testing.T) {
 				hm.Put(1, "a")
 				hm.Put(2, "b")
 				hm.Put(1, "c") // overwrite
-				
+
 				if hm.Size() != 2 {
 					t.Errorf("expected size 2")
 				}
@@ -87,7 +87,7 @@ func TestHashMap_Operations(t *testing.T) {
 				hm.Put(1, "a")
 				hm.Remove(1)
 				hm.Remove(2) // non-existent
-				
+
 				if !hm.Empty() {
 					t.Errorf("expected empty")
 				}
@@ -98,7 +98,7 @@ func TestHashMap_Operations(t *testing.T) {
 			check: func(t *testing.T, hm *HashMap[int, string]) {
 				hm.Put(1, "a")
 				hm.Clear()
-				
+
 				if hm.Size() != 0 {
 					t.Errorf("expected empty")
 				}
@@ -109,13 +109,13 @@ func TestHashMap_Operations(t *testing.T) {
 			check: func(t *testing.T, hm *HashMap[int, string]) {
 				hm.Put(1, "a")
 				hm.Put(2, "b")
-				
+
 				keys := slices.Collect(hm.Keys())
 				sort.Ints(keys)
 				if !slices.Equal(keys, []int{1, 2}) {
 					t.Errorf("keys wrong")
 				}
-				
+
 				vals := slices.Collect(hm.Values())
 				sort.Strings(vals)
 				if !slices.Equal(vals, []string{"a", "b"}) {
@@ -128,7 +128,7 @@ func TestHashMap_Operations(t *testing.T) {
 			check: func(t *testing.T, hm *HashMap[int, string]) {
 				hm.Put(1, "a")
 				hm.Put(2, "b")
-				
+
 				var keys []int
 				var vals []string
 				for k, v := range hm.All() {
