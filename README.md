@@ -2,6 +2,7 @@
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/lock14/collections)](https://go.dev/)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/lock14/collections/go.yml?branch=main)](https://github.com/lock14/collections/actions)
+[![Benchmarks](https://img.shields.io/github/actions/workflow/status/lock14/collections/benchmark.yml?branch=main&label=Benchmarks)](https://github.com/lock14/collections/actions/workflows/benchmark.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/lock14/collections)](https://codecov.io/gh/lock14/collections)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lock14/collections)](https://goreportcard.com/report/github.com/lock14/collections)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lock14/collections.svg)](https://pkg.go.dev/github.com/lock14/collections)
@@ -74,4 +75,4 @@ Contributions are welcome! We require all tests to pass and benchmarks to show n
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
