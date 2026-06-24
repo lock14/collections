@@ -1,0 +1,27 @@
+name: Benchmark Regression Check
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history is required to compare against base branch
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install cob
+        run: go install github.com/knqyf263/cob@latest
+
+      - name: Run cob (Performance Regression Check)
+        # Compares PR HEAD against the target branch
+        # Fails the pipeline if there is > 20% degradation
+        run: cob -base origin/${{ github.base_ref }} -bench-args "test -run '^$' -bench . -benchmem -benchtime=2s ./..."
