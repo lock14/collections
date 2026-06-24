@@ -1,6 +1,7 @@
 package heap_test
 
 import (
+	"github.com/lock14/collections/comparator"
 	"github.com/lock14/collections/heap"
 	"testing"
 )
@@ -14,7 +15,7 @@ func BenchmarkHeap_Add(b *testing.B) {
 }
 
 func BenchmarkHeap_Add_Preallocated(b *testing.B) {
-	h := heap.New[int](heap.Capacity[int](b.N), heap.WithComparator(heap.NaturalOrder[int]()))
+	h := heap.New[int](heap.Capacity[int](b.N), heap.WithComparator(comparator.NaturalOrder[int]()))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		h.Add(i)
