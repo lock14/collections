@@ -61,7 +61,7 @@ func BenchmarkArrayDeque_IterateAll(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _ = range d.All() {
+		for range d.All() {
 		}
 	}
 }
@@ -73,7 +73,7 @@ func BenchmarkArrayDeque_IterateBackward(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _ = range d.Backward() {
+		for range d.Backward() {
 		}
 	}
 }

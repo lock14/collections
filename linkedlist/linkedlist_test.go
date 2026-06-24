@@ -91,7 +91,7 @@ func TestLinkedList_GetSet(t *testing.T) {
 				l.AddBack(10)
 				l.AddBack(20)
 				l.AddBack(30)
-				
+
 				if val := l.Get(0); val != 10 {
 					t.Errorf("expected 10, got %d", val)
 				}
@@ -108,7 +108,7 @@ func TestLinkedList_GetSet(t *testing.T) {
 			check: func(t *testing.T, l *LinkedList[int]) {
 				l.AddBack(10)
 				l.AddBack(20)
-				
+
 				l.Set(1, 100)
 				if val := l.Get(1); val != 100 {
 					t.Errorf("expected 100, got %d", val)

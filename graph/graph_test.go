@@ -127,7 +127,7 @@ func TestGraph_Iterators(t *testing.T) {
 	if !slices.Equal(preds, []int{1}) {
 		t.Errorf("unexpected predecessors")
 	}
-	
+
 	neighs := slices.Collect(g.Neighbors(2))
 	if !slices.Equal(neighs, []int{3}) {
 		t.Errorf("unexpected neighbors")
@@ -138,7 +138,9 @@ func TestGraph_Iterators(t *testing.T) {
 		edges = append(edges, edge{u, v})
 	}
 	slices.SortFunc(edges, func(a, b edge) int {
-		if a.u != b.u { return a.u - b.u }
+		if a.u != b.u {
+			return a.u - b.u
+		}
 		return a.v - b.v
 	})
 	if !slices.Equal(edges, []edge{{1, 2}, {2, 3}}) {
@@ -150,13 +152,15 @@ func TestGraph_Iterators(t *testing.T) {
 		incident = append(incident, edge{u, v})
 	}
 	slices.SortFunc(incident, func(a, b edge) int {
-		if a.u != b.u { return a.u - b.u }
+		if a.u != b.u {
+			return a.u - b.u
+		}
 		return a.v - b.v
 	})
 	if !slices.Equal(incident, []edge{{1, 2}, {2, 3}}) {
 		t.Errorf("unexpected incident edges")
 	}
-	
+
 	var inIncident []edge
 	for u, v := range g.InIncidentEdges(2) {
 		inIncident = append(inIncident, edge{u, v})
@@ -164,7 +168,7 @@ func TestGraph_Iterators(t *testing.T) {
 	if !slices.Equal(inIncident, []edge{{1, 2}}) {
 		t.Errorf("unexpected in-incident edges")
 	}
-	
+
 	var outIncident []edge
 	for u, v := range g.OutIncidentEdges(2) {
 		outIncident = append(outIncident, edge{u, v})
@@ -202,14 +206,14 @@ func TestGraph_Equal(t *testing.T) {
 	t.Parallel()
 	g1 := New[int]()
 	g1.AddEdge(1, 2)
-	
+
 	g2 := New[int]()
 	g2.AddEdge(1, 2)
-	
+
 	if !g1.Equal(g2) {
 		t.Errorf("expected equal")
 	}
-	
+
 	g2.AddEdge(2, 3)
 	if g1.Equal(g2) {
 		t.Errorf("expected not equal")
@@ -218,7 +222,7 @@ func TestGraph_Equal(t *testing.T) {
 
 func TestGraph_String(t *testing.T) {
 	t.Parallel()
-	
+
 	g1 := New[int](Directed())
 	g1.AddEdge(1, 2)
 	g1.AddVertex(3)
@@ -229,7 +233,7 @@ func TestGraph_String(t *testing.T) {
 	if strings.Contains(str1, "{}") {
 		t.Errorf("unexpected void struct in string: %s", str1)
 	}
-	
+
 	g2 := New[int]()
 	g2.AddEdge(1, 2)
 	str2 := g2.String()
@@ -239,7 +243,7 @@ func TestGraph_String(t *testing.T) {
 }
 
 func TestGraph_Coverage(t *testing.T) {
-    g := New[int]()
-    g.AddEdge(1, 2)
-    _ = g.String()
+	g := New[int]()
+	g.AddEdge(1, 2)
+	_ = g.String()
 }

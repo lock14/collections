@@ -181,7 +181,7 @@ func (g *Graph[V]) String() string {
 			}
 			seen[edgePair{u, v}] = true
 		}
-		
+
 		if !first {
 			sb.WriteString(", ")
 		}

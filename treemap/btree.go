@@ -74,11 +74,11 @@ func (tm *TreeMap[K, V]) splitChild(x *node[K, V], i int, y *node[K, V]) {
 	// Copy the upper t-1 keys and values from y to z
 	z.keys = append(z.keys, y.keys[t:]...)
 	z.values = append(z.values, y.values[t:]...)
-	
+
 	// Truncate y's keys and values
 	midKey := y.keys[t-1]
 	midVal := y.values[t-1]
-	
+
 	var zeroK K
 	var zeroV V
 	for j := t - 1; j < len(y.keys); j++ {
@@ -176,7 +176,7 @@ func (tm *TreeMap[K, V]) deleteNode(x *node[K, V], key K) {
 		if x.leaf {
 			return
 		}
-		
+
 		// Ensure the child we descend into has at least t keys
 		if len(x.children[i].keys) == t-1 {
 			tm.fill(x, i)

@@ -58,7 +58,7 @@ func BenchmarkHeap_IterateAll(b *testing.B) {
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _ = range h.All() {
+		for range h.All() {
 		}
 	}
 }

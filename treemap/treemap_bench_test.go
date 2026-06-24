@@ -2,9 +2,9 @@ package treemap_test
 
 import (
 	"fmt"
+	"github.com/lock14/collections/treemap"
 	"math/rand"
 	"testing"
-	"github.com/lock14/collections/treemap"
 )
 
 func BenchmarkTreeMap_Put(b *testing.B) {

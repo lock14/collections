@@ -259,7 +259,7 @@ func TestLabeledGraph_Degree(t *testing.T) {
 				g.AddEdge(2, 1, "2->1")
 				g.AddEdge(1, 3, "1->3")
 				g.AddEdge(1, 1, "1->1") // self loop
-				
+
 				if deg, ok := g.Degree(1); !ok || deg != 5 { // 3 out, 1 in (wait: 2->1 in, 1->1 in; 1->2 out, 1->3 out, 1->1 out)
 					// Let's count properly: In: 2->1, 1->1 (2). Out: 1->2, 1->3, 1->1 (3). Total 5.
 					t.Errorf("expected degree 5, got %d", deg)
@@ -278,7 +278,7 @@ func TestLabeledGraph_Degree(t *testing.T) {
 				g.AddEdge(1, 2, "1-2")
 				g.AddEdge(1, 3, "1-3")
 				g.AddEdge(1, 1, "1-1") // self loop
-				
+
 				if deg, ok := g.Degree(1); !ok || deg != 3 {
 					t.Errorf("expected degree 3, got %d", deg)
 				}
@@ -315,7 +315,7 @@ func TestLabeledGraph_Degree(t *testing.T) {
 	}
 }
 
-type edge struct { u, v int }
+type edge struct{ u, v int }
 
 func TestLabeledGraph_Iterators(t *testing.T) {
 	t.Parallel()
@@ -351,14 +351,14 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 				if !slices.Equal(got, want) {
 					t.Errorf("expected successors %v, got %v", want, got)
 				}
-				
+
 				gotPreds := slices.Collect(g.Predecessors(1))
 				slices.Sort(gotPreds)
 				wantPreds := []int{4}
 				if !slices.Equal(gotPreds, wantPreds) {
 					t.Errorf("expected predecessors %v, got %v", wantPreds, gotPreds)
 				}
-				
+
 				if len(slices.Collect(g.Successors(99))) != 0 {
 					t.Errorf("expected empty iterator for missing vertex")
 				}
@@ -374,13 +374,15 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 				g.AddEdge(1, 2, "")
 				g.AddEdge(2, 3, "")
 				g.AddEdge(4, 2, "")
-				
+
 				var edges []edge
 				for u, v := range g.Edges() {
 					edges = append(edges, edge{u, v})
 				}
 				slices.SortFunc(edges, func(a, b edge) int {
-					if a.u != b.u { return a.u - b.u }
+					if a.u != b.u {
+						return a.u - b.u
+					}
 					return a.v - b.v
 				})
 				wantEdges := []edge{{1, 2}, {2, 3}, {4, 2}}
@@ -393,7 +395,9 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 					incident = append(incident, edge{u, v})
 				}
 				slices.SortFunc(incident, func(a, b edge) int {
-					if a.u != b.u { return a.u - b.u }
+					if a.u != b.u {
+						return a.u - b.u
+					}
 					return a.v - b.v
 				})
 				wantIncident := []edge{{1, 2}, {2, 3}, {4, 2}}
@@ -470,12 +474,12 @@ func TestLabeledGraph_Clone(t *testing.T) {
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "1->2")
 				g.AddVertex(3)
-				
+
 				clone := g.Clone()
 				if clone.Order() != 3 || clone.Size() != 1 {
 					t.Errorf("clone has wrong order/size")
 				}
-				
+
 				// Mutate original, should not affect clone
 				g.AddEdge(2, 3, "2->3")
 				if clone.Size() != 1 {
@@ -507,17 +511,17 @@ func TestLabeledGraph_Equal(t *testing.T) {
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "A")
 				g.AddVertex(3)
-				
+
 				other := New[int, string](Directed())
 				other.AddEdge(1, 2, "A")
 				other.AddVertex(3)
-				
+
 				eqFunc := func(a, b string) bool { return a == b }
-				
+
 				if !g.Equal(other, eqFunc) {
 					t.Errorf("expected graphs to be equal")
 				}
-				
+
 				other.AddEdge(2, 3, "B")
 				if g.Equal(other, eqFunc) {
 					t.Errorf("expected graphs to not be equal")
@@ -580,47 +584,63 @@ func TestLabeledGraph_String(t *testing.T) {
 }
 
 func TestLabeledGraph_Coverage(t *testing.T) {
-    g := New[int, int]()
-    g.AddEdge(1, 2, 3)
-    for _ = range g.Successors(1) { break }
-    for _ = range g.Predecessors(2) { break }
-    for _ = range g.Edges() { break }
-    for _ = range g.IncidentEdges(1) { break }
-    for _ = range g.InIncidentEdges(2) { break }
-    for _ = range g.OutIncidentEdges(1) { break }
-    
-    g2 := New[int, int]()
-    g2.AddEdge(1, 2, 10)
-    g2.AddEdge(1, 4, 40)
-    _ = g.Equal(g2, func(a, b int) bool { return a == b })
-    _ = g.String()
-    _ = g.Clone()
+	g := New[int, int]()
+	g.AddEdge(1, 2, 3)
+	for range g.Successors(1) {
+		break
+	}
+	for range g.Predecessors(2) {
+		break
+	}
+	for range g.Edges() {
+		break
+	}
+	for range g.IncidentEdges(1) {
+		break
+	}
+	for range g.InIncidentEdges(2) {
+		break
+	}
+	for range g.OutIncidentEdges(1) {
+		break
+	}
 
-    un := &undirectedNodeData[int, int]{adjacentLabels: make(map[int]int)}
-    un.setPredecessorLabel(2, 20)
-    un.setSuccessorLabel(3, 30)
-    _ = un.containsPredecessor(2)
-    
-    d := New[int, int](Directed())
-    d.AddEdge(1, 2, 10)
-    _ = d.graph[2].containsPredecessor(1)
-    
-    // cover directedNodeData setters
-    dn := &directedNodeData[int, int]{successorLabels: make(map[int]int)}
-    dn.setPredecessorLabel(2, 20)
-    dn.setSuccessorLabel(3, 30)
-    
-    // cover undirected Edges/IncidentEdges early break
-    for _ = range g.Edges() { break }
-    for _ = range g.IncidentEdges(1) { break }
-    
-    // cover equal early returns
-    g3 := New[int, int]()
-    g3.AddEdge(1, 2, 10)
-    g4 := New[int, int]()
-    g4.AddEdge(1, 3, 10)
-    _ = g3.Equal(g4, func(a, b int) bool { return a == b })
-    
-    g5 := New[int, int](Directed())
-    _ = g3.Equal(g5, func(a, b int) bool { return a == b })
+	g2 := New[int, int]()
+	g2.AddEdge(1, 2, 10)
+	g2.AddEdge(1, 4, 40)
+	_ = g.Equal(g2, func(a, b int) bool { return a == b })
+	_ = g.String()
+	_ = g.Clone()
+
+	un := &undirectedNodeData[int, int]{adjacentLabels: make(map[int]int)}
+	un.setPredecessorLabel(2, 20)
+	un.setSuccessorLabel(3, 30)
+	_ = un.containsPredecessor(2)
+
+	d := New[int, int](Directed())
+	d.AddEdge(1, 2, 10)
+	_ = d.graph[2].containsPredecessor(1)
+
+	// cover directedNodeData setters
+	dn := &directedNodeData[int, int]{successorLabels: make(map[int]int)}
+	dn.setPredecessorLabel(2, 20)
+	dn.setSuccessorLabel(3, 30)
+
+	// cover undirected Edges/IncidentEdges early break
+	for range g.Edges() {
+		break
+	}
+	for range g.IncidentEdges(1) {
+		break
+	}
+
+	// cover equal early returns
+	g3 := New[int, int]()
+	g3.AddEdge(1, 2, 10)
+	g4 := New[int, int]()
+	g4.AddEdge(1, 3, 10)
+	_ = g3.Equal(g4, func(a, b int) bool { return a == b })
+
+	g5 := New[int, int](Directed())
+	_ = g3.Equal(g5, func(a, b int) bool { return a == b })
 }

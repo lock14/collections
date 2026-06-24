@@ -138,14 +138,14 @@ func TestHashSet_BulkOperations(t *testing.T) {
 			check: func(t *testing.T, s *HashSet[int]) {
 				s.Add(1)
 				s.Add(2)
-				
+
 				other := New[int]()
 				other.Add(1)
-				
+
 				if !s.ContainsAll(other) {
 					t.Errorf("expected true")
 				}
-				
+
 				other.Add(3)
 				if s.ContainsAll(other) {
 					t.Errorf("expected false")
@@ -158,11 +158,11 @@ func TestHashSet_BulkOperations(t *testing.T) {
 				s.Add(1)
 				s.Add(2)
 				s.Add(3)
-				
+
 				other := New[int]()
 				other.Add(2)
 				other.Add(3)
-				
+
 				s.RemoveAll(other)
 				if s.Size() != 1 || !s.Contains(1) {
 					t.Errorf("expected only 1 to remain")
@@ -175,11 +175,11 @@ func TestHashSet_BulkOperations(t *testing.T) {
 				s.Add(1)
 				s.Add(2)
 				s.Add(3)
-				
+
 				other := New[int]()
 				other.Add(2)
 				other.Add(4)
-				
+
 				s.RetainAll(other)
 				if s.Size() != 1 || !s.Contains(2) {
 					t.Errorf("expected only 2 to remain")
