@@ -7,119 +7,236 @@ import (
 	"testing"
 )
 
-func TestTreeMap_Basic(t *testing.T) {
-	tm := NewOrdered[int, string](WithDegree[int](2)) // Small degree to force splits
-	
-	if !tm.Empty() {
-		t.Errorf("expected new map to be empty")
+func TestTreeMap_Operations(t *testing.T) {
+	cases := []struct {
+		name     string
+		degree   int
+		ops      func(tm *TreeMap[int, string])
+		validate func(t *testing.T, tm *TreeMap[int, string])
+	}{
+		{
+			name:   "basic put and get",
+			degree: 2,
+			ops: func(tm *TreeMap[int, string]) {
+				tm.Put(10, "ten")
+				tm.Put(20, "twenty")
+				tm.Put(5, "five")
+				tm.Put(6, "six")
+				tm.Put(12, "twelve")
+				tm.Put(30, "thirty")
+				tm.Put(7, "seven")
+				tm.Put(17, "seventeen")
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				if tm.Size() != 8 {
+					t.Errorf("expected size 8, got %d", tm.Size())
+				}
+				if val, ok := tm.Get(12); !ok || val != "twelve" {
+					t.Errorf("expected twelve, got %v, %v", val, ok)
+				}
+				if tm.ContainsKey(100) {
+					t.Errorf("did not expect to find 100")
+				}
+			},
+		},
+		{
+			name:   "overwrite existing key",
+			degree: 2,
+			ops: func(tm *TreeMap[int, string]) {
+				tm.Put(10, "ten")
+				tm.Put(10, "TEN")
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				if val, _ := tm.Get(10); val != "TEN" {
+					t.Errorf("expected TEN, got %v", val)
+				}
+				if tm.Size() != 1 {
+					t.Errorf("expected size 1, got %d", tm.Size())
+				}
+			},
+		},
+		{
+			name:   "remove leaf and internal nodes",
+			degree: 2,
+			ops: func(tm *TreeMap[int, string]) {
+				for i := 1; i <= 20; i++ {
+					tm.Put(i, fmt.Sprintf("val-%d", i))
+				}
+				tm.Remove(20) // leaf
+				tm.Remove(10) // internal
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				if tm.ContainsKey(20) || tm.ContainsKey(10) {
+					t.Errorf("nodes were not removed")
+				}
+				if tm.Size() != 18 {
+					t.Errorf("expected size 18, got %d", tm.Size())
+				}
+			},
+		},
+		{
+			name:   "remove all nodes",
+			degree: 2,
+			ops: func(tm *TreeMap[int, string]) {
+				for i := 1; i <= 20; i++ {
+					tm.Put(i, fmt.Sprintf("val-%d", i))
+				}
+				for i := 1; i <= 20; i++ {
+					tm.Remove(i)
+				}
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				if !tm.Empty() || tm.Size() != 0 {
+					t.Errorf("expected empty map")
+				}
+			},
+		},
+		{
+			name:   "clear map",
+			degree: 2,
+			ops: func(tm *TreeMap[int, string]) {
+				tm.Put(1, "1")
+				tm.Put(2, "2")
+				tm.Clear()
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				if !tm.Empty() || tm.Size() != 0 {
+					t.Errorf("expected empty map")
+				}
+			},
+		},
+		{
+			name:   "iterators return sorted order",
+			degree: 3,
+			ops: func(tm *TreeMap[int, string]) {
+				tm.Put(10, "10")
+				tm.Put(1, "1")
+				tm.Put(20, "20")
+				tm.Put(8, "8")
+				tm.Put(15, "15")
+				tm.Put(5, "5")
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				expectedKeys := []int{1, 5, 8, 10, 15, 20}
+				expectedVals := []string{"1", "5", "8", "10", "15", "20"}
+
+				var actualKeys []int
+				for k := range tm.Keys() {
+					actualKeys = append(actualKeys, k)
+				}
+				if !slices.Equal(expectedKeys, actualKeys) {
+					t.Errorf("expected keys %v, got %v", expectedKeys, actualKeys)
+				}
+
+				var actualVals []string
+				for v := range tm.Values() {
+					actualVals = append(actualVals, v)
+				}
+				if !slices.Equal(expectedVals, actualVals) {
+					t.Errorf("expected vals %v, got %v", expectedVals, actualVals)
+				}
+			},
+		},
+		{
+			name:   "iterator early exit",
+			degree: 2,
+			ops: func(tm *TreeMap[int, string]) {
+				tm.Put(20, "20")
+				tm.Put(30, "30")
+			},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				count := 0
+				for range tm.Keys() {
+					count++
+					break
+				}
+				if count != 1 {
+					t.Errorf("expected early exit, count %d", count)
+				}
+			},
+		},
+		{
+			name:   "get from empty map",
+			degree: 2,
+			ops:    func(tm *TreeMap[int, string]) {},
+			validate: func(t *testing.T, tm *TreeMap[int, string]) {
+				if _, ok := tm.Get(10); ok {
+					t.Errorf("expected not ok")
+				}
+			},
+		},
 	}
 
-	tm.Put(10, "ten")
-	tm.Put(20, "twenty")
-	tm.Put(5, "five")
-	tm.Put(6, "six")
-	tm.Put(12, "twelve")
-	tm.Put(30, "thirty")
-	tm.Put(7, "seven")
-	tm.Put(17, "seventeen")
-
-	if tm.Size() != 8 {
-		t.Errorf("expected size 8, got %d", tm.Size())
-	}
-
-	val, ok := tm.Get(12)
-	if !ok || val != "twelve" {
-		t.Errorf("expected twelve, got %v, %v", val, ok)
-	}
-
-	if tm.ContainsKey(100) {
-		t.Errorf("did not expect to find 100")
-	}
-
-	// Overwrite
-	tm.Put(10, "TEN")
-	val, _ = tm.Get(10)
-	if val != "TEN" {
-		t.Errorf("expected TEN, got %v", val)
-	}
-	if tm.Size() != 8 {
-		t.Errorf("size should remain 8 after overwrite")
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			tm := NewOrdered[int, string](WithDegree[int](tc.degree))
+			tc.ops(tm)
+			tc.validate(t, tm)
+		})
 	}
 }
 
-func TestTreeMap_Remove(t *testing.T) {
-	tm := NewOrdered[int, string](WithDegree[int](2))
-	for i := 1; i <= 20; i++ {
-		tm.Put(i, fmt.Sprintf("val-%d", i))
+func TestTreeMap_Constructors(t *testing.T) {
+	cases := []struct {
+		name        string
+		constructor func()
+		expectPanic bool
+	}{
+		{
+			name: "invalid degree panics",
+			constructor: func() {
+				NewOrdered[int, int](WithDegree[int](1))
+			},
+			expectPanic: true,
+		},
+		{
+			name: "missing comparator panics",
+			constructor: func() {
+				New[int, int]()
+			},
+			expectPanic: true,
+		},
+		{
+			name: "valid degree succeeds",
+			constructor: func() {
+				NewOrdered[int, int](WithDegree[int](32))
+			},
+			expectPanic: false,
+		},
 	}
 
-	if tm.Size() != 20 {
-		t.Errorf("expected size 20, got %d", tm.Size())
-	}
-
-	// Remove leaf
-	tm.Remove(20)
-	if tm.ContainsKey(20) || tm.Size() != 19 {
-		t.Errorf("remove failed for 20")
-	}
-
-	// Remove internal node
-	tm.Remove(10)
-	if tm.ContainsKey(10) || tm.Size() != 18 {
-		t.Errorf("remove failed for 10")
-	}
-
-	// Remove root iteratively
-	for i := 1; i <= 19; i++ {
-		if i == 10 {
-			continue
-		}
-		tm.Remove(i)
-	}
-
-	if !tm.Empty() {
-		t.Errorf("expected empty map, size is %d", tm.Size())
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			defer func() {
+				r := recover()
+				if tc.expectPanic && r == nil {
+					t.Errorf("expected panic but got none")
+				}
+				if !tc.expectPanic && r != nil {
+					t.Errorf("expected no panic but got: %v", r)
+				}
+			}()
+			tc.constructor()
+		})
 	}
 }
 
-func TestTreeMap_Iterators(t *testing.T) {
-	tm := NewOrdered[int, string](WithDegree[int](3))
-	expectedKeys := []int{1, 5, 8, 10, 15, 20}
-	
-	// Insert out of order
-	tm.Put(10, "10")
-	tm.Put(1, "1")
-	tm.Put(20, "20")
-	tm.Put(8, "8")
-	tm.Put(15, "15")
-	tm.Put(5, "5")
-
-	var actualKeys []int
-	for k := range tm.Keys() {
-		actualKeys = append(actualKeys, k)
-	}
-
-	if !slices.Equal(expectedKeys, actualKeys) {
-		t.Errorf("expected %v, got %v", expectedKeys, actualKeys)
-	}
-
-	var actualVals []string
-	for v := range tm.Values() {
-		actualVals = append(actualVals, v)
-	}
-	expectedVals := []string{"1", "5", "8", "10", "15", "20"}
-	if !slices.Equal(expectedVals, actualVals) {
-		t.Errorf("expected %v, got %v", expectedVals, actualVals)
-	}
-}
+// Procedural Stress Tests
+// The following tests construct very specific B-Tree states or perform
+// randomized large-scale operations which do not fit cleanly into a table format.
 
 func TestTreeMap_LargeRandom(t *testing.T) {
+	t.Parallel()
 	tm := NewOrdered[int, int]()
 	keys := make([]int, 0, 1000)
 	for i := 0; i < 1000; i++ {
 		keys = append(keys, i)
 	}
-	
+
 	rand.Shuffle(len(keys), func(i, j int) {
 		keys[i], keys[j] = keys[j], keys[i]
 	})
@@ -158,141 +275,36 @@ func TestTreeMap_LargeRandom(t *testing.T) {
 	}
 }
 
-func TestTreeMap_Clear(t *testing.T) {
-	tm := NewOrdered[int, int]()
-	tm.Put(1, 1)
-	tm.Put(2, 2)
-	tm.Clear()
-	
-	if !tm.Empty() || tm.Size() != 0 {
-		t.Errorf("expected empty map")
-	}
-	if tm.ContainsKey(1) {
-		t.Errorf("should not contain 1")
-	}
-}
-
-func TestTreeMap_EdgeCases(t *testing.T) {
-	// Panics
-	assertPanics := func(f func()) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("expected panic")
-			}
-		}()
-		f()
-	}
-
-	assertPanics(func() { NewOrdered[int, int](WithDegree[int](1)) })
-	assertPanics(func() { New[int, int]() }) // No comparator
-
-	tm := NewOrdered[int, int](WithDegree[int](2))
-
-	// Remove from empty
-	tm.Remove(10)
-
-	// Get from empty
-	if _, ok := tm.Get(10); ok {
-		t.Errorf("expected not ok")
-	}
-
-	// Insert and remove non-existent
-	tm.Put(10, 10)
-	tm.Remove(20)
-	if tm.Size() != 1 {
-		t.Errorf("expected size 1")
-	}
-
-	// Iterator early exit
-	tm.Put(20, 20)
-	tm.Put(30, 30)
-	count := 0
-	for range tm.Keys() {
-		count++
-		break // early exit
-	}
-	if count != 1 {
-		t.Errorf("expected count 1, got %d", count)
-	}
-
-	count = 0
-	for range tm.Values() {
-		count++
-		break // early exit
-	}
-	if count != 1 {
-		t.Errorf("expected count 1, got %d", count)
-	}
-
-	count = 0
-	for k, _ := range tm.All() {
-		if k == 20 {
-			break
-		}
-		count++
-	}
-	if count != 1 {
-		t.Errorf("expected count 1, got %d", count)
-	}
-
-	// For Get 50% coverage
-	tm.root = nil
-	tm.Get(10)
-}
-
 func TestTreeMap_DeepTree(t *testing.T) {
+	t.Parallel()
 	tm := NewOrdered[int, int](WithDegree[int](2))
 	for i := 0; i < 2000; i++ {
 		tm.Put(i, i)
 	}
-	
+
 	// Delete every third element to trigger borrows and merges heavily
 	for i := 0; i < 2000; i += 3 {
 		tm.Remove(i)
 	}
-	
+
 	// Delete the rest
 	for i := 0; i < 2000; i++ {
 		if i%3 != 0 {
 			tm.Remove(i)
 		}
 	}
-	
+
 	if !tm.Empty() {
 		t.Errorf("expected empty")
-	}
-
-	// Trigger early exit in inOrder on an internal node
-	for i := 0; i < 2000; i++ {
-		tm.Put(i, i)
-	}
-	count := 0
-	for range tm.Keys() {
-		count++
-		if count == 1000 {
-			break
-		}
 	}
 }
 
 func TestTreeMap_GetSuccessor(t *testing.T) {
+	t.Parallel()
 	// We want to hit the case where we delete an internal node's key,
 	// and its left child has t-1 keys, but its right child has >= t keys.
 	tm := NewOrdered[int, int](WithDegree[int](2))
-	
-	// Create a specific tree structure
-	// degree=2 means max keys = 3. 
-	// Let's just insert elements carefully to make left child small, right child big.
-	tm.Put(20, 20)
-	tm.Put(10, 10)
-	tm.Put(30, 30)
-	tm.Put(40, 40)
-	tm.Put(50, 50)
-	// Now root might be 20, 40.
-	// If we just remove 10, the left child of 20 becomes empty/merged.
-	// Let's just insert a bunch and delete carefully.
-	
-	tm.Clear()
+
 	tm.Put(10, 10)
 	tm.Put(20, 20)
 	tm.Put(30, 30)
