@@ -56,11 +56,12 @@ func New[K any, V any](opts ...Option[K]) *TreeMap[K, V] {
 	if config.comparator == nil {
 		panic("comparator must be provided or use NewOrdered")
 	}
-	return &TreeMap[K, V]{
-		root:       newNode[K, V](true),
+	tm := &TreeMap[K, V]{
 		degree:     config.degree,
 		comparator: config.comparator,
 	}
+	tm.root = tm.newNode(true)
+	return tm
 }
 
 // NewOrdered creates an empty TreeMap for keys that satisfy cmp.Ordered using natural ordering.

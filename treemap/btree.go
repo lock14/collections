@@ -9,9 +9,16 @@ type node[K any, V any] struct {
 	children []*node[K, V]
 }
 
-func newNode[K any, V any](leaf bool) *node[K, V] {
+func (tm *TreeMap[K, V]) newNode(leaf bool) *node[K, V] {
+	var children []*node[K, V]
+	if !leaf {
+		children = make([]*node[K, V], 0, 2*tm.degree)
+	}
 	return &node[K, V]{
-		leaf: leaf,
+		leaf:     leaf,
+		keys:     make([]K, 0, 2*tm.degree-1),
+		values:   make([]V, 0, 2*tm.degree-1),
+		children: children,
 	}
 }
 
@@ -37,7 +44,7 @@ func (tm *TreeMap[K, V]) put(key K, value V) {
 
 	root := tm.root
 	if len(root.keys) == 2*tm.degree-1 {
-		s := newNode[K, V](false)
+		s := tm.newNode(false)
 		s.children = append(s.children, root)
 		tm.splitChild(s, 0, root)
 		tm.root = s
@@ -62,11 +69,11 @@ func (tm *TreeMap[K, V]) updateExisting(n *node[K, V], key K, value V) bool {
 
 func (tm *TreeMap[K, V]) splitChild(x *node[K, V], i int, y *node[K, V]) {
 	t := tm.degree
-	z := newNode[K, V](y.leaf)
+	z := tm.newNode(y.leaf)
 
 	// Copy the upper t-1 keys and values from y to z
-	z.keys = slices.Clone(y.keys[t:])
-	z.values = slices.Clone(y.values[t:])
+	z.keys = append(z.keys, y.keys[t:]...)
+	z.values = append(z.values, y.values[t:]...)
 	
 	// Truncate y's keys and values
 	midKey := y.keys[t-1]
@@ -82,7 +89,10 @@ func (tm *TreeMap[K, V]) splitChild(x *node[K, V], i int, y *node[K, V]) {
 	y.values = y.values[:t-1]
 
 	if !y.leaf {
-		z.children = slices.Clone(y.children[t:])
+		z.children = append(z.children, y.children[t:]...)
+		for j := t; j < len(y.children); j++ {
+			y.children[j] = nil
+		}
 		y.children = y.children[:t]
 	}
 
