@@ -34,8 +34,8 @@ func main() {
 	set.Add(10)
 	
 	// Iterates in sorted order: 1, 5, 10
-	for it := set.Iterator(); it.HasNext(); {
-		fmt.Println(it.Next())
+	for val := range set.All() {
+		fmt.Println(val)
 	}
 }
 ```
