@@ -1,4 +1,10 @@
 .idea
 
+# Coverage files
 coverage.out
 coverage
+cov
+cov.out
+c.out
+*.out
+*.test
