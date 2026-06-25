@@ -73,7 +73,7 @@ func (b *BitSet) ClearBit(bit int) {
 }
 
 // Set sets the bit at the specified index to true.
-func (b *BitSet) Set(bit int) {
+func (b *BitSet) SetBit(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	if b.bits[index]&(1<<shift) == 0 {
@@ -86,7 +86,7 @@ func (b *BitSet) Set(bit int) {
 }
 
 // Get returns the value of the bit with the specified index.
-func (b *BitSet) Get(bit int) bool {
+func (b *BitSet) GetBit(bit int) bool {
 	index, shift := convert(bit)
 	if index >= b.maxWordInUse {
 		return false
@@ -279,7 +279,7 @@ func (b *BitSet) recomputeSize() {
 
 // Add inserts the specified element into the bit set.
 func (b *BitSet) Add(t int) {
-	b.Set(t)
+	b.SetBit(t)
 }
 
 // RemoveElement removes the specified element from the bit set.
@@ -289,7 +289,7 @@ func (b *BitSet) RemoveElement(t int) {
 
 // Contains returns true if this bit set contains the specified element.
 func (b *BitSet) Contains(t int) bool {
-	return b.Get(t)
+	return b.GetBit(t)
 }
 
 // Empty returns true if the collection contains no elements.
@@ -328,7 +328,7 @@ func (b *BitSet) Remove() int {
 // AddAll inserts all elements from the given sequence into the collection.
 func (b *BitSet) AddAll(seq iter.Seq[int]) {
 	for v := range seq {
-		b.Set(v)
+		b.SetBit(v)
 	}
 }
 
@@ -374,7 +374,7 @@ func (b *BitSet) RetainAll(col collections.Collection[int]) {
 	temp := New(NumBits(b.Capacity()))
 	for v := range col.All() {
 		if b.Contains(v) {
-			temp.Set(v)
+			temp.SetBit(v)
 		}
 	}
 	b.bits = temp.bits
