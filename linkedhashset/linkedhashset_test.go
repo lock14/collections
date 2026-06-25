@@ -306,7 +306,7 @@ func TestLinkedHashSet_Bulk(t *testing.T) {
 
 func TestLinkedHashSet_Sequenced(t *testing.T) {
 	t.Parallel()
-	
+
 	t.Run("first_last", func(t *testing.T) {
 		s := New[int]()
 
@@ -318,20 +318,20 @@ func TestLinkedHashSet_Sequenced(t *testing.T) {
 		if v != 10 {
 			t.Errorf("First: expected 10, got %v", v)
 		}
-		
+
 		v = s.Last()
 		if v != 30 {
 			t.Errorf("Last: expected 30, got %v", v)
 		}
 	})
-	
+
 	t.Run("poll_first_last", func(t *testing.T) {
 		s := New[int]()
-		
+
 		s.Add(10)
 		s.Add(20)
 		s.Add(30)
-		
+
 		v := s.PollFirst()
 		if v != 10 {
 			t.Errorf("PollFirst: expected 10, got %v", v)
@@ -339,7 +339,7 @@ func TestLinkedHashSet_Sequenced(t *testing.T) {
 		if s.Contains(10) {
 			t.Errorf("PollFirst didn't remove")
 		}
-		
+
 		v = s.PollLast()
 		if v != 30 {
 			t.Errorf("PollLast: expected 30, got %v", v)
@@ -348,10 +348,10 @@ func TestLinkedHashSet_Sequenced(t *testing.T) {
 			t.Errorf("PollLast didn't remove")
 		}
 	})
-	
+
 	t.Run("empty_panics", func(t *testing.T) {
 		s := New[int]()
-		
+
 		assertPanic := func(name string, f func()) {
 			t.Helper()
 			defer func() {
@@ -361,25 +361,25 @@ func TestLinkedHashSet_Sequenced(t *testing.T) {
 			}()
 			f()
 		}
-		
+
 		assertPanic("First", func() { s.First() })
 		assertPanic("Last", func() { s.Last() })
 		assertPanic("PollFirst", func() { s.PollFirst() })
 		assertPanic("PollLast", func() { s.PollLast() })
 	})
-	
+
 	t.Run("put_first_last", func(t *testing.T) {
 		s := New[int]()
 		s.AddFirst(2)
 		s.AddFirst(1)
 		s.AddLast(3)
-		
+
 		got := slices.Collect(s.All())
 		expected := []int{1, 2, 3}
 		if !slices.Equal(got, expected) {
 			t.Errorf("expected keys %v, got %v", expected, got)
 		}
-		
+
 		// Update existing with AddFirst
 		s.AddFirst(3)
 		got = slices.Collect(s.All())
@@ -425,7 +425,7 @@ func TestLinkedHashSet_Reversed(t *testing.T) {
 	if !slices.Equal(elements, []int{3, 2, 1}) {
 		t.Errorf("expected ReversedAll [3, 2, 1], got %v", elements)
 	}
-	
+
 	// Test coverage for early exit iterator
 	for v := range s.ReversedAll() {
 		_ = v

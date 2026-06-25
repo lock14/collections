@@ -481,20 +481,20 @@ func (b *BitSet) Lower(t int) (int, bool) {
 		}
 		return b.Last(), true
 	}
-	
+
 	var mask uint64
-	if shift == wordSize - 1 {
+	if shift == wordSize-1 {
 		mask = ^uint64(0)
 	} else {
 		mask = (1 << (shift + 1)) - 1
 	}
-	
+
 	w := b.bits[index] & mask
 	if w != 0 {
 		lz := bits.LeadingZeros64(w)
 		return index*wordSize + (wordSize - 1 - lz), true
 	}
-	
+
 	for i := index - 1; i >= 0; i-- {
 		if b.bits[i] != 0 {
 			lz := bits.LeadingZeros64(b.bits[i])
@@ -515,20 +515,20 @@ func (b *BitSet) Floor(t int) (int, bool) {
 		}
 		return b.Last(), true
 	}
-	
+
 	var mask uint64
-	if shift == wordSize - 1 {
+	if shift == wordSize-1 {
 		mask = ^uint64(0)
 	} else {
 		mask = (1 << (shift + 1)) - 1
 	}
-	
+
 	w := b.bits[index] & mask
 	if w != 0 {
 		lz := bits.LeadingZeros64(w)
 		return index*wordSize + (wordSize - 1 - lz), true
 	}
-	
+
 	for i := index - 1; i >= 0; i-- {
 		if b.bits[i] != 0 {
 			lz := bits.LeadingZeros64(b.bits[i])
@@ -546,14 +546,14 @@ func (b *BitSet) Ceiling(t int) (int, bool) {
 	if index >= b.maxWordInUse {
 		return 0, false
 	}
-	
+
 	mask := ^uint64(0) << shift
 	w := b.bits[index] & mask
 	if w != 0 {
 		tz := bits.TrailingZeros64(w)
 		return index*wordSize + tz, true
 	}
-	
+
 	for i := index + 1; i < b.maxWordInUse; i++ {
 		if b.bits[i] != 0 {
 			tz := bits.TrailingZeros64(b.bits[i])
@@ -574,14 +574,14 @@ func (b *BitSet) Higher(t int) (int, bool) {
 	if index >= b.maxWordInUse {
 		return 0, false
 	}
-	
+
 	mask := ^uint64(0) << shift
 	w := b.bits[index] & mask
 	if w != 0 {
 		tz := bits.TrailingZeros64(w)
 		return index*wordSize + tz, true
 	}
-	
+
 	for i := index + 1; i < b.maxWordInUse; i++ {
 		if b.bits[i] != 0 {
 			tz := bits.TrailingZeros64(b.bits[i])
@@ -616,7 +616,7 @@ func (b *BitSet) AllFrom(from int) iter.Seq[int] {
 		if index >= b.maxWordInUse {
 			return
 		}
-		
+
 		w := b.bits[index] & (^uint64(0) << shift)
 		for w != 0 {
 			tz := bits.TrailingZeros64(w)
@@ -625,7 +625,7 @@ func (b *BitSet) AllFrom(from int) iter.Seq[int] {
 			}
 			w &= w - 1
 		}
-		
+
 		for i := index + 1; i < b.maxWordInUse; i++ {
 			w = b.bits[i]
 			for w != 0 {
@@ -645,7 +645,7 @@ func (b *BitSet) AllTo(to int) iter.Seq[int] {
 			return
 		}
 		endIndex, endShift := convert(to)
-		
+
 		for i := 0; i < b.maxWordInUse && i <= endIndex; i++ {
 			w := b.bits[i]
 			if i == endIndex {
@@ -678,7 +678,7 @@ func (b *BitSet) AllBetween(from, to int) iter.Seq[int] {
 			return
 		}
 		endIndex, endShift := convert(to)
-		
+
 		for i := index; i < b.maxWordInUse && i <= endIndex; i++ {
 			w := b.bits[i]
 			if i == index {

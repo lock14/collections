@@ -146,7 +146,7 @@ func (tm *TreeMap[K, V]) Lower(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
 	var found bool
-	
+
 	n := tm.root
 	for n != nil && len(n.keys) > 0 {
 		i, _ := slices.BinarySearchFunc(n.keys, key, tm.comparator)
@@ -167,7 +167,7 @@ func (tm *TreeMap[K, V]) Floor(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
 	var found bool
-	
+
 	n := tm.root
 	for n != nil && len(n.keys) > 0 {
 		i, match := slices.BinarySearchFunc(n.keys, key, tm.comparator)
@@ -191,7 +191,7 @@ func (tm *TreeMap[K, V]) Ceiling(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
 	var found bool
-	
+
 	n := tm.root
 	for n != nil && len(n.keys) > 0 {
 		i, match := slices.BinarySearchFunc(n.keys, key, tm.comparator)
@@ -215,7 +215,7 @@ func (tm *TreeMap[K, V]) Higher(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
 	var found bool
-	
+
 	n := tm.root
 	for n != nil && len(n.keys) > 0 {
 		i, match := slices.BinarySearchFunc(n.keys, key, tm.comparator)
