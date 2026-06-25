@@ -21,12 +21,11 @@ package main
 import (
 	"fmt"
 	
-	"github.com/lock14/collections/comparator"
 	"github.com/lock14/collections/treeset"
 )
 
 func main() {
-	set := treeset.New[int](comparator.NaturalOrder[int]())
+	set := treeset.NewOrdered[int]()
 	
 	set.Add(5)
 	set.Add(1)
