@@ -39,10 +39,27 @@ jobs:
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             # Extract unique directories and prepend ./
-            PKGS=$(echo "$GO_FILES" | xargs dirname | sort -u | awk '{print "./" $0}' | tr '\n' ' ')
-            echo "Testing packages: $PKGS"
-            echo "pkgs=$PKGS" >> $GITHUB_OUTPUT
-            echo "skip=false" >> $GITHUB_OUTPUT
+            PKGS=""
+            for dir in $(echo "$GO_FILES" | xargs -n1 dirname | sort -u); do
+              # Check if the directory existed in the base branch
+              if git rev-parse --verify "$BASE:$dir" >/dev/null 2>&1; then
+                PKGS="$PKGS ./$dir"
+              else
+                echo "Skipping new package $dir as it does not exist in $BASE"
+              fi
+            done
+            
+            # Trim whitespace
+            PKGS=$(echo $PKGS | xargs)
+            
+            if [ -z "$PKGS" ]; then
+              echo "No existing packages changed. Skipping benchmarks."
+              echo "skip=true" >> $GITHUB_OUTPUT
+            else
+              echo "Testing packages: $PKGS"
+              echo "pkgs=$PKGS" >> $GITHUB_OUTPUT
+              echo "skip=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Run cob (Performance Regression Check)
