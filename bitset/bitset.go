@@ -64,7 +64,9 @@ func (b *BitSet) ClearBit(bit int) {
 		return
 	}
 	if b.bits[index]&(1<<shift) != 0 {
-		b.size--
+		if b.size != -1 {
+			b.size--
+		}
 		b.bits[index] &= ^(1 << shift)
 		if index == b.maxWordInUse-1 && b.bits[index] == 0 {
 			b.maxWordInUse = b.lastNonZeroWord() + 1
@@ -77,7 +79,9 @@ func (b *BitSet) SetBit(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
 	if b.bits[index]&(1<<shift) == 0 {
-		b.size++
+		if b.size != -1 {
+			b.size++
+		}
 		b.bits[index] |= 1 << shift
 		if index+1 > b.maxWordInUse {
 			b.maxWordInUse = index + 1
@@ -99,8 +103,11 @@ func (b *BitSet) Capacity() int {
 	return len(b.bits) * wordSize
 }
 
-// Size returns the number of set bits in this bit set.
+// Size returns the number of set bits in the BitSet.
 func (b *BitSet) Size() int {
+	if b.size == -1 {
+		b.recomputeSize()
+	}
 	return b.size
 }
 
@@ -121,7 +128,7 @@ func (b *BitSet) Flip() {
 		b.bits[i] = ^b.bits[i]
 	}
 	b.maxWordInUse = b.lastNonZeroWord() + 1
-	b.recomputeSize()
+	b.size = -1
 }
 
 // FlipRange sets each bit from the specified start bit (inclusive) to the
@@ -143,40 +150,29 @@ func (b *BitSet) FlipRange(start int, end int) {
 		lowerBits := oldWord & startMask
 		middleBits := (^oldWord) & middleMask
 		upperBits := oldWord & endMask
-		newWord := lowerBits | middleBits | upperBits
-		
-		b.size += bits.OnesCount64(newWord) - bits.OnesCount64(oldWord)
-		b.bits[startIndex] = newWord
+		b.bits[startIndex] = lowerBits | middleBits | upperBits
 	} else {
 		// flip upper bits, keep lower bits the same
 		oldStart := b.bits[startIndex]
 		lowerBits := oldStart & startMask
 		upperBits := (^oldStart) & ^startMask
-		newStart := upperBits | lowerBits
-		
-		b.size += bits.OnesCount64(newStart) - bits.OnesCount64(oldStart)
-		b.bits[startIndex] = newStart
+		b.bits[startIndex] = upperBits | lowerBits
 
 		// flip all bits at each of the middles indices
-		totalOnes := 0
 		for i := startIndex + 1; i < endIndex; i++ {
-			totalOnes += bits.OnesCount64(b.bits[i])
 			b.bits[i] = ^b.bits[i]
 		}
-		b.size += 64*(endIndex - startIndex - 1) - 2*totalOnes
 
 		if end != b.Capacity() {
 			// flip lower bits, keep upper bits the same
 			oldEnd := b.bits[endIndex]
 			lowerBits = (^oldEnd) & ^endMask
 			upperBits = oldEnd & endMask
-			newEnd := upperBits | lowerBits
-			
-			b.size += bits.OnesCount64(newEnd) - bits.OnesCount64(oldEnd)
-			b.bits[endIndex] = newEnd
+			b.bits[endIndex] = upperBits | lowerBits
 		}
 	}
 	b.maxWordInUse = b.lastNonZeroWord() + 1
+	b.size = -1
 }
 
 // FromBytes returns new BitSet containing all the bits in the given byte array.
@@ -353,7 +349,7 @@ func (b *BitSet) RemoveAll(col collections.Collection[int]) {
 			b.bits[i] &= ^other.bits[i]
 		}
 		b.maxWordInUse = b.lastNonZeroWord() + 1
-		b.recomputeSize()
+		b.size = -1
 		return
 	}
 	for v := range col.All() {
@@ -372,7 +368,7 @@ func (b *BitSet) RetainAll(col collections.Collection[int]) {
 			}
 		}
 		b.maxWordInUse = b.lastNonZeroWord() + 1
-		b.recomputeSize()
+		b.size = -1
 		return
 	}
 	if set, ok := col.(collections.Set[int]); ok {
