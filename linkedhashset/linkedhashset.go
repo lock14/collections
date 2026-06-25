@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var _ collections.MutableSet[int] = (*LinkedHashSet[int])(nil)
+var _ collections.MutableSequencedSet[int] = (*LinkedHashSet[int])(nil)
 
 // LinkedHashSet represents a set of elements of type T that preserves iteration order.
 type LinkedHashSet[T comparable] struct {
@@ -58,6 +58,40 @@ func (s *LinkedHashSet[T]) Remove() T {
 		return k
 	}
 	panic("cannot remove from an empty set")
+}
+
+// First returns the first element in the set.
+func (s *LinkedHashSet[T]) First() (T, bool) {
+	k, _, ok := s.m.First()
+	return k, ok
+}
+
+// Last returns the last element in the set.
+func (s *LinkedHashSet[T]) Last() (T, bool) {
+	k, _, ok := s.m.Last()
+	return k, ok
+}
+
+// PollFirst removes and returns the first element in the set.
+func (s *LinkedHashSet[T]) PollFirst() (T, bool) {
+	k, _, ok := s.m.PollFirst()
+	return k, ok
+}
+
+// PollLast removes and returns the last element in the set.
+func (s *LinkedHashSet[T]) PollLast() (T, bool) {
+	k, _, ok := s.m.PollLast()
+	return k, ok
+}
+
+// AddFirst inserts the specified item at the front of the set.
+func (s *LinkedHashSet[T]) AddFirst(item T) {
+	s.m.PutFirst(item, struct{}{})
+}
+
+// AddLast inserts the specified item at the end of the set.
+func (s *LinkedHashSet[T]) AddLast(item T) {
+	s.m.PutLast(item, struct{}{})
 }
 
 // RemoveElement removes the specified item from the set.
@@ -140,6 +174,11 @@ func (s *LinkedHashSet[T]) Empty() bool {
 // All returns an iterator over the elements in the set.
 func (s *LinkedHashSet[T]) All() iter.Seq[T] {
 	return s.m.Keys()
+}
+
+// ReversedAll returns an iterator over the elements in reverse order.
+func (s *LinkedHashSet[T]) ReversedAll() iter.Seq[T] {
+	return s.m.ReversedKeys()
 }
 
 // String returns a string representation of the set.

@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"slices"
 	"testing"
+	"iter"
 )
 
 func TestTreeMap_Operations(t *testing.T) {
@@ -322,5 +323,159 @@ func TestTreeMap_GetSuccessor(t *testing.T) {
 
 	if tm.ContainsKey(20) {
 		t.Errorf("20 should be removed")
+	}
+}
+
+func assertKV(t *testing.T, k int, v int, ok bool, expectedK int, expectedV int, expectedOk bool, name string) {
+	t.Helper()
+	if ok != expectedOk {
+		t.Errorf("%s: expected ok=%v, got %v", name, expectedOk, ok)
+	} else if ok && (k != expectedK || v != expectedV) {
+		t.Errorf("%s: expected (%v, %v), got (%v, %v)", name, expectedK, expectedV, k, v)
+	}
+}
+
+func TestTreeMap_Navigable(t *testing.T) {
+	t.Parallel()
+	tm := NewOrdered[int, int]()
+	
+	_, _, ok := tm.Lower(10)
+	if ok { t.Errorf("expected empty map to return false for Lower") }
+	
+	tm.Put(10, 10)
+	tm.Put(20, 20)
+	tm.Put(30, 30)
+	tm.Put(40, 40)
+	tm.Put(50, 50)
+	
+	k, v, ok := tm.Lower(30)
+	assertKV(t, k, v, ok, 20, 20, true, "Lower(30)")
+	k, v, ok = tm.Lower(10)
+	assertKV(t, k, v, ok, 0, 0, false, "Lower(10)")
+	
+	k, v, ok = tm.Floor(30)
+	assertKV(t, k, v, ok, 30, 30, true, "Floor(30)")
+	k, v, ok = tm.Floor(25)
+	assertKV(t, k, v, ok, 20, 20, true, "Floor(25)")
+	k, v, ok = tm.Floor(5)
+	assertKV(t, k, v, ok, 0, 0, false, "Floor(5)")
+	
+	k, v, ok = tm.Ceiling(30)
+	assertKV(t, k, v, ok, 30, 30, true, "Ceiling(30)")
+	k, v, ok = tm.Ceiling(35)
+	assertKV(t, k, v, ok, 40, 40, true, "Ceiling(35)")
+	k, v, ok = tm.Ceiling(60)
+	assertKV(t, k, v, ok, 0, 0, false, "Ceiling(60)")
+	
+	k, v, ok = tm.Higher(30)
+	assertKV(t, k, v, ok, 40, 40, true, "Higher(30)")
+	k, v, ok = tm.Higher(50)
+	assertKV(t, k, v, ok, 0, 0, false, "Higher(50)")
+}
+
+func TestTreeMap_Sequenced(t *testing.T) {
+	t.Parallel()
+	tm := NewOrdered[int, int]()
+	
+	_, _, ok := tm.First()
+	if ok { t.Errorf("First on empty map") }
+	_, _, ok = tm.Last()
+	if ok { t.Errorf("Last on empty map") }
+	
+	tm.Put(10, 10)
+	tm.Put(20, 20)
+	tm.Put(30, 30)
+	
+	k, v, ok := tm.First()
+	assertKV(t, k, v, ok, 10, 10, true, "First")
+	k, v, ok = tm.Last()
+	assertKV(t, k, v, ok, 30, 30, true, "Last")
+	
+	k, v, ok = tm.PollFirst()
+	assertKV(t, k, v, ok, 10, 10, true, "PollFirst")
+	if tm.ContainsKey(10) { t.Errorf("PollFirst didn't remove") }
+	
+	k, v, ok = tm.PollLast()
+	assertKV(t, k, v, ok, 30, 30, true, "PollLast")
+	if tm.ContainsKey(30) { t.Errorf("PollLast didn't remove") }
+	
+	// Test panics
+	assertPanic := func(name string, f func()) {
+		t.Helper()
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("%s did not panic", name)
+			}
+		}()
+		f()
+	}
+	assertPanic("PutFirst", func() { tm.PutFirst(1, 1) })
+	assertPanic("PutLast", func() { tm.PutLast(1, 1) })
+}
+
+func TestTreeMap_Reversed(t *testing.T) {
+	t.Parallel()
+	tm := NewOrdered[int, int]()
+	for i := 1; i <= 5; i++ {
+		tm.Put(i*10, i*10)
+	}
+	
+	var keys []int
+	for k := range tm.ReversedKeys() {
+		keys = append(keys, k)
+	}
+	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
+		t.Errorf("ReversedKeys: %v", keys)
+	}
+	
+	var vals []int
+	for _, v := range tm.ReversedAll() {
+		vals = append(vals, v)
+	}
+	if !slices.Equal(vals, []int{50, 40, 30, 20, 10}) {
+		t.Errorf("ReversedAll: %v", vals)
+	}
+	
+	// coverage for ReversedKeys early exit
+	for k := range tm.ReversedKeys() {
+		_ = k
+		break
+	}
+	// coverage for ReversedValues early exit
+	for v := range tm.ReversedValues() {
+		_ = v
+		break
+	}
+}
+
+func TestTreeMap_Iterators_Bounds(t *testing.T) {
+	t.Parallel()
+	tm := NewOrdered[int, int]()
+	for i := 1; i <= 10; i++ {
+		tm.Put(i, i)
+	}
+	
+	collect := func(seq iter.Seq2[int, int]) []int {
+		var res []int
+		for k, _ := range seq {
+			res = append(res, k)
+		}
+		return res
+	}
+	
+	if got := collect(tm.AllFrom(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+		t.Errorf("AllFrom(5): %v", got)
+	}
+	if got := collect(tm.AllTo(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+		t.Errorf("AllTo(5): %v", got)
+	}
+	if got := collect(tm.AllBetween(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
+		t.Errorf("AllBetween(3, 7): %v", got)
+	}
+	
+	// Early exit coverage
+	for k, _ := range tm.AllBetween(1, 10) {
+		_ = k
+		break
 	}
 }

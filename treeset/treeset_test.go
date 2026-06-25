@@ -251,3 +251,136 @@ func TestTreeSet_Constructors(t *testing.T) {
 		})
 	}
 }
+
+func assertKV(t *testing.T, k int, ok bool, expectedK int, expectedOk bool, name string) {
+	t.Helper()
+	if ok != expectedOk {
+		t.Errorf("%s: expected ok=%v, got %v", name, expectedOk, ok)
+	} else if ok && k != expectedK {
+		t.Errorf("%s: expected %v, got %v", name, expectedK, k)
+	}
+}
+
+func TestTreeSet_Navigable(t *testing.T) {
+	t.Parallel()
+	s := NewOrdered[int]()
+	
+	_, ok := s.Lower(10)
+	if ok { t.Errorf("expected empty set to return false for Lower") }
+	
+	s.Add(10)
+	s.Add(20)
+	s.Add(30)
+	s.Add(40)
+	s.Add(50)
+	
+	k, ok := s.Lower(30)
+	assertKV(t, k, ok, 20, true, "Lower(30)")
+	k, ok = s.Lower(10)
+	assertKV(t, k, ok, 0, false, "Lower(10)")
+	
+	k, ok = s.Floor(30)
+	assertKV(t, k, ok, 30, true, "Floor(30)")
+	k, ok = s.Floor(25)
+	assertKV(t, k, ok, 20, true, "Floor(25)")
+	k, ok = s.Floor(5)
+	assertKV(t, k, ok, 0, false, "Floor(5)")
+	
+	k, ok = s.Ceiling(30)
+	assertKV(t, k, ok, 30, true, "Ceiling(30)")
+	k, ok = s.Ceiling(35)
+	assertKV(t, k, ok, 40, true, "Ceiling(35)")
+	k, ok = s.Ceiling(60)
+	assertKV(t, k, ok, 0, false, "Ceiling(60)")
+	
+	k, ok = s.Higher(30)
+	assertKV(t, k, ok, 40, true, "Higher(30)")
+	k, ok = s.Higher(50)
+	assertKV(t, k, ok, 0, false, "Higher(50)")
+}
+
+func TestTreeSet_Sequenced(t *testing.T) {
+	t.Parallel()
+	s := NewOrdered[int]()
+	
+	_, ok := s.First()
+	if ok { t.Errorf("First on empty set") }
+	_, ok = s.Last()
+	if ok { t.Errorf("Last on empty set") }
+	
+	s.Add(10)
+	s.Add(20)
+	s.Add(30)
+	
+	k, ok := s.First()
+	assertKV(t, k, ok, 10, true, "First")
+	k, ok = s.Last()
+	assertKV(t, k, ok, 30, true, "Last")
+	
+	k, ok = s.PollFirst()
+	assertKV(t, k, ok, 10, true, "PollFirst")
+	if s.Contains(10) { t.Errorf("PollFirst didn't remove") }
+	
+	k, ok = s.PollLast()
+	assertKV(t, k, ok, 30, true, "PollLast")
+	if s.Contains(30) { t.Errorf("PollLast didn't remove") }
+	
+	// Test panics
+	assertPanic := func(name string, f func()) {
+		t.Helper()
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("%s did not panic", name)
+			}
+		}()
+		f()
+	}
+	assertPanic("AddFirst", func() { s.AddFirst(1) })
+	assertPanic("AddLast", func() { s.AddLast(1) })
+}
+
+func TestTreeSet_Reversed(t *testing.T) {
+	t.Parallel()
+	s := NewOrdered[int]()
+	for i := 1; i <= 5; i++ {
+		s.Add(i * 10)
+	}
+	
+	var keys []int
+	for k := range s.ReversedAll() {
+		keys = append(keys, k)
+	}
+	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
+		t.Errorf("ReversedAll: %v", keys)
+	}
+	
+	// coverage for ReversedAll early exit
+	for k := range s.ReversedAll() {
+		_ = k
+		break
+	}
+}
+
+func TestTreeSet_Iterators_Bounds(t *testing.T) {
+	t.Parallel()
+	s := NewOrdered[int]()
+	for i := 1; i <= 10; i++ {
+		s.Add(i)
+	}
+	
+	if got := slices.Collect(s.AllFrom(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+		t.Errorf("AllFrom(5): %v", got)
+	}
+	if got := slices.Collect(s.AllTo(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+		t.Errorf("AllTo(5): %v", got)
+	}
+	if got := slices.Collect(s.AllBetween(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
+		t.Errorf("AllBetween(3, 7): %v", got)
+	}
+	
+	// Early exit coverage
+	for k := range s.AllBetween(1, 10) {
+		_ = k
+		break
+	}
+}

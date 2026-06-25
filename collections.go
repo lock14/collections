@@ -154,3 +154,129 @@ type MutableMap[K any, V any] interface {
 	// Clear removes all key-value pairs from the map.
 	Clear()
 }
+
+// SequencedSet represents a set with a defined encounter order.
+type SequencedSet[T any] interface {
+	Set[T]
+	// First returns the first element in the set.
+	First() (T, bool)
+	// Last returns the last element in the set.
+	Last() (T, bool)
+	// ReversedAll returns an iterator over the elements in reverse order.
+	ReversedAll() iter.Seq[T]
+}
+
+// MutableSequencedSet represents a sequenced set that can be modified.
+type MutableSequencedSet[T any] interface {
+	SequencedSet[T]
+	MutableSet[T]
+	// PollFirst removes and returns the first element in the set.
+	PollFirst() (T, bool)
+	// PollLast removes and returns the last element in the set.
+	PollLast() (T, bool)
+	// AddFirst inserts the specified element at the front of the set.
+	AddFirst(T)
+	// AddLast inserts the specified element at the end of the set.
+	AddLast(T)
+}
+
+// SequencedMap represents a map with a defined encounter order.
+type SequencedMap[K any, V any] interface {
+	Map[K, V]
+	// First returns the first key-value pair in the map.
+	First() (K, V, bool)
+	// Last returns the last key-value pair in the map.
+	Last() (K, V, bool)
+	// ReversedAll returns an iterator over the key-value pairs in reverse order.
+	ReversedAll() iter.Seq2[K, V]
+	// ReversedKeys returns an iterator over the keys in reverse order.
+	ReversedKeys() iter.Seq[K]
+	// ReversedValues returns an iterator over the values in reverse order.
+	ReversedValues() iter.Seq[V]
+}
+
+// MutableSequencedMap represents a sequenced map that can be modified.
+type MutableSequencedMap[K any, V any] interface {
+	SequencedMap[K, V]
+	MutableMap[K, V]
+	// PollFirst removes and returns the first key-value pair in the map.
+	PollFirst() (K, V, bool)
+	// PollLast removes and returns the last key-value pair in the map.
+	PollLast() (K, V, bool)
+	// PutFirst inserts the specified key-value pair at the front of the map.
+	PutFirst(K, V)
+	// PutLast inserts the specified key-value pair at the end of the map.
+	PutLast(K, V)
+}
+
+// SortedSet represents a set that maintains its elements in ascending order.
+type SortedSet[T any] interface {
+	SequencedSet[T]
+	// AllFrom returns an iterator over the elements greater than or equal to the given element.
+	AllFrom(from T) iter.Seq[T]
+	// AllTo returns an iterator over the elements less than the given element.
+	AllTo(to T) iter.Seq[T]
+	// AllBetween returns an iterator over the elements greater than or equal to 'from' and less than 'to'.
+	AllBetween(from, to T) iter.Seq[T]
+}
+
+// MutableSortedSet represents a sorted set that can be modified.
+type MutableSortedSet[T any] interface {
+	SortedSet[T]
+	MutableSequencedSet[T]
+}
+
+// SortedMap represents a map that maintains its entries in ascending order of keys.
+type SortedMap[K any, V any] interface {
+	SequencedMap[K, V]
+	// AllFrom returns an iterator over the entries whose keys are greater than or equal to the given key.
+	AllFrom(from K) iter.Seq2[K, V]
+	// AllTo returns an iterator over the entries whose keys are less than the given key.
+	AllTo(to K) iter.Seq2[K, V]
+	// AllBetween returns an iterator over the entries whose keys are greater than or equal to 'from' and less than 'to'.
+	AllBetween(from, to K) iter.Seq2[K, V]
+}
+
+// MutableSortedMap represents a sorted map that can be modified.
+type MutableSortedMap[K any, V any] interface {
+	SortedMap[K, V]
+	MutableSequencedMap[K, V]
+}
+
+// NavigableSet represents a sorted set with routing methods for finding closest matches.
+type NavigableSet[T any] interface {
+	SortedSet[T]
+	// Lower returns the greatest element strictly less than the given element.
+	Lower(T) (T, bool)
+	// Floor returns the greatest element less than or equal to the given element.
+	Floor(T) (T, bool)
+	// Ceiling returns the least element greater than or equal to the given element.
+	Ceiling(T) (T, bool)
+	// Higher returns the least element strictly greater than the given element.
+	Higher(T) (T, bool)
+}
+
+// MutableNavigableSet represents a navigable set that can be modified.
+type MutableNavigableSet[T any] interface {
+	NavigableSet[T]
+	MutableSortedSet[T]
+}
+
+// NavigableMap represents a sorted map with routing methods for finding closest key matches.
+type NavigableMap[K any, V any] interface {
+	SortedMap[K, V]
+	// Lower returns the key-value pair for the greatest key strictly less than the given key.
+	Lower(K) (K, V, bool)
+	// Floor returns the key-value pair for the greatest key less than or equal to the given key.
+	Floor(K) (K, V, bool)
+	// Ceiling returns the key-value pair for the least key greater than or equal to the given key.
+	Ceiling(K) (K, V, bool)
+	// Higher returns the key-value pair for the least key strictly greater than the given key.
+	Higher(K) (K, V, bool)
+}
+
+// MutableNavigableMap represents a navigable map that can be modified.
+type MutableNavigableMap[K any, V any] interface {
+	NavigableMap[K, V]
+	MutableSortedMap[K, V]
+}

@@ -303,3 +303,123 @@ func TestLinkedHashSet_Bulk(t *testing.T) {
 		})
 	}
 }
+
+func TestLinkedHashSet_Sequenced(t *testing.T) {
+	t.Parallel()
+	
+	t.Run("first_last", func(t *testing.T) {
+		s := New[int]()
+		_, ok := s.First()
+		if ok {
+			t.Errorf("expected empty set to have no first")
+		}
+		_, ok = s.Last()
+		if ok {
+			t.Errorf("expected empty set to have no last")
+		}
+		
+		s.Add(1)
+		s.Add(2)
+		s.Add(3)
+		
+		v, ok := s.First()
+		if !ok || v != 1 {
+			t.Errorf("expected First to be 1, got %v, %v", v, ok)
+		}
+		
+		v, ok = s.Last()
+		if !ok || v != 3 {
+			t.Errorf("expected Last to be 3, got %v, %v", v, ok)
+		}
+	})
+	
+	t.Run("poll_first_last", func(t *testing.T) {
+		s := New[int]()
+		_, ok := s.PollFirst()
+		if ok {
+			t.Errorf("expected false")
+		}
+		_, ok = s.PollLast()
+		if ok {
+			t.Errorf("expected false")
+		}
+		
+		s.Add(1)
+		s.Add(2)
+		s.Add(3)
+		
+		v, ok := s.PollFirst()
+		if !ok || v != 1 || s.Size() != 2 {
+			t.Errorf("expected PollFirst to be 1 and size 2")
+		}
+		
+		v, ok = s.PollLast()
+		if !ok || v != 3 || s.Size() != 1 {
+			t.Errorf("expected PollLast to be 3 and size 1")
+		}
+	})
+	
+	t.Run("add_first_last", func(t *testing.T) {
+		s := New[int]()
+		s.AddFirst(2)
+		s.AddFirst(1)
+		s.AddLast(3)
+		
+		got := slices.Collect(s.All())
+		expected := []int{1, 2, 3}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+		
+		// Update existing with AddFirst
+		s.AddFirst(3)
+		got = slices.Collect(s.All())
+		expected = []int{3, 1, 2}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+
+		// Update existing with AddLast
+		s.AddLast(1)
+		got = slices.Collect(s.All())
+		expected = []int{3, 2, 1}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+	})
+
+	t.Run("add_first_eviction", func(t *testing.T) {
+		s := New[int](WithMaxElements(2))
+		s.AddFirst(1)
+		s.AddFirst(2)
+		s.AddFirst(3) // Should evict tail (1)
+
+		got := slices.Collect(s.All())
+		expected := []int{3, 2}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+	})
+}
+
+func TestLinkedHashSet_Reversed(t *testing.T) {
+	t.Parallel()
+	s := New[int]()
+	s.Add(1)
+	s.Add(2)
+	s.Add(3)
+
+	var elements []int
+	for v := range s.ReversedAll() {
+		elements = append(elements, v)
+	}
+	if !slices.Equal(elements, []int{3, 2, 1}) {
+		t.Errorf("expected ReversedAll [3, 2, 1], got %v", elements)
+	}
+	
+	// Test coverage for early exit iterator
+	for v := range s.ReversedAll() {
+		_ = v
+		break
+	}
+}

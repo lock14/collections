@@ -3,9 +3,10 @@ package treemap
 import (
 	"github.com/lock14/collections"
 	"iter"
+	"slices"
 )
 
-var _ collections.MutableMap[int, int] = (*TreeMap[int, int])(nil)
+var _ collections.MutableNavigableMap[int, int] = (*TreeMap[int, int])(nil)
 
 func (tm *TreeMap[K, V]) Get(key K) (V, bool) {
 	if tm.root == nil {
@@ -87,4 +88,251 @@ func (tm *TreeMap[K, V]) Values() iter.Seq[V] {
 			}
 		}
 	}
+}
+
+func (tm *TreeMap[K, V]) First() (K, V, bool) {
+	if tm.root == nil || tm.size == 0 {
+		var zeroK K
+		var zeroV V
+		return zeroK, zeroV, false
+	}
+	n := tm.root
+	for !n.leaf {
+		n = n.children[0]
+	}
+	return n.keys[0], n.values[0], true
+}
+
+func (tm *TreeMap[K, V]) Last() (K, V, bool) {
+	if tm.root == nil || tm.size == 0 {
+		var zeroK K
+		var zeroV V
+		return zeroK, zeroV, false
+	}
+	n := tm.root
+	for !n.leaf {
+		n = n.children[len(n.children)-1]
+	}
+	return n.keys[len(n.keys)-1], n.values[len(n.values)-1], true
+}
+
+func (tm *TreeMap[K, V]) PollFirst() (K, V, bool) {
+	k, v, ok := tm.First()
+	if ok {
+		tm.Remove(k)
+	}
+	return k, v, ok
+}
+
+func (tm *TreeMap[K, V]) PollLast() (K, V, bool) {
+	k, v, ok := tm.Last()
+	if ok {
+		tm.Remove(k)
+	}
+	return k, v, ok
+}
+
+func (tm *TreeMap[K, V]) PutFirst(key K, value V) {
+	panic("PutFirst is not supported on SortedMap")
+}
+
+func (tm *TreeMap[K, V]) PutLast(key K, value V) {
+	panic("PutLast is not supported on SortedMap")
+}
+
+func (tm *TreeMap[K, V]) Lower(key K) (K, V, bool) {
+	var bestK K
+	var bestV V
+	var found bool
+	
+	n := tm.root
+	for n != nil && len(n.keys) > 0 {
+		i, _ := slices.BinarySearchFunc(n.keys, key, tm.comparator)
+		if i > 0 {
+			bestK = n.keys[i-1]
+			bestV = n.values[i-1]
+			found = true
+		}
+		if n.leaf {
+			break
+		}
+		n = n.children[i]
+	}
+	return bestK, bestV, found
+}
+
+func (tm *TreeMap[K, V]) Floor(key K) (K, V, bool) {
+	var bestK K
+	var bestV V
+	var found bool
+	
+	n := tm.root
+	for n != nil && len(n.keys) > 0 {
+		i, match := slices.BinarySearchFunc(n.keys, key, tm.comparator)
+		if match {
+			return n.keys[i], n.values[i], true
+		}
+		if i > 0 {
+			bestK = n.keys[i-1]
+			bestV = n.values[i-1]
+			found = true
+		}
+		if n.leaf {
+			break
+		}
+		n = n.children[i]
+	}
+	return bestK, bestV, found
+}
+
+func (tm *TreeMap[K, V]) Ceiling(key K) (K, V, bool) {
+	var bestK K
+	var bestV V
+	var found bool
+	
+	n := tm.root
+	for n != nil && len(n.keys) > 0 {
+		i, match := slices.BinarySearchFunc(n.keys, key, tm.comparator)
+		if match {
+			return n.keys[i], n.values[i], true
+		}
+		if i < len(n.keys) {
+			bestK = n.keys[i]
+			bestV = n.values[i]
+			found = true
+		}
+		if n.leaf {
+			break
+		}
+		n = n.children[i]
+	}
+	return bestK, bestV, found
+}
+
+func (tm *TreeMap[K, V]) Higher(key K) (K, V, bool) {
+	var bestK K
+	var bestV V
+	var found bool
+	
+	n := tm.root
+	for n != nil && len(n.keys) > 0 {
+		i, match := slices.BinarySearchFunc(n.keys, key, tm.comparator)
+		if match {
+			i++
+		}
+		if i < len(n.keys) {
+			bestK = n.keys[i]
+			bestV = n.values[i]
+			found = true
+		}
+		if n.leaf {
+			break
+		}
+		n = n.children[i]
+	}
+	return bestK, bestV, found
+}
+
+func (tm *TreeMap[K, V]) ReversedAll() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		tm.reverseInOrder(tm.root, yield)
+	}
+}
+
+func (tm *TreeMap[K, V]) reverseInOrder(n *node[K, V], yield func(K, V) bool) bool {
+	if n == nil || len(n.keys) == 0 {
+		return true
+	}
+	if !n.leaf {
+		if !tm.reverseInOrder(n.children[len(n.keys)], yield) {
+			return false
+		}
+	}
+	for i := len(n.keys) - 1; i >= 0; i-- {
+		if !yield(n.keys[i], n.values[i]) {
+			return false
+		}
+		if !n.leaf {
+			if !tm.reverseInOrder(n.children[i], yield) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (tm *TreeMap[K, V]) ReversedKeys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for k := range tm.ReversedAll() {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+func (tm *TreeMap[K, V]) ReversedValues() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for _, v := range tm.ReversedAll() {
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+func (tm *TreeMap[K, V]) AllFrom(from K) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		var zero K
+		tm.rangeInOrder(tm.root, from, zero, true, false, yield)
+	}
+}
+
+func (tm *TreeMap[K, V]) AllTo(to K) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		var zero K
+		tm.rangeInOrder(tm.root, zero, to, false, true, yield)
+	}
+}
+
+func (tm *TreeMap[K, V]) AllBetween(from K, to K) iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		tm.rangeInOrder(tm.root, from, to, true, true, yield)
+	}
+}
+
+func (tm *TreeMap[K, V]) rangeInOrder(n *node[K, V], from K, to K, checkFrom, checkTo bool, yield func(K, V) bool) bool {
+	if n == nil || len(n.keys) == 0 {
+		return true
+	}
+	for i := 0; i < len(n.keys); i++ {
+		cmpFrom := 1
+		if checkFrom {
+			cmpFrom = tm.comparator(n.keys[i], from)
+		}
+		cmpTo := -1
+		if checkTo {
+			cmpTo = tm.comparator(n.keys[i], to)
+		}
+
+		if !n.leaf && cmpFrom >= 0 {
+			if !tm.rangeInOrder(n.children[i], from, to, checkFrom, checkTo, yield) {
+				return false
+			}
+		}
+		if cmpTo >= 0 {
+			return false
+		}
+		if cmpFrom >= 0 {
+			if !yield(n.keys[i], n.values[i]) {
+				return false
+			}
+		}
+	}
+	if !n.leaf {
+		if !tm.rangeInOrder(n.children[len(n.keys)], from, to, checkFrom, checkTo, yield) {
+			return false
+		}
+	}
+	return true
 }

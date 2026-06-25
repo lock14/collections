@@ -644,3 +644,136 @@ func primesLessThan(n int) *BitSet {
 	}
 	return b
 }
+
+func assertKV(t *testing.T, k int, ok bool, expectedK int, expectedOk bool, name string) {
+	t.Helper()
+	if ok != expectedOk {
+		t.Errorf("%s: expected ok=%v, got %v", name, expectedOk, ok)
+	} else if ok && k != expectedK {
+		t.Errorf("%s: expected %v, got %v", name, expectedK, k)
+	}
+}
+
+func TestBitSet_Navigable(t *testing.T) {
+	t.Parallel()
+	b := New()
+	
+	_, ok := b.Lower(10)
+	if ok { t.Errorf("expected empty set to return false for Lower") }
+	
+	b.Add(10)
+	b.Add(20)
+	b.Add(30)
+	b.Add(40)
+	b.Add(50)
+	
+	k, ok := b.Lower(30)
+	assertKV(t, k, ok, 20, true, "Lower(30)")
+	k, ok = b.Lower(10)
+	assertKV(t, k, ok, 0, false, "Lower(10)")
+	
+	k, ok = b.Floor(30)
+	assertKV(t, k, ok, 30, true, "Floor(30)")
+	k, ok = b.Floor(25)
+	assertKV(t, k, ok, 20, true, "Floor(25)")
+	k, ok = b.Floor(5)
+	assertKV(t, k, ok, 0, false, "Floor(5)")
+	
+	k, ok = b.Ceiling(30)
+	assertKV(t, k, ok, 30, true, "Ceiling(30)")
+	k, ok = b.Ceiling(35)
+	assertKV(t, k, ok, 40, true, "Ceiling(35)")
+	k, ok = b.Ceiling(60)
+	assertKV(t, k, ok, 0, false, "Ceiling(60)")
+	
+	k, ok = b.Higher(30)
+	assertKV(t, k, ok, 40, true, "Higher(30)")
+	k, ok = b.Higher(50)
+	assertKV(t, k, ok, 0, false, "Higher(50)")
+}
+
+func TestBitSet_Sequenced(t *testing.T) {
+	t.Parallel()
+	b := New()
+	
+	_, ok := b.First()
+	if ok { t.Errorf("First on empty set") }
+	_, ok = b.Last()
+	if ok { t.Errorf("Last on empty set") }
+	
+	b.Add(10)
+	b.Add(20)
+	b.Add(30)
+	
+	k, ok := b.First()
+	assertKV(t, k, ok, 10, true, "First")
+	k, ok = b.Last()
+	assertKV(t, k, ok, 30, true, "Last")
+	
+	k, ok = b.PollFirst()
+	assertKV(t, k, ok, 10, true, "PollFirst")
+	if b.Contains(10) { t.Errorf("PollFirst didn't remove") }
+	
+	k, ok = b.PollLast()
+	assertKV(t, k, ok, 30, true, "PollLast")
+	if b.Contains(30) { t.Errorf("PollLast didn't remove") }
+	
+	// Test panics
+	assertPanic := func(name string, f func()) {
+		t.Helper()
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("%s did not panic", name)
+			}
+		}()
+		f()
+	}
+	assertPanic("AddFirst", func() { b.AddFirst(1) })
+	assertPanic("AddLast", func() { b.AddLast(1) })
+}
+
+func TestBitSet_Reversed(t *testing.T) {
+	t.Parallel()
+	b := New()
+	for i := 1; i <= 5; i++ {
+		b.Add(i * 10)
+	}
+	
+	var keys []int
+	for k := range b.ReversedAll() {
+		keys = append(keys, k)
+	}
+	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
+		t.Errorf("ReversedAll: %v", keys)
+	}
+	
+	// coverage for ReversedAll early exit
+	for k := range b.ReversedAll() {
+		_ = k
+		break
+	}
+}
+
+func TestBitSet_Iterators_Bounds(t *testing.T) {
+	t.Parallel()
+	b := New()
+	for i := 1; i <= 10; i++ {
+		b.Add(i)
+	}
+	
+	if got := slices.Collect(b.AllFrom(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+		t.Errorf("AllFrom(5): %v", got)
+	}
+	if got := slices.Collect(b.AllTo(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+		t.Errorf("AllTo(5): %v", got)
+	}
+	if got := slices.Collect(b.AllBetween(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
+		t.Errorf("AllBetween(3, 7): %v", got)
+	}
+	
+	// Early exit coverage
+	for k := range b.AllBetween(1, 10) {
+		_ = k
+		break
+	}
+}

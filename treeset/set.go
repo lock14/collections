@@ -8,7 +8,7 @@ import (
 	"github.com/lock14/collections"
 )
 
-var _ collections.MutableSet[int] = (*TreeSet[int])(nil)
+var _ collections.MutableNavigableSet[int] = (*TreeSet[int])(nil)
 
 // Add inserts the specified element into the set.
 func (s *TreeSet[T]) Add(item T) {
@@ -90,6 +90,88 @@ func (s *TreeSet[T]) Empty() bool {
 // All returns an Iterator over all the elements of this set.
 func (s *TreeSet[T]) All() iter.Seq[T] {
 	return s.m.Keys()
+}
+
+func (s *TreeSet[T]) First() (T, bool) {
+	k, _, ok := s.m.First()
+	return k, ok
+}
+
+func (s *TreeSet[T]) Last() (T, bool) {
+	k, _, ok := s.m.Last()
+	return k, ok
+}
+
+func (s *TreeSet[T]) PollFirst() (T, bool) {
+	k, _, ok := s.m.PollFirst()
+	return k, ok
+}
+
+func (s *TreeSet[T]) PollLast() (T, bool) {
+	k, _, ok := s.m.PollLast()
+	return k, ok
+}
+
+func (s *TreeSet[T]) AddFirst(item T) {
+	panic("AddFirst is not supported on SortedSet")
+}
+
+func (s *TreeSet[T]) AddLast(item T) {
+	panic("AddLast is not supported on SortedSet")
+}
+
+func (s *TreeSet[T]) Lower(item T) (T, bool) {
+	k, _, ok := s.m.Lower(item)
+	return k, ok
+}
+
+func (s *TreeSet[T]) Floor(item T) (T, bool) {
+	k, _, ok := s.m.Floor(item)
+	return k, ok
+}
+
+func (s *TreeSet[T]) Ceiling(item T) (T, bool) {
+	k, _, ok := s.m.Ceiling(item)
+	return k, ok
+}
+
+func (s *TreeSet[T]) Higher(item T) (T, bool) {
+	k, _, ok := s.m.Higher(item)
+	return k, ok
+}
+
+func (s *TreeSet[T]) ReversedAll() iter.Seq[T] {
+	return s.m.ReversedKeys()
+}
+
+func (s *TreeSet[T]) AllFrom(from T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for k, _ := range s.m.AllFrom(from) {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+func (s *TreeSet[T]) AllTo(to T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for k, _ := range s.m.AllTo(to) {
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+func (s *TreeSet[T]) AllBetween(from T, to T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for k, _ := range s.m.AllBetween(from, to) {
+			if !yield(k) {
+				return
+			}
+		}
+	}
 }
 
 // String returns a string representation of the set.
