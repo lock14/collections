@@ -473,7 +473,7 @@ func TestTreeMap_Iterators_Bounds(t *testing.T) {
 
 	collect := func(seq iter.Seq2[int, int]) []int {
 		var res []int
-		for k, _ := range seq {
+		for k := range seq {
 			res = append(res, k)
 		}
 		return res
@@ -490,7 +490,7 @@ func TestTreeMap_Iterators_Bounds(t *testing.T) {
 	}
 
 	// Early exit coverage
-	for k, _ := range tm.AllBetween(1, 10) {
+	for k := range tm.AllBetween(1, 10) {
 		_ = k
 		break
 	}

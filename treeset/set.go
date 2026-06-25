@@ -150,7 +150,7 @@ func (s *TreeSet[T]) ReversedAll() iter.Seq[T] {
 
 func (s *TreeSet[T]) AllFrom(from T) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for k, _ := range s.m.AllFrom(from) {
+		for k := range s.m.AllFrom(from) {
 			if !yield(k) {
 				return
 			}
@@ -160,7 +160,7 @@ func (s *TreeSet[T]) AllFrom(from T) iter.Seq[T] {
 
 func (s *TreeSet[T]) AllTo(to T) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for k, _ := range s.m.AllTo(to) {
+		for k := range s.m.AllTo(to) {
 			if !yield(k) {
 				return
 			}
@@ -170,7 +170,7 @@ func (s *TreeSet[T]) AllTo(to T) iter.Seq[T] {
 
 func (s *TreeSet[T]) AllBetween(from T, to T) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for k, _ := range s.m.AllBetween(from, to) {
+		for k := range s.m.AllBetween(from, to) {
 			if !yield(k) {
 				return
 			}
