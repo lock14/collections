@@ -85,7 +85,7 @@ func TestBitSet_MutableSet(t *testing.T) {
 	if b.ContainsAll(other) {
 		t.Errorf("expected not to contain all")
 	}
-	
+
 	// test ContainsAll when other has more words than b
 	other.Clear()
 	other.AddAll(slices.Values([]int{2, 3, 100}))
@@ -100,7 +100,7 @@ func TestBitSet_MutableSet(t *testing.T) {
 	if !b.ContainsAll(other) {
 		t.Errorf("expected to contain all even with empty upper words")
 	}
-	
+
 	other.Clear()
 	other.AddAll(slices.Values([]int{2, 3}))
 	if !other.ContainsAll(b) {
@@ -140,7 +140,7 @@ func TestBitSet_MutableSet(t *testing.T) {
 	hset.Add(2)
 	hset.Add(3)
 	hset.Add(4)
-	
+
 	b.Clear()
 	b.AddAll(slices.Values([]int{1, 2, 3, 4, 5}))
 	b.RemoveAll(hset)
@@ -158,7 +158,7 @@ func TestBitSet_MutableSet(t *testing.T) {
 	// Test Size() lazy evaluation
 	b.Clear()
 	b.AddAll(slices.Values([]int{1, 2, 3}))
-	b.FlipRange(0, 5) // sets size to -1
+	b.FlipRange(0, 5)  // sets size to -1
 	if b.Size() != 2 { // triggers recomputeSize
 		t.Errorf("Lazy size evaluation failed: expected 2, got %v", b.Size())
 	}
