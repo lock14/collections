@@ -31,14 +31,14 @@ func TestNew(t *testing.T) {
 		{
 			name: "default_capacity",
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 64 {
-					t.Errorf("expected Size 64, got %d", got)
+				if got := b.Capacity(); got != 64 {
+					t.Errorf("expected Capacity 64, got %d", got)
 				}
 				if got := b.Length(); got != 0 {
 					t.Errorf("expected Length 0, got %d", got)
 				}
 				for i := 0; i < 64; i++ {
-					if b.Get(i) {
+					if b.GetBit(i) {
 						t.Errorf("expected bit %d to be unset", i)
 					}
 				}
@@ -48,11 +48,11 @@ func TestNew(t *testing.T) {
 			name: "zero_bits",
 			opts: []Option{NumBits(0)},
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 0 {
-					t.Errorf("expected Size 0, got %d", got)
+				if got := b.Capacity(); got != 0 {
+					t.Errorf("Capacity() = %v, want %v", got, 0)
 				}
-				b.Set(5) // should grow without panic
-				if !b.Get(5) {
+				b.SetBit(5) // should grow without panic
+				if !b.GetBit(5) {
 					t.Errorf("expected bit 5 to be set after growing from zero")
 				}
 			},
@@ -61,8 +61,8 @@ func TestNew(t *testing.T) {
 			name: "exact_word_size",
 			opts: []Option{NumBits(64)},
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 64 {
-					t.Errorf("expected Size 64, got %d", got)
+				if got := b.Capacity(); got != 64 {
+					t.Errorf("expected Capacity 64, got %d", got)
 				}
 			},
 		},
@@ -70,8 +70,8 @@ func TestNew(t *testing.T) {
 			name: "non_exact_word_size",
 			opts: []Option{NumBits(100)},
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 128 { // 100 bits requires 2 words
-					t.Errorf("expected Size 128, got %d", got)
+				if got := b.Capacity(); got != 128 { // 100 bits requires 2 words
+					t.Errorf("Capacity() = %v, want %v", got, 128)
 				}
 			},
 		},
@@ -86,7 +86,7 @@ func TestNew(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestGetBit(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -95,7 +95,7 @@ func TestGet(t *testing.T) {
 		{
 			name: "get_out_of_range_returns_false",
 			check: func(t *testing.T, b *BitSet) {
-				if b.Get(1000) {
+				if b.GetBit(1000) {
 					t.Errorf("expected false for out-of-range bit")
 				}
 			},
@@ -103,10 +103,10 @@ func TestGet(t *testing.T) {
 		{
 			name: "get_out_of_range_does_not_grow",
 			check: func(t *testing.T, b *BitSet) {
-				sizeBefore := b.Size()
-				b.Get(1000)
-				if got := b.Size(); got != sizeBefore {
-					t.Errorf("Get on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				sizeBefore := b.Capacity()
+				b.GetBit(1000)
+				if got := b.Capacity(); got != sizeBefore {
+					t.Errorf("Capacity() = %v, want %v", got, sizeBefore)
 				}
 			},
 		},
@@ -118,7 +118,7 @@ func TestGet(t *testing.T) {
 						t.Errorf("expected panic for negative index")
 					}
 				}()
-				b.Get(-1)
+				b.GetBit(-1)
 			},
 		},
 	}
@@ -132,7 +132,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-func TestSet(t *testing.T) {
+func TestSetBit(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -141,8 +141,8 @@ func TestSet(t *testing.T) {
 		{
 			name: "set_single_bit",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				if !b.Get(5) {
+				b.SetBit(5)
+				if !b.GetBit(5) {
 					t.Errorf("expected bit 5 to be set")
 				}
 			},
@@ -151,8 +151,8 @@ func TestSet(t *testing.T) {
 			name: "set_many_bits",
 			check: func(t *testing.T, b *BitSet) {
 				for i := 0; i < 128; i++ {
-					b.Set(i)
-					if !b.Get(i) {
+					b.SetBit(i)
+					if !b.GetBit(i) {
 						t.Errorf("expected bit %d to be set", i)
 					}
 				}
@@ -166,7 +166,7 @@ func TestSet(t *testing.T) {
 						t.Errorf("expected panic for negative index")
 					}
 				}()
-				b.Set(-1)
+				b.SetBit(-1)
 			},
 		},
 	}
@@ -180,7 +180,7 @@ func TestSet(t *testing.T) {
 	}
 }
 
-func TestClear(t *testing.T) {
+func TestClearBit(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -189,9 +189,9 @@ func TestClear(t *testing.T) {
 		{
 			name: "clear_set_bit",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				b.Clear(5)
-				if b.Get(5) {
+				b.SetBit(5)
+				b.ClearBit(5)
+				if b.GetBit(5) {
 					t.Errorf("expected bit 5 to be unset after Clear")
 				}
 			},
@@ -199,9 +199,9 @@ func TestClear(t *testing.T) {
 		{
 			name: "clear_updates_length",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				b.Set(10)
-				b.Clear(10)
+				b.SetBit(5)
+				b.SetBit(10)
+				b.ClearBit(10)
 				if got := b.Length(); got != 6 {
 					t.Errorf("expected Length 6 after clearing highest bit, got %d", got)
 				}
@@ -210,8 +210,8 @@ func TestClear(t *testing.T) {
 		{
 			name: "clear_only_bit_in_word_0",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(3)
-				b.Clear(3)
+				b.SetBit(3)
+				b.ClearBit(3)
 				if got := b.Length(); got != 0 {
 					t.Errorf("expected Length 0, got %d", got)
 				}
@@ -220,19 +220,19 @@ func TestClear(t *testing.T) {
 		{
 			name: "clear_out_of_range_does_not_grow",
 			check: func(t *testing.T, b *BitSet) {
-				sizeBefore := b.Size()
-				b.Clear(1000)
-				if got := b.Size(); got != sizeBefore {
-					t.Errorf("Clear on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				sizeBefore := b.Capacity()
+				b.ClearBit(1000)
+				if got := b.Capacity(); got != sizeBefore {
+					t.Errorf("Capacity() = %v, want %v", got, sizeBefore)
 				}
 			},
 		},
 		{
 			name: "clear_unset_bit_is_noop",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				b.Clear(3)
-				if !b.Get(5) {
+				b.SetBit(5)
+				b.ClearBit(3)
+				if !b.GetBit(5) {
 					t.Errorf("clearing an unset bit should not affect other bits")
 				}
 			},
@@ -265,7 +265,7 @@ func TestLength(t *testing.T) {
 		{
 			name: "set_bit_0",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(0)
+				b.SetBit(0)
 				if got := b.Length(); got != 1 {
 					t.Errorf("expected 1, got %d", got)
 				}
@@ -274,7 +274,7 @@ func TestLength(t *testing.T) {
 		{
 			name: "set_bit_5",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
+				b.SetBit(5)
 				if got := b.Length(); got != 6 {
 					t.Errorf("expected 6, got %d", got)
 				}
@@ -283,7 +283,7 @@ func TestLength(t *testing.T) {
 		{
 			name: "set_bit_63",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(63)
+				b.SetBit(63)
 				if got := b.Length(); got != 64 {
 					t.Errorf("expected 64, got %d", got)
 				}
@@ -292,7 +292,7 @@ func TestLength(t *testing.T) {
 		{
 			name: "set_bit_64",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(64)
+				b.SetBit(64)
 				if got := b.Length(); got != 65 {
 					t.Errorf("expected 65, got %d", got)
 				}
@@ -301,9 +301,9 @@ func TestLength(t *testing.T) {
 		{
 			name: "set_multiple_bits_in_word_0",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(3)
-				b.Set(10)
-				b.Set(7)
+				b.SetBit(3)
+				b.SetBit(10)
+				b.SetBit(7)
 				if got := b.Length(); got != 11 {
 					t.Errorf("expected 11, got %d", got)
 				}
@@ -312,8 +312,8 @@ func TestLength(t *testing.T) {
 		{
 			name: "set_bits_across_words",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
-				b.Set(100)
+				b.SetBit(5)
+				b.SetBit(100)
 				if got := b.Length(); got != 101 {
 					t.Errorf("expected 101, got %d", got)
 				}
@@ -340,7 +340,7 @@ func TestFlip(t *testing.T) {
 			name: "flip_empty",
 			check: func(t *testing.T, b *BitSet) {
 				b.Flip()
-				if !b.Get(0) || !b.Get(63) {
+				if !b.GetBit(0) || !b.GetBit(63) {
 					t.Errorf("expected all bits in default capacity to be set")
 				}
 				if b.Length() != 64 {
@@ -351,7 +351,7 @@ func TestFlip(t *testing.T) {
 		{
 			name: "flip_twice_restores",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(5)
+				b.SetBit(5)
 				b.Flip()
 				b.Flip()
 				if got := slices.Collect(b.SetBits()); !slices.Equal(got, []int{5}) {
@@ -380,8 +380,8 @@ func TestFlipRange(t *testing.T) {
 			name: "flip_entire_range_does_not_expand_size",
 			check: func(t *testing.T, b *BitSet) {
 				b.FlipRange(0, 64)
-				if got := b.Size(); got != 64 {
-					t.Errorf("unexpected size got: %d, want: %d", got, 64)
+				if got := b.Capacity(); got != 64 {
+					t.Errorf("Capacity() = %v, want %v", got, 64)
 				}
 				if got := b.Length(); got != 64 {
 					t.Errorf("unexpected length got: %d, want: %d", got, 64)
@@ -412,7 +412,7 @@ func TestFlipRange(t *testing.T) {
 			name: "flip_full_middle_words",
 			check: func(t *testing.T, b *BitSet) {
 				b.FlipRange(60, 130) // covers word 0 (partial), word 1 (full), word 2 (partial)
-				if !b.Get(60) || !b.Get(127) || !b.Get(129) || b.Get(59) || b.Get(130) {
+				if !b.GetBit(60) || !b.GetBit(127) || !b.GetBit(129) || b.GetBit(59) || b.GetBit(130) {
 					t.Errorf("flip range failed for multi-word span")
 				}
 			},
@@ -456,8 +456,8 @@ func TestString(t *testing.T) {
 		{
 			name: "two_words_bottom_word_1_top_word_2",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(0)
-				b.Set(127) // expands to 2 words
+				b.SetBit(0)
+				b.SetBit(127) // expands to 2 words
 				want := "80000000000000000000000000000001"
 				if got := b.String(); got != want {
 					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
@@ -520,7 +520,7 @@ func TestFromBytesToBytes(t *testing.T) {
 			}
 			for n := 0; n < b.Length(); n++ {
 				gotSetBit := (got[n/8] & (1 << (n % 8))) != 0
-				wantSetBit := b.Get(n)
+				wantSetBit := b.GetBit(n)
 				if gotSetBit != wantSetBit {
 					t.Errorf("unexpected result for bit %d, got: %v, want: %v", n, gotSetBit, wantSetBit)
 				}
@@ -547,10 +547,10 @@ func TestSetBits(t *testing.T) {
 		{
 			name: "sparse_bits",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(0)
-				b.Set(63)
-				b.Set(64)
-				b.Set(127)
+				b.SetBit(0)
+				b.SetBit(63)
+				b.SetBit(64)
+				b.SetBit(127)
 				want := []int{0, 63, 64, 127}
 				got := slices.Collect(b.SetBits())
 				if !slices.Equal(got, want) {
@@ -561,9 +561,9 @@ func TestSetBits(t *testing.T) {
 		{
 			name: "early_break",
 			check: func(t *testing.T, b *BitSet) {
-				b.Set(1)
-				b.Set(5)
-				b.Set(100)
+				b.SetBit(1)
+				b.SetBit(5)
+				b.SetBit(100)
 				got := []int{}
 				for n := range b.SetBits() {
 					got = append(got, n)
@@ -627,16 +627,16 @@ func TestBitSetPrimeGen(t *testing.T) {
 func primesLessThan(n int) *BitSet {
 	b := New(NumBits(n))
 	if n > 2 {
-		b.Set(0)
-		b.Set(1)
+		b.SetBit(0)
+		b.SetBit(1)
 		for i := 4; i < n; i += 2 {
-			b.Set(i)
+			b.SetBit(i)
 		}
 		for i := 3; (i*i) > i && (i*i) < n; i += 2 {
-			if !b.Get(i) {
+			if !b.GetBit(i) {
 				// i is prime
 				for j := i * i; j > i && j < n; j += i {
-					b.Set(j)
+					b.SetBit(j)
 				}
 			}
 		}
