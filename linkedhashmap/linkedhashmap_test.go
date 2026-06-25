@@ -353,53 +353,60 @@ func TestLinkedHashMap_Sequenced(t *testing.T) {
 	
 	t.Run("first_last", func(t *testing.T) {
 		m := New[int, string]()
-		_, _, ok := m.First()
-		if ok {
-			t.Errorf("expected empty map to have no first")
-		}
-		_, _, ok = m.Last()
-		if ok {
-			t.Errorf("expected empty map to have no last")
-		}
 		
-		m.Put(1, "A")
-		m.Put(2, "B")
-		m.Put(3, "C")
-		
-		k, v, ok := m.First()
-		if !ok || k != 1 || v != "A" {
-			t.Errorf("expected First to be (1, A), got (%v, %v, %v)", k, v, ok)
+		assertPanic := func(name string, f func()) {
+			t.Helper()
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("%s did not panic", name)
+				}
+			}()
+			f()
 		}
 		
-		k, v, ok = m.Last()
-		if !ok || k != 3 || v != "C" {
-			t.Errorf("expected Last to be (3, C), got (%v, %v, %v)", k, v, ok)
+		assertPanic("First", func() { m.First() })
+		assertPanic("Last", func() { m.Last() })
+		assertPanic("PollFirst", func() { m.PollFirst() })
+		assertPanic("PollLast", func() { m.PollLast() })
+		
+		hm := New[int, int]()
+
+		hm.Put(10, 10)
+		hm.Put(20, 20)
+		hm.Put(30, 30)
+
+		k, v := hm.First()
+		if k != 10 || v != 10 {
+			t.Errorf("First: expected (10, 10), got (%v, %v)", k, v)
+		}
+		
+		k, v = hm.Last()
+		if k != 30 || v != 30 {
+			t.Errorf("Last: expected (30, 30), got (%v, %v)", k, v)
 		}
 	})
 	
 	t.Run("poll_first_last", func(t *testing.T) {
-		m := New[int, string]()
-		_, _, ok := m.PollFirst()
-		if ok {
-			t.Errorf("expected false")
-		}
-		_, _, ok = m.PollLast()
-		if ok {
-			t.Errorf("expected false")
-		}
+		hm := New[int, int]()
 		
-		m.Put(1, "A")
-		m.Put(2, "B")
-		m.Put(3, "C")
+		hm.Put(10, 10)
+		hm.Put(20, 20)
+		hm.Put(30, 30)
 		
-		k, v, ok := m.PollFirst()
-		if !ok || k != 1 || v != "A" || m.Size() != 2 {
-			t.Errorf("expected PollFirst to be (1, A) and size 2")
+		k, v := hm.PollFirst()
+		if k != 10 || v != 10 {
+			t.Errorf("PollFirst: expected (10, 10), got (%v, %v)", k, v)
+		}
+		if hm.ContainsKey(10) {
+			t.Errorf("PollFirst didn't remove")
 		}
 		
-		k, v, ok = m.PollLast()
-		if !ok || k != 3 || v != "C" || m.Size() != 1 {
-			t.Errorf("expected PollLast to be (3, C) and size 1")
+		k, v = hm.PollLast()
+		if k != 30 || v != 30 {
+			t.Errorf("PollLast: expected (30, 30), got (%v, %v)", k, v)
+		}
+		if hm.ContainsKey(30) {
+			t.Errorf("PollLast didn't remove")
 		}
 	})
 	

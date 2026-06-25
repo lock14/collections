@@ -90,46 +90,48 @@ func (tm *TreeMap[K, V]) Values() iter.Seq[V] {
 	}
 }
 
-func (tm *TreeMap[K, V]) First() (K, V, bool) {
-	if tm.root == nil || tm.size == 0 {
-		var zeroK K
-		var zeroV V
-		return zeroK, zeroV, false
+// First returns the first key-value pair in the map.
+func (tm *TreeMap[K, V]) First() (K, V) {
+	if tm.Empty() {
+		panic("First called on empty map")
 	}
 	n := tm.root
 	for !n.leaf {
 		n = n.children[0]
 	}
-	return n.keys[0], n.values[0], true
+	return n.keys[0], n.values[0]
 }
 
-func (tm *TreeMap[K, V]) Last() (K, V, bool) {
-	if tm.root == nil || tm.size == 0 {
-		var zeroK K
-		var zeroV V
-		return zeroK, zeroV, false
+// Last returns the last key-value pair in the map.
+func (tm *TreeMap[K, V]) Last() (K, V) {
+	if tm.Empty() {
+		panic("Last called on empty map")
 	}
 	n := tm.root
 	for !n.leaf {
 		n = n.children[len(n.children)-1]
 	}
-	return n.keys[len(n.keys)-1], n.values[len(n.values)-1], true
+	return n.keys[len(n.keys)-1], n.values[len(n.values)-1]
 }
 
-func (tm *TreeMap[K, V]) PollFirst() (K, V, bool) {
-	k, v, ok := tm.First()
-	if ok {
-		tm.Remove(k)
+// PollFirst removes and returns the first key-value pair in the map.
+func (tm *TreeMap[K, V]) PollFirst() (K, V) {
+	if tm.Empty() {
+		panic("PollFirst called on empty map")
 	}
-	return k, v, ok
+	k, v := tm.First()
+	tm.Remove(k)
+	return k, v
 }
 
-func (tm *TreeMap[K, V]) PollLast() (K, V, bool) {
-	k, v, ok := tm.Last()
-	if ok {
-		tm.Remove(k)
+// PollLast removes and returns the last key-value pair in the map.
+func (tm *TreeMap[K, V]) PollLast() (K, V) {
+	if tm.Empty() {
+		panic("PollLast called on empty map")
 	}
-	return k, v, ok
+	k, v := tm.Last()
+	tm.Remove(k)
+	return k, v
 }
 
 func (tm *TreeMap[K, V]) PutFirst(key K, value V) {

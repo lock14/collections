@@ -414,46 +414,52 @@ func (b *BitSet) ContainsAll(col collections.Collection[int]) bool {
 	return true
 }
 
-func (b *BitSet) First() (int, bool) {
+// First returns the first element in the bitset.
+func (b *BitSet) First() int {
 	if b.Empty() {
-		return 0, false
+		panic("First called on empty bitset")
 	}
 	for i := 0; i < b.maxWordInUse; i++ {
 		if b.bits[i] != 0 {
 			tz := bits.TrailingZeros64(b.bits[i])
-			return i*wordSize + tz, true
+			return i*wordSize + tz
 		}
 	}
-	return 0, false
+	panic("unreachable")
 }
 
-func (b *BitSet) Last() (int, bool) {
+// Last returns the last element in the bitset.
+func (b *BitSet) Last() int {
 	if b.Empty() {
-		return 0, false
+		panic("Last called on empty bitset")
 	}
 	for i := b.maxWordInUse - 1; i >= 0; i-- {
 		if b.bits[i] != 0 {
 			lz := bits.LeadingZeros64(b.bits[i])
-			return i*wordSize + (wordSize - 1 - lz), true
+			return i*wordSize + (wordSize - 1 - lz)
 		}
 	}
-	return 0, false
+	panic("unreachable")
 }
 
-func (b *BitSet) PollFirst() (int, bool) {
-	v, ok := b.First()
-	if ok {
-		b.ClearBit(v)
+// PollFirst removes and returns the first element in the bitset.
+func (b *BitSet) PollFirst() int {
+	if b.Empty() {
+		panic("PollFirst called on empty bitset")
 	}
-	return v, ok
+	val := b.First()
+	b.ClearBit(val)
+	return val
 }
 
-func (b *BitSet) PollLast() (int, bool) {
-	v, ok := b.Last()
-	if ok {
-		b.ClearBit(v)
+// PollLast removes and returns the last element in the bitset.
+func (b *BitSet) PollLast() int {
+	if b.Empty() {
+		panic("PollLast called on empty bitset")
 	}
-	return v, ok
+	val := b.Last()
+	b.ClearBit(val)
+	return val
 }
 
 func (b *BitSet) AddFirst(t int) {
@@ -470,7 +476,10 @@ func (b *BitSet) Lower(t int) (int, bool) {
 	}
 	index, shift := convert(t - 1)
 	if index >= b.maxWordInUse {
-		return b.Last()
+		if b.Empty() {
+			return 0, false
+		}
+		return b.Last(), true
 	}
 	
 	var mask uint64
@@ -501,7 +510,10 @@ func (b *BitSet) Floor(t int) (int, bool) {
 	}
 	index, shift := convert(t)
 	if index >= b.maxWordInUse {
-		return b.Last()
+		if b.Empty() {
+			return 0, false
+		}
+		return b.Last(), true
 	}
 	
 	var mask uint64
@@ -553,7 +565,10 @@ func (b *BitSet) Ceiling(t int) (int, bool) {
 
 func (b *BitSet) Higher(t int) (int, bool) {
 	if t < 0 {
-		return b.First()
+		if b.Empty() {
+			return 0, false
+		}
+		return b.First(), true
 	}
 	index, shift := convert(t + 1)
 	if index >= b.maxWordInUse {

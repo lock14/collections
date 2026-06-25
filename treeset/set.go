@@ -92,24 +92,28 @@ func (s *TreeSet[T]) All() iter.Seq[T] {
 	return s.m.Keys()
 }
 
-func (s *TreeSet[T]) First() (T, bool) {
-	k, _, ok := s.m.First()
-	return k, ok
+// First returns the first element in the set.
+func (s *TreeSet[T]) First() T {
+	k, _ := s.m.First()
+	return k
 }
 
-func (s *TreeSet[T]) Last() (T, bool) {
-	k, _, ok := s.m.Last()
-	return k, ok
+// Last returns the last element in the set.
+func (s *TreeSet[T]) Last() T {
+	k, _ := s.m.Last()
+	return k
 }
 
-func (s *TreeSet[T]) PollFirst() (T, bool) {
-	k, _, ok := s.m.PollFirst()
-	return k, ok
+// PollFirst removes and returns the first element in the set.
+func (s *TreeSet[T]) PollFirst() T {
+	k, _ := s.m.PollFirst()
+	return k
 }
 
-func (s *TreeSet[T]) PollLast() (T, bool) {
-	k, _, ok := s.m.PollLast()
-	return k, ok
+// PollLast removes and returns the last element in the set.
+func (s *TreeSet[T]) PollLast() T {
+	k, _ := s.m.PollLast()
+	return k
 }
 
 func (s *TreeSet[T]) AddFirst(item T) {

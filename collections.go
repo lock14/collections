@@ -158,10 +158,10 @@ type MutableMap[K any, V any] interface {
 // SequencedSet represents a set with a defined encounter order.
 type SequencedSet[T any] interface {
 	Set[T]
-	// First returns the first element in the set.
-	First() (T, bool)
-	// Last returns the last element in the set.
-	Last() (T, bool)
+	// First returns the first element in the set. Panics if empty.
+	First() T
+	// Last returns the last element in the set. Panics if empty.
+	Last() T
 	// ReversedAll returns an iterator over the elements in reverse order.
 	ReversedAll() iter.Seq[T]
 }
@@ -170,10 +170,10 @@ type SequencedSet[T any] interface {
 type MutableSequencedSet[T any] interface {
 	SequencedSet[T]
 	MutableSet[T]
-	// PollFirst removes and returns the first element in the set.
-	PollFirst() (T, bool)
-	// PollLast removes and returns the last element in the set.
-	PollLast() (T, bool)
+	// PollFirst removes and returns the first element in the set. Panics if empty.
+	PollFirst() T
+	// PollLast removes and returns the last element in the set. Panics if empty.
+	PollLast() T
 	// AddFirst inserts the specified element at the front of the set.
 	AddFirst(T)
 	// AddLast inserts the specified element at the end of the set.
@@ -183,10 +183,10 @@ type MutableSequencedSet[T any] interface {
 // SequencedMap represents a map with a defined encounter order.
 type SequencedMap[K any, V any] interface {
 	Map[K, V]
-	// First returns the first key-value pair in the map.
-	First() (K, V, bool)
-	// Last returns the last key-value pair in the map.
-	Last() (K, V, bool)
+	// First returns the first key-value pair in the map. Panics if empty.
+	First() (K, V)
+	// Last returns the last key-value pair in the map. Panics if empty.
+	Last() (K, V)
 	// ReversedAll returns an iterator over the key-value pairs in reverse order.
 	ReversedAll() iter.Seq2[K, V]
 	// ReversedKeys returns an iterator over the keys in reverse order.
@@ -199,10 +199,10 @@ type SequencedMap[K any, V any] interface {
 type MutableSequencedMap[K any, V any] interface {
 	SequencedMap[K, V]
 	MutableMap[K, V]
-	// PollFirst removes and returns the first key-value pair in the map.
-	PollFirst() (K, V, bool)
-	// PollLast removes and returns the last key-value pair in the map.
-	PollLast() (K, V, bool)
+	// PollFirst removes and returns the first key-value pair in the map. Panics if empty.
+	PollFirst() (K, V)
+	// PollLast removes and returns the last key-value pair in the map. Panics if empty.
+	PollLast() (K, V)
 	// PutFirst inserts the specified key-value pair at the front of the map.
 	PutFirst(K, V)
 	// PutLast inserts the specified key-value pair at the end of the map.

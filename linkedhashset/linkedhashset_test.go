@@ -309,57 +309,66 @@ func TestLinkedHashSet_Sequenced(t *testing.T) {
 	
 	t.Run("first_last", func(t *testing.T) {
 		s := New[int]()
-		_, ok := s.First()
-		if ok {
-			t.Errorf("expected empty set to have no first")
-		}
-		_, ok = s.Last()
-		if ok {
-			t.Errorf("expected empty set to have no last")
-		}
-		
-		s.Add(1)
-		s.Add(2)
-		s.Add(3)
-		
-		v, ok := s.First()
-		if !ok || v != 1 {
-			t.Errorf("expected First to be 1, got %v, %v", v, ok)
+
+		s.Add(10)
+		s.Add(20)
+		s.Add(30)
+
+		v := s.First()
+		if v != 10 {
+			t.Errorf("First: expected 10, got %v", v)
 		}
 		
-		v, ok = s.Last()
-		if !ok || v != 3 {
-			t.Errorf("expected Last to be 3, got %v, %v", v, ok)
+		v = s.Last()
+		if v != 30 {
+			t.Errorf("Last: expected 30, got %v", v)
 		}
 	})
 	
 	t.Run("poll_first_last", func(t *testing.T) {
 		s := New[int]()
-		_, ok := s.PollFirst()
-		if ok {
-			t.Errorf("expected false")
-		}
-		_, ok = s.PollLast()
-		if ok {
-			t.Errorf("expected false")
-		}
 		
-		s.Add(1)
-		s.Add(2)
-		s.Add(3)
+		s.Add(10)
+		s.Add(20)
+		s.Add(30)
 		
-		v, ok := s.PollFirst()
-		if !ok || v != 1 || s.Size() != 2 {
-			t.Errorf("expected PollFirst to be 1 and size 2")
+		v := s.PollFirst()
+		if v != 10 {
+			t.Errorf("PollFirst: expected 10, got %v", v)
+		}
+		if s.Contains(10) {
+			t.Errorf("PollFirst didn't remove")
 		}
 		
-		v, ok = s.PollLast()
-		if !ok || v != 3 || s.Size() != 1 {
-			t.Errorf("expected PollLast to be 3 and size 1")
+		v = s.PollLast()
+		if v != 30 {
+			t.Errorf("PollLast: expected 30, got %v", v)
+		}
+		if s.Contains(30) {
+			t.Errorf("PollLast didn't remove")
 		}
 	})
 	
-	t.Run("add_first_last", func(t *testing.T) {
+	t.Run("empty_panics", func(t *testing.T) {
+		s := New[int]()
+		
+		assertPanic := func(name string, f func()) {
+			t.Helper()
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("%s did not panic", name)
+				}
+			}()
+			f()
+		}
+		
+		assertPanic("First", func() { s.First() })
+		assertPanic("Last", func() { s.Last() })
+		assertPanic("PollFirst", func() { s.PollFirst() })
+		assertPanic("PollLast", func() { s.PollLast() })
+	})
+	
+	t.Run("put_first_last", func(t *testing.T) {
 		s := New[int]()
 		s.AddFirst(2)
 		s.AddFirst(1)

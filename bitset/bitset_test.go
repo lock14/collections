@@ -694,31 +694,7 @@ func TestBitSet_Navigable(t *testing.T) {
 
 func TestBitSet_Sequenced(t *testing.T) {
 	t.Parallel()
-	b := New()
 	
-	_, ok := b.First()
-	if ok { t.Errorf("First on empty set") }
-	_, ok = b.Last()
-	if ok { t.Errorf("Last on empty set") }
-	
-	b.Add(10)
-	b.Add(20)
-	b.Add(30)
-	
-	k, ok := b.First()
-	assertKV(t, k, ok, 10, true, "First")
-	k, ok = b.Last()
-	assertKV(t, k, ok, 30, true, "Last")
-	
-	k, ok = b.PollFirst()
-	assertKV(t, k, ok, 10, true, "PollFirst")
-	if b.Contains(10) { t.Errorf("PollFirst didn't remove") }
-	
-	k, ok = b.PollLast()
-	assertKV(t, k, ok, 30, true, "PollLast")
-	if b.Contains(30) { t.Errorf("PollLast didn't remove") }
-	
-	// Test panics
 	assertPanic := func(name string, f func()) {
 		t.Helper()
 		defer func() {
@@ -728,6 +704,39 @@ func TestBitSet_Sequenced(t *testing.T) {
 		}()
 		f()
 	}
+	
+	b := New()
+	assertPanic("First", func() { b.First() })
+	assertPanic("Last", func() { b.Last() })
+	assertPanic("PollFirst", func() { b.PollFirst() })
+	assertPanic("PollLast", func() { b.PollLast() })
+	
+	b.Add(10)
+	b.Add(20)
+	b.Add(30)
+	
+	v := b.First()
+	if v != 10 {
+		t.Errorf("First: expected 10, got %v", v)
+	}
+	
+	v = b.Last()
+	if v != 30 {
+		t.Errorf("Last: expected 30, got %v", v)
+	}
+	
+	v = b.PollFirst()
+	if v != 10 {
+		t.Errorf("PollFirst: expected 10, got %v", v)
+	}
+	if b.Contains(10) { t.Errorf("PollFirst didn't remove") }
+	
+	v = b.PollLast()
+	if v != 30 {
+		t.Errorf("PollLast: expected 30, got %v", v)
+	}
+	if b.Contains(30) { t.Errorf("PollLast didn't remove") }
+	
 	assertPanic("AddFirst", func() { b.AddFirst(1) })
 	assertPanic("AddLast", func() { b.AddLast(1) })
 }

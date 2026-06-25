@@ -61,27 +61,27 @@ func (s *LinkedHashSet[T]) Remove() T {
 }
 
 // First returns the first element in the set.
-func (s *LinkedHashSet[T]) First() (T, bool) {
-	k, _, ok := s.m.First()
-	return k, ok
+func (s *LinkedHashSet[T]) First() T {
+	k, _ := s.m.First()
+	return k
 }
 
 // Last returns the last element in the set.
-func (s *LinkedHashSet[T]) Last() (T, bool) {
-	k, _, ok := s.m.Last()
-	return k, ok
+func (s *LinkedHashSet[T]) Last() T {
+	k, _ := s.m.Last()
+	return k
 }
 
 // PollFirst removes and returns the first element in the set.
-func (s *LinkedHashSet[T]) PollFirst() (T, bool) {
-	k, _, ok := s.m.PollFirst()
-	return k, ok
+func (s *LinkedHashSet[T]) PollFirst() T {
+	k, _ := s.m.PollFirst()
+	return k
 }
 
 // PollLast removes and returns the last element in the set.
-func (s *LinkedHashSet[T]) PollLast() (T, bool) {
-	k, _, ok := s.m.PollLast()
-	return k, ok
+func (s *LinkedHashSet[T]) PollLast() T {
+	k, _ := s.m.PollLast()
+	return k
 }
 
 // AddFirst inserts the specified item at the front of the set.

@@ -375,29 +375,6 @@ func TestTreeMap_Navigable(t *testing.T) {
 
 func TestTreeMap_Sequenced(t *testing.T) {
 	t.Parallel()
-	tm := NewOrdered[int, int]()
-	
-	_, _, ok := tm.First()
-	if ok { t.Errorf("First on empty map") }
-	_, _, ok = tm.Last()
-	if ok { t.Errorf("Last on empty map") }
-	
-	tm.Put(10, 10)
-	tm.Put(20, 20)
-	tm.Put(30, 30)
-	
-	k, v, ok := tm.First()
-	assertKV(t, k, v, ok, 10, 10, true, "First")
-	k, v, ok = tm.Last()
-	assertKV(t, k, v, ok, 30, 30, true, "Last")
-	
-	k, v, ok = tm.PollFirst()
-	assertKV(t, k, v, ok, 10, 10, true, "PollFirst")
-	if tm.ContainsKey(10) { t.Errorf("PollFirst didn't remove") }
-	
-	k, v, ok = tm.PollLast()
-	assertKV(t, k, v, ok, 30, 30, true, "PollLast")
-	if tm.ContainsKey(30) { t.Errorf("PollLast didn't remove") }
 	
 	// Test panics
 	assertPanic := func(name string, f func()) {
@@ -409,6 +386,39 @@ func TestTreeMap_Sequenced(t *testing.T) {
 		}()
 		f()
 	}
+	
+	tm := NewOrdered[int, int]()
+	assertPanic("First", func() { tm.First() })
+	assertPanic("Last", func() { tm.Last() })
+	assertPanic("PollFirst", func() { tm.PollFirst() })
+	assertPanic("PollLast", func() { tm.PollLast() })
+	
+	tm.Put(10, 10)
+	tm.Put(20, 20)
+	tm.Put(30, 30)
+	
+	k, v := tm.First()
+	if k != 10 || v != 10 {
+		t.Errorf("First: expected (10, 10), got (%v, %v)", k, v)
+	}
+	
+	k, v = tm.Last()
+	if k != 30 || v != 30 {
+		t.Errorf("Last: expected (30, 30), got (%v, %v)", k, v)
+	}
+	
+	k, v = tm.PollFirst()
+	if k != 10 || v != 10 {
+		t.Errorf("PollFirst: expected (10, 10), got (%v, %v)", k, v)
+	}
+	if tm.ContainsKey(10) { t.Errorf("PollFirst didn't remove") }
+	
+	k, v = tm.PollLast()
+	if k != 30 || v != 30 {
+		t.Errorf("PollLast: expected (30, 30), got (%v, %v)", k, v)
+	}
+	if tm.ContainsKey(30) { t.Errorf("PollLast didn't remove") }
+	
 	assertPanic("PutFirst", func() { tm.PutFirst(1, 1) })
 	assertPanic("PutLast", func() { tm.PutLast(1, 1) })
 }

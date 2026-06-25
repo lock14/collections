@@ -301,29 +301,6 @@ func TestTreeSet_Navigable(t *testing.T) {
 
 func TestTreeSet_Sequenced(t *testing.T) {
 	t.Parallel()
-	s := NewOrdered[int]()
-	
-	_, ok := s.First()
-	if ok { t.Errorf("First on empty set") }
-	_, ok = s.Last()
-	if ok { t.Errorf("Last on empty set") }
-	
-	s.Add(10)
-	s.Add(20)
-	s.Add(30)
-	
-	k, ok := s.First()
-	assertKV(t, k, ok, 10, true, "First")
-	k, ok = s.Last()
-	assertKV(t, k, ok, 30, true, "Last")
-	
-	k, ok = s.PollFirst()
-	assertKV(t, k, ok, 10, true, "PollFirst")
-	if s.Contains(10) { t.Errorf("PollFirst didn't remove") }
-	
-	k, ok = s.PollLast()
-	assertKV(t, k, ok, 30, true, "PollLast")
-	if s.Contains(30) { t.Errorf("PollLast didn't remove") }
 	
 	// Test panics
 	assertPanic := func(name string, f func()) {
@@ -335,6 +312,39 @@ func TestTreeSet_Sequenced(t *testing.T) {
 		}()
 		f()
 	}
+	
+	s := NewOrdered[int]()
+	assertPanic("First", func() { s.First() })
+	assertPanic("Last", func() { s.Last() })
+	assertPanic("PollFirst", func() { s.PollFirst() })
+	assertPanic("PollLast", func() { s.PollLast() })
+	
+	s.Add(10)
+	s.Add(20)
+	s.Add(30)
+	
+	v := s.First()
+	if v != 10 {
+		t.Errorf("First: expected 10, got %v", v)
+	}
+	
+	v = s.Last()
+	if v != 30 {
+		t.Errorf("Last: expected 30, got %v", v)
+	}
+	
+	v = s.PollFirst()
+	if v != 10 {
+		t.Errorf("PollFirst: expected 10, got %v", v)
+	}
+	if s.Contains(10) { t.Errorf("PollFirst didn't remove") }
+	
+	v = s.PollLast()
+	if v != 30 {
+		t.Errorf("PollLast: expected 30, got %v", v)
+	}
+	if s.Contains(30) { t.Errorf("PollLast didn't remove") }
+	
 	assertPanic("AddFirst", func() { s.AddFirst(1) })
 	assertPanic("AddLast", func() { s.AddLast(1) })
 }

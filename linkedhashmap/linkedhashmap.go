@@ -136,46 +136,44 @@ func (hm *LinkedHashMap[K, V]) PutLast(key K, value V) {
 	}
 }
 
-func (hm *LinkedHashMap[K, V]) First() (K, V, bool) {
-	if hm.Empty() {
-		var zeroK K
-		var zeroV V
-		return zeroK, zeroV, false
+// First returns the first key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) First() (K, V) {
+	if hm.Size() == 0 {
+		panic("First called on empty map")
 	}
-	return hm.list.next.key, hm.list.next.value, true
+	e := hm.list.next
+	return e.key, e.value
 }
 
-func (hm *LinkedHashMap[K, V]) Last() (K, V, bool) {
-	if hm.Empty() {
-		var zeroK K
-		var zeroV V
-		return zeroK, zeroV, false
+// Last returns the last key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) Last() (K, V) {
+	if hm.Size() == 0 {
+		panic("Last called on empty map")
 	}
-	return hm.list.prev.key, hm.list.prev.value, true
+	e := hm.list.prev
+	return e.key, e.value
 }
 
-func (hm *LinkedHashMap[K, V]) PollFirst() (K, V, bool) {
-	if hm.Empty() {
-		var zeroK K
-		var zeroV V
-		return zeroK, zeroV, false
+// PollFirst removes and returns the first key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) PollFirst() (K, V) {
+	if hm.Size() == 0 {
+		panic("PollFirst called on empty map")
 	}
-	n := hm.list.next
-	unlink(n)
-	delete(hm.hashtable, n.key)
-	return n.key, n.value, true
+	e := hm.list.next
+	unlink(e)
+	delete(hm.hashtable, e.key)
+	return e.key, e.value
 }
 
-func (hm *LinkedHashMap[K, V]) PollLast() (K, V, bool) {
-	if hm.Empty() {
-		var zeroK K
-		var zeroV V
-		return zeroK, zeroV, false
+// PollLast removes and returns the last key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) PollLast() (K, V) {
+	if hm.Size() == 0 {
+		panic("PollLast called on empty map")
 	}
-	n := hm.list.prev
-	unlink(n)
-	delete(hm.hashtable, n.key)
-	return n.key, n.value, true
+	e := hm.list.prev
+	unlink(e)
+	delete(hm.hashtable, e.key)
+	return e.key, e.value
 }
 
 func (hm *LinkedHashMap[K, V]) Get(key K) (V, bool) {
