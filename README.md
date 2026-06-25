@@ -7,9 +7,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lock14/collections)](https://goreportcard.com/report/github.com/lock14/collections)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lock14/collections.svg)](https://pkg.go.dev/github.com/lock14/collections)
 
-A comprehensive, generic, and highly optimized data structures and collections library for Go 1.23+.
+Generic data structures for Go 1.23+. Focuses on type safety, minimal allocations, and predictable performance.
 
-## Getting Started
+## Usage
 
 ```bash
 go get github.com/lock14/collections
@@ -26,33 +26,32 @@ import (
 )
 
 func main() {
-	// Create a new TreeSet for integers
 	set := treeset.New[int](comparator.NaturalOrder[int]())
 	
 	set.Add(5)
 	set.Add(1)
 	set.Add(10)
 	
-	// Iterates in sorted order: 1, 5, 10
 	for val := range set.All() {
 		fmt.Println(val)
 	}
 }
 ```
 
-## Features
+## Data Structures
 
-This library provides generic implementations of standard data structures, eliminating the need for `interface{}` and type assertions.
+Implementations leverage Go generics to eliminate `interface{}` boxing and runtime type assertions.
 
 *   **Maps**
-    *   `hashmap`: Standard hash table based map.
-    *   `linkedhashmap`: Hash map that preserves insertion or access order.
-    *   `treemap`: B-Tree based sorted map.
+    *   `hashmap`: Map backed by a hash table.
+    *   `linkedhashmap`: Hash map preserving insertion or access order.
+    *   `treemap`: Sorted map backed by a B-Tree.
 *   **Sets**
-    *   `hashset`: Standard hash table based set.
-    *   `treeset`: B-Tree based sorted set.
-    *   `bitset`: Memory-efficient set of integers.
-*   **Lists & Queues**
+    *   `hashset`: Set backed by a hash table.
+    *   `linkedhashset`: Hash set preserving insertion or access order.
+    *   `treeset`: Sorted set backed by a B-Tree.
+    *   `bitset`: Word-aligned dense integer set.
+*   **Lists, Queues, & Stacks**
     *   `arraylist`: Dynamically resizing array.
     *   `linkedlist`: Doubly-linked list.
     *   `arraydeque`: Double-ended queue backed by a ring buffer.
@@ -63,16 +62,16 @@ This library provides generic implementations of standard data structures, elimi
 
 ## Performance & Testing
 
-This project takes performance seriously. Core data structures like `TreeMap` and `TreeSet` are heavily optimized to reduce memory allocations and Garbage Collection (GC) overhead.
+Design prioritizes mechanical sympathy and GC pressure reduction.
 
-*   **100% Table-Driven Tests**: We enforce strict table-driven testing conventions for robustness.
-*   **Zero-Allocation Paths**: Read operations (like `Get` and `Contains`) in our tree structures are 100% allocation-free.
-*   **CI Benchmark Regression**: Every Pull Request is automatically profiled via a GitHub Actions pipeline against the `main` branch to strictly prevent any performance degradations.
+*   **Zero-Allocation Reads**: Read paths (`Get`, `Contains`, etc.) bypass heap allocations.
+*   **Continuous Benchmarking**: CI gates PRs via `cob`, comparing allocation metrics and execution times against `main`. Regressions fail the build.
+*   **Test Coverage**: Table-driven tests are mandatory. Edge cases, bounds checks, and generic fallback paths must be explicitly exercised.
 
 ## Contributing
 
-Contributions are welcome! We require all tests to pass and benchmarks to show no regression. Ensure any new logic is accompanied by strict table-driven testing.
+Submit PRs with passing tests and benchmarks. Table-driven testing is required. Performance regressions will not be merged.
 
 ## License
 
-This project is licensed under the Apache License, Version 2.0 - see the [LICENSE](LICENSE) file for details.
+Apache 2.0. See [LICENSE](LICENSE).
