@@ -51,7 +51,7 @@ Implementations leverage Go generics to eliminate `interface{}` boxing and runti
     *   `linkedhashset`: Hash set preserving insertion or access order.
     *   `treeset`: Sorted set backed by a B-Tree.
     *   `bitset`: Word-aligned dense integer set.
-*   **Lists, Queues & Stacks**
+*   **Lists, Queues, & Stacks**
     *   `arraylist`: Dynamically resizing array.
     *   `linkedlist`: Doubly-linked list.
     *   `arraydeque`: Double-ended queue backed by a ring buffer.
