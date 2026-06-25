@@ -6,6 +6,8 @@ import (
 	"iter"
 	"math/bits"
 	"strings"
+
+	"github.com/lock14/collections"
 )
 
 const (
@@ -18,7 +20,10 @@ const (
 type BitSet struct {
 	bits         []uint64
 	maxWordInUse int
+	size         int
 }
+
+var _ collections.MutableSet[int] = (*BitSet)(nil)
 
 // Config holds the values for configuring a BitSet.
 type Config struct {
@@ -48,18 +53,22 @@ func New(opts ...Option) *BitSet {
 	return &BitSet{
 		bits:         make([]uint64, (config.numBits/wordSize)+min(1, config.numBits%wordSize)),
 		maxWordInUse: 0,
+		size:         0,
 	}
 }
 
-// Clear sets the bit specified by the index to false.
-func (b *BitSet) Clear(bit int) {
+// ClearBit sets the bit specified by the index to false.
+func (b *BitSet) ClearBit(bit int) {
 	index, shift := convert(bit)
 	if index >= b.maxWordInUse {
 		return
 	}
-	b.bits[index] &= ^(1 << shift)
-	if index == b.maxWordInUse-1 && b.bits[index] == 0 {
-		b.maxWordInUse = b.lastNonZeroWord() + 1
+	if b.bits[index]&(1<<shift) != 0 {
+		b.size--
+		b.bits[index] &= ^(1 << shift)
+		if index == b.maxWordInUse-1 && b.bits[index] == 0 {
+			b.maxWordInUse = b.lastNonZeroWord() + 1
+		}
 	}
 }
 
@@ -67,9 +76,12 @@ func (b *BitSet) Clear(bit int) {
 func (b *BitSet) Set(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
-	b.bits[index] |= 1 << shift
-	if index+1 > b.maxWordInUse {
-		b.maxWordInUse = index + 1
+	if b.bits[index]&(1<<shift) == 0 {
+		b.size++
+		b.bits[index] |= 1 << shift
+		if index+1 > b.maxWordInUse {
+			b.maxWordInUse = index + 1
+		}
 	}
 }
 
@@ -82,9 +94,14 @@ func (b *BitSet) Get(bit int) bool {
 	return (b.bits[index]>>shift)&1 == 1
 }
 
-// Size returns the number of bits in this bit set.
-func (b *BitSet) Size() int {
+// Capacity returns the maximum number of bits this bit set can currently hold without resizing.
+func (b *BitSet) Capacity() int {
 	return len(b.bits) * wordSize
+}
+
+// Size returns the number of set bits in this bit set.
+func (b *BitSet) Size() int {
+	return b.size
 }
 
 // Length returns the 'logical size' of this BitSet.
@@ -98,12 +115,13 @@ func (b *BitSet) Length() int {
 }
 
 // Flip sets each bit to the complement of its current value. This call is
-// equivalent to b.FlipRange(0, b.Size())
+// equivalent to b.FlipRange(0, b.Capacity())
 func (b *BitSet) Flip() {
 	for i := 0; i < len(b.bits); i++ {
 		b.bits[i] = ^b.bits[i]
 	}
 	b.maxWordInUse = b.lastNonZeroWord() + 1
+	b.recomputeSize()
 }
 
 // FlipRange sets each bit from the specified start bit (inclusive) to the
@@ -111,7 +129,7 @@ func (b *BitSet) Flip() {
 func (b *BitSet) FlipRange(start int, end int) {
 	startIndex, startShift := convert(start)
 	endIndex, endShift := convert(end)
-	if end != b.Size() {
+	if end != b.Capacity() {
 		b.ensureSize(endIndex)
 	}
 
@@ -136,7 +154,7 @@ func (b *BitSet) FlipRange(start int, end int) {
 			b.bits[i] = ^b.bits[i]
 		}
 
-		if end != b.Size() {
+		if end != b.Capacity() {
 			// flip lower bits, keep upper bits the same
 			lowerBits = (^b.bits[endIndex]) & ^endMask
 			upperBits = b.bits[endIndex] & endMask
@@ -144,6 +162,7 @@ func (b *BitSet) FlipRange(start int, end int) {
 		}
 	}
 	b.maxWordInUse = b.lastNonZeroWord() + 1
+	b.recomputeSize()
 }
 
 // FromBytes returns new BitSet containing all the bits in the given byte array.
@@ -161,6 +180,7 @@ func FromBytes(bytes []byte) *BitSet {
 		k++
 	}
 	b.maxWordInUse = b.lastNonZeroWord() + 1
+	b.recomputeSize()
 	return b
 }
 
@@ -247,4 +267,139 @@ func ensureNonNegative(i int) {
 	if i < 0 {
 		panic(fmt.Sprintf("runtime error: index out of range [%d]", i))
 	}
+}
+
+func (b *BitSet) recomputeSize() {
+	size := 0
+	for i := 0; i < b.maxWordInUse; i++ {
+		size += bits.OnesCount64(b.bits[i])
+	}
+	b.size = size
+}
+
+// Add inserts the specified element into the bit set.
+func (b *BitSet) Add(t int) {
+	b.Set(t)
+}
+
+// RemoveElement removes the specified element from the bit set.
+func (b *BitSet) RemoveElement(t int) {
+	b.ClearBit(t)
+}
+
+// Contains returns true if this bit set contains the specified element.
+func (b *BitSet) Contains(t int) bool {
+	return b.Get(t)
+}
+
+// Empty returns true if the collection contains no elements.
+func (b *BitSet) Empty() bool {
+	return b.size == 0
+}
+
+// All returns an iterator over all the elements in the bit set.
+func (b *BitSet) All() iter.Seq[int] {
+	return b.SetBits()
+}
+
+// Clear removes all elements from the bit set.
+func (b *BitSet) Clear() {
+	b.bits = make([]uint64, len(b.bits))
+	b.maxWordInUse = 0
+	b.size = 0
+}
+
+// Remove removes and returns a single element from the bit set.
+func (b *BitSet) Remove() int {
+	if b.size == 0 {
+		panic("remove from empty set")
+	}
+	for i := 0; i < b.maxWordInUse; i++ {
+		if b.bits[i] != 0 {
+			tz := bits.TrailingZeros64(b.bits[i])
+			val := i*wordSize + tz
+			b.ClearBit(val)
+			return val
+		}
+	}
+	panic("size is not zero but no bits set")
+}
+
+// AddAll inserts all elements from the given sequence into the collection.
+func (b *BitSet) AddAll(seq iter.Seq[int]) {
+	for v := range seq {
+		b.Set(v)
+	}
+}
+
+// RemoveAll removes all elements of the specified collection from this set.
+func (b *BitSet) RemoveAll(col collections.Collection[int]) {
+	if other, ok := col.(*BitSet); ok {
+		for i := 0; i < b.maxWordInUse && i < other.maxWordInUse; i++ {
+			b.bits[i] &= ^other.bits[i]
+		}
+		b.maxWordInUse = b.lastNonZeroWord() + 1
+		b.recomputeSize()
+		return
+	}
+	for v := range col.All() {
+		b.ClearBit(v)
+	}
+}
+
+// RetainAll retains only the elements in this set that are contained in the specified collection.
+func (b *BitSet) RetainAll(col collections.Collection[int]) {
+	if other, ok := col.(*BitSet); ok {
+		for i := 0; i < b.maxWordInUse; i++ {
+			if i < other.maxWordInUse {
+				b.bits[i] &= other.bits[i]
+			} else {
+				b.bits[i] = 0
+			}
+		}
+		b.maxWordInUse = b.lastNonZeroWord() + 1
+		b.recomputeSize()
+		return
+	}
+	if set, ok := col.(collections.Set[int]); ok {
+		for v := range b.All() {
+			if !set.Contains(v) {
+				b.ClearBit(v)
+			}
+		}
+		return
+	}
+
+	// For generic non-set collections, build a temporary BitSet to avoid O(N*M).
+	temp := New(NumBits(b.Capacity()))
+	for v := range col.All() {
+		if b.Contains(v) {
+			temp.Set(v)
+		}
+	}
+	b.bits = temp.bits
+	b.maxWordInUse = temp.maxWordInUse
+	b.size = temp.size
+}
+
+// ContainsAll returns true if this set contains all elements of the specified collection.
+func (b *BitSet) ContainsAll(col collections.Collection[int]) bool {
+	if other, ok := col.(*BitSet); ok {
+		for i := 0; i < other.maxWordInUse; i++ {
+			if i >= b.maxWordInUse {
+				if other.bits[i] != 0 {
+					return false
+				}
+			} else if (b.bits[i] & other.bits[i]) != other.bits[i] {
+				return false
+			}
+		}
+		return true
+	}
+	for v := range col.All() {
+		if !b.Contains(v) {
+			return false
+		}
+	}
+	return true
 }

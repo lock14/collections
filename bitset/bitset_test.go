@@ -31,8 +31,8 @@ func TestNew(t *testing.T) {
 		{
 			name: "default_capacity",
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 64 {
-					t.Errorf("expected Size 64, got %d", got)
+				if got := b.Capacity(); got != 64 {
+					t.Errorf("expected Capacity 64, got %d", got)
 				}
 				if got := b.Length(); got != 0 {
 					t.Errorf("expected Length 0, got %d", got)
@@ -48,8 +48,8 @@ func TestNew(t *testing.T) {
 			name: "zero_bits",
 			opts: []Option{NumBits(0)},
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 0 {
-					t.Errorf("expected Size 0, got %d", got)
+				if got := b.Capacity(); got != 0 {
+					t.Errorf("Capacity() = %v, want %v", got, 0)
 				}
 				b.Set(5) // should grow without panic
 				if !b.Get(5) {
@@ -61,8 +61,8 @@ func TestNew(t *testing.T) {
 			name: "exact_word_size",
 			opts: []Option{NumBits(64)},
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 64 {
-					t.Errorf("expected Size 64, got %d", got)
+				if got := b.Capacity(); got != 64 {
+					t.Errorf("expected Capacity 64, got %d", got)
 				}
 			},
 		},
@@ -70,8 +70,8 @@ func TestNew(t *testing.T) {
 			name: "non_exact_word_size",
 			opts: []Option{NumBits(100)},
 			check: func(t *testing.T, b *BitSet) {
-				if got := b.Size(); got != 128 { // 100 bits requires 2 words
-					t.Errorf("expected Size 128, got %d", got)
+				if got := b.Capacity(); got != 128 { // 100 bits requires 2 words
+					t.Errorf("Capacity() = %v, want %v", got, 128)
 				}
 			},
 		},
@@ -103,10 +103,10 @@ func TestGet(t *testing.T) {
 		{
 			name: "get_out_of_range_does_not_grow",
 			check: func(t *testing.T, b *BitSet) {
-				sizeBefore := b.Size()
+				sizeBefore := b.Capacity()
 				b.Get(1000)
-				if got := b.Size(); got != sizeBefore {
-					t.Errorf("Get on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				if got := b.Capacity(); got != sizeBefore {
+					t.Errorf("Capacity() = %v, want %v", got, sizeBefore)
 				}
 			},
 		},
@@ -180,7 +180,7 @@ func TestSet(t *testing.T) {
 	}
 }
 
-func TestClear(t *testing.T) {
+func TestClearBit(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -190,7 +190,7 @@ func TestClear(t *testing.T) {
 			name: "clear_set_bit",
 			check: func(t *testing.T, b *BitSet) {
 				b.Set(5)
-				b.Clear(5)
+				b.ClearBit(5)
 				if b.Get(5) {
 					t.Errorf("expected bit 5 to be unset after Clear")
 				}
@@ -201,7 +201,7 @@ func TestClear(t *testing.T) {
 			check: func(t *testing.T, b *BitSet) {
 				b.Set(5)
 				b.Set(10)
-				b.Clear(10)
+				b.ClearBit(10)
 				if got := b.Length(); got != 6 {
 					t.Errorf("expected Length 6 after clearing highest bit, got %d", got)
 				}
@@ -211,7 +211,7 @@ func TestClear(t *testing.T) {
 			name: "clear_only_bit_in_word_0",
 			check: func(t *testing.T, b *BitSet) {
 				b.Set(3)
-				b.Clear(3)
+				b.ClearBit(3)
 				if got := b.Length(); got != 0 {
 					t.Errorf("expected Length 0, got %d", got)
 				}
@@ -220,10 +220,10 @@ func TestClear(t *testing.T) {
 		{
 			name: "clear_out_of_range_does_not_grow",
 			check: func(t *testing.T, b *BitSet) {
-				sizeBefore := b.Size()
-				b.Clear(1000)
-				if got := b.Size(); got != sizeBefore {
-					t.Errorf("Clear on out-of-range bit grew the BitSet from %d to %d", sizeBefore, got)
+				sizeBefore := b.Capacity()
+				b.ClearBit(1000)
+				if got := b.Capacity(); got != sizeBefore {
+					t.Errorf("Capacity() = %v, want %v", got, sizeBefore)
 				}
 			},
 		},
@@ -231,7 +231,7 @@ func TestClear(t *testing.T) {
 			name: "clear_unset_bit_is_noop",
 			check: func(t *testing.T, b *BitSet) {
 				b.Set(5)
-				b.Clear(3)
+				b.ClearBit(3)
 				if !b.Get(5) {
 					t.Errorf("clearing an unset bit should not affect other bits")
 				}
@@ -380,8 +380,8 @@ func TestFlipRange(t *testing.T) {
 			name: "flip_entire_range_does_not_expand_size",
 			check: func(t *testing.T, b *BitSet) {
 				b.FlipRange(0, 64)
-				if got := b.Size(); got != 64 {
-					t.Errorf("unexpected size got: %d, want: %d", got, 64)
+				if got := b.Capacity(); got != 64 {
+					t.Errorf("Capacity() = %v, want %v", got, 64)
 				}
 				if got := b.Length(); got != 64 {
 					t.Errorf("unexpected length got: %d, want: %d", got, 64)

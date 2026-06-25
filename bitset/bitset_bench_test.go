@@ -25,14 +25,14 @@ func BenchmarkGet(b *testing.B) {
 	}
 }
 
-func BenchmarkClear(b *testing.B) {
+func BenchmarkClearBit(b *testing.B) {
 	bs := New(NumBits(10000))
 	for i := 0; i < 10000; i++ {
 		bs.Set(i)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		bs.Clear(i % 10000)
+		bs.ClearBit(i % 10000)
 	}
 }
 
