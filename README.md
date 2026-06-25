@@ -50,6 +50,7 @@ This library provides generic implementations of standard data structures, elimi
     *   `treemap`: B-Tree based sorted map.
 *   **Sets**
     *   `hashset`: Standard hash table based set.
+    *   `linkedhashset`: Hash set that preserves insertion or access order.
     *   `treeset`: B-Tree based sorted set.
     *   `bitset`: Memory-efficient set of integers.
 *   **Lists & Queues**
@@ -63,10 +64,10 @@ This library provides generic implementations of standard data structures, elimi
 
 ## Performance & Testing
 
-This project takes performance seriously. Core data structures like `TreeMap` and `TreeSet` are heavily optimized to reduce memory allocations and Garbage Collection (GC) overhead.
+This project takes performance seriously. Core data structures are heavily optimized to reduce memory allocations and Garbage Collection (GC) overhead.
 
 *   **100% Table-Driven Tests**: We enforce strict table-driven testing conventions for robustness.
-*   **Zero-Allocation Paths**: Read operations (like `Get` and `Contains`) in our tree structures are 100% allocation-free.
+*   **Zero-Allocation Paths**: Read operations (like `Get` and `Contains`) across the library are heavily optimized to be allocation-free where possible.
 *   **CI Benchmark Regression**: Every Pull Request is automatically profiled via a GitHub Actions pipeline against the `main` branch to strictly prevent any performance degradations.
 
 ## Contributing
