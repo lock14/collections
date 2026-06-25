@@ -43,13 +43,13 @@ func main() {
 Implementations leverage Go generics to eliminate `interface{}` boxing and runtime type assertions.
 
 *   **Maps**
-    *   `hashmap`: Hash table.
+    *   `hashmap`: Map backed by a hash table.
     *   `linkedhashmap`: Hash map preserving insertion or access order.
-    *   `treemap`: B-Tree based sorted map.
+    *   `treemap`: Sorted map backed by a B-Tree.
 *   **Sets**
-    *   `hashset`: Hash table.
+    *   `hashset`: Set backed by a hash table.
     *   `linkedhashset`: Hash set preserving insertion or access order.
-    *   `treeset`: B-Tree based sorted set.
+    *   `treeset`: Sorted set backed by a B-Tree.
     *   `bitset`: Word-aligned dense integer set.
 *   **Lists & Queues**
     *   `arraylist`: Dynamically resizing array.
