@@ -429,7 +429,7 @@ func TestTreeMap_Sequenced(t *testing.T) {
 	assertPanic("PutLast", func() { tm.PutLast(1, 1) })
 }
 
-func TestTreeMap_Reversed(t *testing.T) {
+func TestTreeMap_Backward(t *testing.T) {
 	t.Parallel()
 	tm := NewOrdered[int, int]()
 	for i := 1; i <= 5; i++ {
@@ -437,28 +437,28 @@ func TestTreeMap_Reversed(t *testing.T) {
 	}
 
 	var keys []int
-	for k := range tm.ReversedKeys() {
+	for k := range tm.BackwardKeys() {
 		keys = append(keys, k)
 	}
 	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
-		t.Errorf("ReversedKeys: %v", keys)
+		t.Errorf("BackwardKeys: %v", keys)
 	}
 
 	var vals []int
-	for _, v := range tm.ReversedAll() {
+	for _, v := range tm.Backward() {
 		vals = append(vals, v)
 	}
 	if !slices.Equal(vals, []int{50, 40, 30, 20, 10}) {
-		t.Errorf("ReversedAll: %v", vals)
+		t.Errorf("Backward: %v", vals)
 	}
 
-	// coverage for ReversedKeys early exit
-	for k := range tm.ReversedKeys() {
+	// coverage for BackwardKeys early exit
+	for k := range tm.BackwardKeys() {
 		_ = k
 		break
 	}
-	// coverage for ReversedValues early exit
-	for v := range tm.ReversedValues() {
+	// coverage for BackwardValues early exit
+	for v := range tm.BackwardValues() {
 		_ = v
 		break
 	}
@@ -479,18 +479,18 @@ func TestTreeMap_Iterators_Bounds(t *testing.T) {
 		return res
 	}
 
-	if got := collect(tm.AllFrom(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
-		t.Errorf("AllFrom(5): %v", got)
+	if got := collect(tm.From(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+		t.Errorf("From(5): %v", got)
 	}
-	if got := collect(tm.AllTo(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
-		t.Errorf("AllTo(5): %v", got)
+	if got := collect(tm.To(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+		t.Errorf("To(5): %v", got)
 	}
-	if got := collect(tm.AllBetween(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
-		t.Errorf("AllBetween(3, 7): %v", got)
+	if got := collect(tm.Between(4, 8)); !slices.Equal(got, []int{4, 5, 6, 7}) {
+		t.Errorf("Between(4, 8): %v", got)
 	}
 
 	// Early exit coverage
-	for k := range tm.AllBetween(1, 10) {
+	for k := range tm.Between(1, 10) {
 		_ = k
 		break
 	}

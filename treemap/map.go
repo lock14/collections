@@ -235,7 +235,7 @@ func (tm *TreeMap[K, V]) Higher(key K) (K, V, bool) {
 	return bestK, bestV, found
 }
 
-func (tm *TreeMap[K, V]) ReversedAll() iter.Seq2[K, V] {
+func (tm *TreeMap[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		tm.reverseInOrder(tm.root, yield)
 	}
@@ -263,9 +263,9 @@ func (tm *TreeMap[K, V]) reverseInOrder(n *node[K, V], yield func(K, V) bool) bo
 	return true
 }
 
-func (tm *TreeMap[K, V]) ReversedKeys() iter.Seq[K] {
+func (tm *TreeMap[K, V]) BackwardKeys() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		for k := range tm.ReversedAll() {
+		for k := range tm.Backward() {
 			if !yield(k) {
 				return
 			}
@@ -273,9 +273,9 @@ func (tm *TreeMap[K, V]) ReversedKeys() iter.Seq[K] {
 	}
 }
 
-func (tm *TreeMap[K, V]) ReversedValues() iter.Seq[V] {
+func (tm *TreeMap[K, V]) BackwardValues() iter.Seq[V] {
 	return func(yield func(V) bool) {
-		for _, v := range tm.ReversedAll() {
+		for _, v := range tm.Backward() {
 			if !yield(v) {
 				return
 			}
@@ -283,21 +283,21 @@ func (tm *TreeMap[K, V]) ReversedValues() iter.Seq[V] {
 	}
 }
 
-func (tm *TreeMap[K, V]) AllFrom(from K) iter.Seq2[K, V] {
+func (tm *TreeMap[K, V]) From(from K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		var zero K
 		tm.rangeInOrder(tm.root, from, zero, true, false, yield)
 	}
 }
 
-func (tm *TreeMap[K, V]) AllTo(to K) iter.Seq2[K, V] {
+func (tm *TreeMap[K, V]) To(to K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		var zero K
 		tm.rangeInOrder(tm.root, zero, to, false, true, yield)
 	}
 }
 
-func (tm *TreeMap[K, V]) AllBetween(from K, to K) iter.Seq2[K, V] {
+func (tm *TreeMap[K, V]) Between(from K, to K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		tm.rangeInOrder(tm.root, from, to, true, true, yield)
 	}

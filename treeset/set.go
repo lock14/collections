@@ -144,13 +144,13 @@ func (s *TreeSet[T]) Higher(item T) (T, bool) {
 	return k, ok
 }
 
-func (s *TreeSet[T]) ReversedAll() iter.Seq[T] {
-	return s.m.ReversedKeys()
+func (s *TreeSet[T]) Backward() iter.Seq[T] {
+	return s.m.BackwardKeys()
 }
 
-func (s *TreeSet[T]) AllFrom(from T) iter.Seq[T] {
+func (s *TreeSet[T]) From(from T) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for k := range s.m.AllFrom(from) {
+		for k := range s.m.From(from) {
 			if !yield(k) {
 				return
 			}
@@ -158,9 +158,9 @@ func (s *TreeSet[T]) AllFrom(from T) iter.Seq[T] {
 	}
 }
 
-func (s *TreeSet[T]) AllTo(to T) iter.Seq[T] {
+func (s *TreeSet[T]) To(to T) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for k := range s.m.AllTo(to) {
+		for k := range s.m.To(to) {
 			if !yield(k) {
 				return
 			}
@@ -168,9 +168,9 @@ func (s *TreeSet[T]) AllTo(to T) iter.Seq[T] {
 	}
 }
 
-func (s *TreeSet[T]) AllBetween(from T, to T) iter.Seq[T] {
+func (s *TreeSet[T]) Between(from, to T) iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for k := range s.m.AllBetween(from, to) {
+		for k := range s.m.Between(from, to) {
 			if !yield(k) {
 				return
 			}

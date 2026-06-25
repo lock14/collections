@@ -411,7 +411,7 @@ func TestLinkedHashSet_Sequenced(t *testing.T) {
 	})
 }
 
-func TestLinkedHashSet_Reversed(t *testing.T) {
+func TestLinkedHashSet_Backward(t *testing.T) {
 	t.Parallel()
 	s := New[int]()
 	s.Add(1)
@@ -419,15 +419,15 @@ func TestLinkedHashSet_Reversed(t *testing.T) {
 	s.Add(3)
 
 	var elements []int
-	for v := range s.ReversedAll() {
+	for v := range s.Backward() {
 		elements = append(elements, v)
 	}
 	if !slices.Equal(elements, []int{3, 2, 1}) {
-		t.Errorf("expected ReversedAll [3, 2, 1], got %v", elements)
+		t.Errorf("expected Backward [3, 2, 1], got %v", elements)
 	}
 
 	// Test coverage for early exit iterator
-	for v := range s.ReversedAll() {
+	for v := range s.Backward() {
 		_ = v
 		break
 	}

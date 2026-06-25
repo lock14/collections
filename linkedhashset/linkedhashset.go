@@ -176,9 +176,9 @@ func (s *LinkedHashSet[T]) All() iter.Seq[T] {
 	return s.m.Keys()
 }
 
-// ReversedAll returns an iterator over the elements in reverse order.
-func (s *LinkedHashSet[T]) ReversedAll() iter.Seq[T] {
-	return s.m.ReversedKeys()
+// Backward returns an iterator over the elements in reverse order.
+func (s *LinkedHashSet[T]) Backward() iter.Seq[T] {
+	return s.m.BackwardKeys()
 }
 
 // String returns a string representation of the set.
