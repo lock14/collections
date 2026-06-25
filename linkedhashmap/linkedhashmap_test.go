@@ -461,7 +461,7 @@ func TestLinkedHashMap_Sequenced(t *testing.T) {
 	})
 }
 
-func TestLinkedHashMap_Reversed(t *testing.T) {
+func TestLinkedHashMap_Backward(t *testing.T) {
 	t.Parallel()
 	m := New[int, string]()
 	m.Put(1, "A")
@@ -470,39 +470,38 @@ func TestLinkedHashMap_Reversed(t *testing.T) {
 
 	var keys []int
 	var values []string
-	for k, v := range m.ReversedAll() {
+	for k, v := range m.Backward() {
 		keys = append(keys, k)
 		values = append(values, v)
 	}
 	if !slices.Equal(keys, []int{3, 2, 1}) {
-		t.Errorf("expected ReversedAll keys [3, 2, 1], got %v", keys)
+		t.Errorf("expected Backward keys [3, 2, 1], got %v", keys)
 	}
 	if !slices.Equal(values, []string{"C", "B", "A"}) {
-		t.Errorf("expected ReversedAll values [C, B, A], got %v", values)
+		t.Errorf("expected Backward values [C, B, A], got %v", values)
 	}
 
-	keys2 := slices.Collect(m.ReversedKeys())
+	keys2 := slices.Collect(m.BackwardKeys())
 	if !slices.Equal(keys2, []int{3, 2, 1}) {
-		t.Errorf("expected ReversedKeys [3, 2, 1], got %v", keys2)
+		t.Errorf("expected BackwardKeys [3, 2, 1], got %v", keys2)
 	}
 
-	values2 := slices.Collect(m.ReversedValues())
+	values2 := slices.Collect(m.BackwardValues())
 	if !slices.Equal(values2, []string{"C", "B", "A"}) {
-		t.Errorf("expected ReversedValues [C, B, A], got %v", values2)
+		t.Errorf("expected BackwardValues [C, B, A], got %v", values2)
 	}
 
-	// Test coverage for early exit iterator
-	for k := range m.ReversedKeys() {
+	// cover early exits
+	for k := range m.BackwardKeys() {
 		_ = k
 		break
 	}
-	for v := range m.ReversedValues() {
+	for v := range m.BackwardValues() {
 		_ = v
 		break
 	}
-	for k, v := range m.ReversedAll() {
-		_ = k
-		_ = v
+	for k, v := range m.Backward() {
+		_, _ = k, v
 		break
 	}
 }

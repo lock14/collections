@@ -747,7 +747,7 @@ func TestBitSet_Sequenced(t *testing.T) {
 	assertPanic("AddLast", func() { b.AddLast(1) })
 }
 
-func TestBitSet_Reversed(t *testing.T) {
+func TestBitSet_Backward(t *testing.T) {
 	t.Parallel()
 	b := New()
 	for i := 1; i <= 5; i++ {
@@ -755,15 +755,15 @@ func TestBitSet_Reversed(t *testing.T) {
 	}
 
 	var keys []int
-	for k := range b.ReversedAll() {
+	for k := range b.Backward() {
 		keys = append(keys, k)
 	}
 	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
-		t.Errorf("ReversedAll: %v", keys)
+		t.Errorf("Backward: %v", keys)
 	}
 
-	// coverage for ReversedAll early exit
-	for k := range b.ReversedAll() {
+	// coverage for Backward early exit
+	for k := range b.Backward() {
 		_ = k
 		break
 	}
@@ -776,18 +776,18 @@ func TestBitSet_Iterators_Bounds(t *testing.T) {
 		b.Add(i)
 	}
 
-	if got := slices.Collect(b.AllFrom(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
-		t.Errorf("AllFrom(5): %v", got)
+	if got := slices.Collect(b.From(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+		t.Errorf("From(5): %v", got)
 	}
-	if got := slices.Collect(b.AllTo(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
-		t.Errorf("AllTo(5): %v", got)
+	if got := slices.Collect(b.To(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+		t.Errorf("To(5): %v", got)
 	}
-	if got := slices.Collect(b.AllBetween(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
-		t.Errorf("AllBetween(3, 7): %v", got)
+	if got := slices.Collect(b.Between(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
+		t.Errorf("Between(3, 7): %v", got)
 	}
 
 	// Early exit coverage
-	for k := range b.AllBetween(1, 10) {
+	for k := range b.Between(1, 10) {
 		_ = k
 		break
 	}

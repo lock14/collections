@@ -162,8 +162,8 @@ type SequencedSet[T any] interface {
 	First() T
 	// Last returns the last element in the set. Panics if empty.
 	Last() T
-	// ReversedAll returns an iterator over the elements in reverse order.
-	ReversedAll() iter.Seq[T]
+	// Backward returns an iterator over the elements in reverse order.
+	Backward() iter.Seq[T]
 }
 
 // MutableSequencedSet represents a sequenced set that can be modified.
@@ -187,12 +187,12 @@ type SequencedMap[K any, V any] interface {
 	First() (K, V)
 	// Last returns the last key-value pair in the map. Panics if empty.
 	Last() (K, V)
-	// ReversedAll returns an iterator over the key-value pairs in reverse order.
-	ReversedAll() iter.Seq2[K, V]
-	// ReversedKeys returns an iterator over the keys in reverse order.
-	ReversedKeys() iter.Seq[K]
-	// ReversedValues returns an iterator over the values in reverse order.
-	ReversedValues() iter.Seq[V]
+	// Backward returns an iterator over the key-value pairs in reverse order.
+	Backward() iter.Seq2[K, V]
+	// BackwardKeys returns an iterator over the keys in reverse order.
+	BackwardKeys() iter.Seq[K]
+	// BackwardValues returns an iterator over the values in reverse order.
+	BackwardValues() iter.Seq[V]
 }
 
 // MutableSequencedMap represents a sequenced map that can be modified.
@@ -212,12 +212,12 @@ type MutableSequencedMap[K any, V any] interface {
 // SortedSet represents a set that maintains its elements in ascending order.
 type SortedSet[T any] interface {
 	SequencedSet[T]
-	// AllFrom returns an iterator over the elements greater than or equal to the given element.
-	AllFrom(from T) iter.Seq[T]
-	// AllTo returns an iterator over the elements less than the given element.
-	AllTo(to T) iter.Seq[T]
-	// AllBetween returns an iterator over the elements greater than or equal to 'from' and less than 'to'.
-	AllBetween(from, to T) iter.Seq[T]
+	// From returns an iterator over the elements greater than or equal to the given element.
+	From(from T) iter.Seq[T]
+	// To returns an iterator over the elements less than the given element.
+	To(to T) iter.Seq[T]
+	// Between returns an iterator over the elements greater than or equal to 'from' and less than 'to'.
+	Between(from, to T) iter.Seq[T]
 }
 
 // MutableSortedSet represents a sorted set that can be modified.
@@ -229,12 +229,12 @@ type MutableSortedSet[T any] interface {
 // SortedMap represents a map that maintains its entries in ascending order of keys.
 type SortedMap[K any, V any] interface {
 	SequencedMap[K, V]
-	// AllFrom returns an iterator over the entries whose keys are greater than or equal to the given key.
-	AllFrom(from K) iter.Seq2[K, V]
-	// AllTo returns an iterator over the entries whose keys are less than the given key.
-	AllTo(to K) iter.Seq2[K, V]
-	// AllBetween returns an iterator over the entries whose keys are greater than or equal to 'from' and less than 'to'.
-	AllBetween(from, to K) iter.Seq2[K, V]
+	// From returns an iterator over the entries whose keys are greater than or equal to the given key.
+	From(from K) iter.Seq2[K, V]
+	// To returns an iterator over the entries whose keys are less than the given key.
+	To(to K) iter.Seq2[K, V]
+	// Between returns an iterator over the entries whose keys are greater than or equal to 'from' and less than 'to'.
+	Between(from, to K) iter.Seq2[K, V]
 }
 
 // MutableSortedMap represents a sorted map that can be modified.

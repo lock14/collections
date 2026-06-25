@@ -244,7 +244,7 @@ func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	}
 }
 
-func (hm *LinkedHashMap[K, V]) ReversedAll() iter.Seq2[K, V] {
+func (hm *LinkedHashMap[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		for cur := hm.list.prev; cur != hm.list && yield(cur.key, cur.value); {
 			cur = cur.prev
@@ -252,7 +252,7 @@ func (hm *LinkedHashMap[K, V]) ReversedAll() iter.Seq2[K, V] {
 	}
 }
 
-func (hm *LinkedHashMap[K, V]) ReversedKeys() iter.Seq[K] {
+func (hm *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
 	return func(yield func(K) bool) {
 		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
 			if !yield(cur.key) {
@@ -262,7 +262,7 @@ func (hm *LinkedHashMap[K, V]) ReversedKeys() iter.Seq[K] {
 	}
 }
 
-func (hm *LinkedHashMap[K, V]) ReversedValues() iter.Seq[V] {
+func (hm *LinkedHashMap[K, V]) BackwardValues() iter.Seq[V] {
 	return func(yield func(V) bool) {
 		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
 			if !yield(cur.value) {

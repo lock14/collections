@@ -355,7 +355,7 @@ func TestTreeSet_Sequenced(t *testing.T) {
 	assertPanic("AddLast", func() { s.AddLast(1) })
 }
 
-func TestTreeSet_Reversed(t *testing.T) {
+func TestTreeSet_Backward(t *testing.T) {
 	t.Parallel()
 	s := NewOrdered[int]()
 	for i := 1; i <= 5; i++ {
@@ -363,15 +363,15 @@ func TestTreeSet_Reversed(t *testing.T) {
 	}
 
 	var keys []int
-	for k := range s.ReversedAll() {
+	for k := range s.Backward() {
 		keys = append(keys, k)
 	}
 	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
-		t.Errorf("ReversedAll: %v", keys)
+		t.Errorf("Backward: %v", keys)
 	}
 
-	// coverage for ReversedAll early exit
-	for k := range s.ReversedAll() {
+	// coverage for Backward early exit
+	for k := range s.Backward() {
 		_ = k
 		break
 	}
@@ -384,18 +384,18 @@ func TestTreeSet_Iterators_Bounds(t *testing.T) {
 		s.Add(i)
 	}
 
-	if got := slices.Collect(s.AllFrom(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
-		t.Errorf("AllFrom(5): %v", got)
+	if got := slices.Collect(s.From(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+		t.Errorf("From(5): %v", got)
 	}
-	if got := slices.Collect(s.AllTo(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
-		t.Errorf("AllTo(5): %v", got)
+	if got := slices.Collect(s.To(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+		t.Errorf("To(5): %v", got)
 	}
-	if got := slices.Collect(s.AllBetween(3, 7)); !slices.Equal(got, []int{3, 4, 5, 6}) {
-		t.Errorf("AllBetween(3, 7): %v", got)
+	if got := slices.Collect(s.Between(4, 8)); !slices.Equal(got, []int{4, 5, 6, 7}) {
+		t.Errorf("Between(4, 8): %v", got)
 	}
 
 	// Early exit coverage
-	for k := range s.AllBetween(1, 10) {
+	for k := range s.Between(1, 10) {
 		_ = k
 		break
 	}

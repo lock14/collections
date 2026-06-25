@@ -591,7 +591,7 @@ func (b *BitSet) Higher(t int) (int, bool) {
 	return 0, false
 }
 
-func (b *BitSet) ReversedAll() iter.Seq[int] {
+func (b *BitSet) Backward() iter.Seq[int] {
 	return func(yield func(int) bool) {
 		for i := b.maxWordInUse - 1; i >= 0; i-- {
 			w := b.bits[i]
@@ -607,7 +607,7 @@ func (b *BitSet) ReversedAll() iter.Seq[int] {
 	}
 }
 
-func (b *BitSet) AllFrom(from int) iter.Seq[int] {
+func (b *BitSet) From(from int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if from < 0 {
 			from = 0
@@ -639,7 +639,7 @@ func (b *BitSet) AllFrom(from int) iter.Seq[int] {
 	}
 }
 
-func (b *BitSet) AllTo(to int) iter.Seq[int] {
+func (b *BitSet) To(to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if to <= 0 {
 			return
@@ -665,7 +665,7 @@ func (b *BitSet) AllTo(to int) iter.Seq[int] {
 	}
 }
 
-func (b *BitSet) AllBetween(from, to int) iter.Seq[int] {
+func (b *BitSet) Between(from, to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if from >= to || to <= 0 {
 			return
