@@ -347,3 +347,162 @@ func TestLinkedHashMap_CoverageIters(t *testing.T) {
 		break
 	}
 }
+
+func TestLinkedHashMap_Sequenced(t *testing.T) {
+	t.Parallel()
+
+	t.Run("first_last", func(t *testing.T) {
+		m := New[int, string]()
+
+		assertPanic := func(name string, f func()) {
+			t.Helper()
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("%s did not panic", name)
+				}
+			}()
+			f()
+		}
+
+		assertPanic("First", func() { m.First() })
+		assertPanic("Last", func() { m.Last() })
+		assertPanic("PollFirst", func() { m.PollFirst() })
+		assertPanic("PollLast", func() { m.PollLast() })
+
+		hm := New[int, int]()
+
+		hm.Put(10, 10)
+		hm.Put(20, 20)
+		hm.Put(30, 30)
+
+		k, v := hm.First()
+		if k != 10 || v != 10 {
+			t.Errorf("First: expected (10, 10), got (%v, %v)", k, v)
+		}
+
+		k, v = hm.Last()
+		if k != 30 || v != 30 {
+			t.Errorf("Last: expected (30, 30), got (%v, %v)", k, v)
+		}
+	})
+
+	t.Run("poll_first_last", func(t *testing.T) {
+		hm := New[int, int]()
+
+		hm.Put(10, 10)
+		hm.Put(20, 20)
+		hm.Put(30, 30)
+
+		k, v := hm.PollFirst()
+		if k != 10 || v != 10 {
+			t.Errorf("PollFirst: expected (10, 10), got (%v, %v)", k, v)
+		}
+		if hm.ContainsKey(10) {
+			t.Errorf("PollFirst didn't remove")
+		}
+
+		k, v = hm.PollLast()
+		if k != 30 || v != 30 {
+			t.Errorf("PollLast: expected (30, 30), got (%v, %v)", k, v)
+		}
+		if hm.ContainsKey(30) {
+			t.Errorf("PollLast didn't remove")
+		}
+	})
+
+	t.Run("put_first_last", func(t *testing.T) {
+		m := New[int, string]()
+		m.PutFirst(2, "B")
+		m.PutFirst(1, "A")
+		m.PutLast(3, "C")
+
+		got := slices.Collect(m.Keys())
+		expected := []int{1, 2, 3}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+
+		// Update existing with PutFirst
+		m.PutFirst(3, "C-updated")
+		got = slices.Collect(m.Keys())
+		expected = []int{3, 1, 2}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+		v, _ := m.Get(3)
+		if v != "C-updated" {
+			t.Errorf("expected value updated")
+		}
+
+		// Update existing with PutLast
+		m.PutLast(1, "A-updated")
+		got = slices.Collect(m.Keys())
+		expected = []int{3, 2, 1}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+		v, _ = m.Get(1)
+		if v != "A-updated" {
+			t.Errorf("expected value updated")
+		}
+	})
+
+	t.Run("put_first_eviction", func(t *testing.T) {
+		m := New[int, string](WithMaxElements(2))
+		m.PutFirst(1, "A")
+		m.PutFirst(2, "B")
+		m.PutFirst(3, "C") // Should evict tail (1, "A")
+
+		got := slices.Collect(m.Keys())
+		expected := []int{3, 2}
+		if !slices.Equal(got, expected) {
+			t.Errorf("expected keys %v, got %v", expected, got)
+		}
+	})
+}
+
+func TestLinkedHashMap_Reversed(t *testing.T) {
+	t.Parallel()
+	m := New[int, string]()
+	m.Put(1, "A")
+	m.Put(2, "B")
+	m.Put(3, "C")
+
+	var keys []int
+	var values []string
+	for k, v := range m.ReversedAll() {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+	if !slices.Equal(keys, []int{3, 2, 1}) {
+		t.Errorf("expected ReversedAll keys [3, 2, 1], got %v", keys)
+	}
+	if !slices.Equal(values, []string{"C", "B", "A"}) {
+		t.Errorf("expected ReversedAll values [C, B, A], got %v", values)
+	}
+
+	keys2 := slices.Collect(m.ReversedKeys())
+	if !slices.Equal(keys2, []int{3, 2, 1}) {
+		t.Errorf("expected ReversedKeys [3, 2, 1], got %v", keys2)
+	}
+
+	values2 := slices.Collect(m.ReversedValues())
+	if !slices.Equal(values2, []string{"C", "B", "A"}) {
+		t.Errorf("expected ReversedValues [C, B, A], got %v", values2)
+	}
+
+	// Test coverage for early exit iterator
+	for k := range m.ReversedKeys() {
+		_ = k
+		break
+	}
+	for v := range m.ReversedValues() {
+		_ = v
+		break
+	}
+	for k, v := range m.ReversedAll() {
+		_ = k
+		_ = v
+		break
+	}
+}

@@ -12,7 +12,7 @@ const (
 	AccessOrder    = true
 )
 
-var _ collections.MutableMap[int, int] = (*LinkedHashMap[int, int])(nil)
+var _ collections.MutableSequencedMap[int, int] = (*LinkedHashMap[int, int])(nil)
 
 // KeyOrder represents the iteration order of the linked hash map.
 type KeyOrder bool
@@ -104,6 +104,78 @@ func (hm *LinkedHashMap[K, V]) Put(key K, value V) {
 	}
 }
 
+func (hm *LinkedHashMap[K, V]) PutFirst(key K, value V) {
+	n, ok := hm.hashtable[key]
+	if ok {
+		n.value = value
+		unlink(n)
+		insertBefore(hm.list.next, n)
+	} else {
+		n = &node[K, V]{
+			key:   key,
+			value: value,
+		}
+		hm.hashtable[key] = n
+		insertBefore(hm.list.next, n)
+		if hm.removeEldest() {
+			eldest := hm.list.prev
+			unlink(eldest)
+			delete(hm.hashtable, eldest.key)
+		}
+	}
+}
+
+func (hm *LinkedHashMap[K, V]) PutLast(key K, value V) {
+	n, ok := hm.hashtable[key]
+	if ok {
+		n.value = value
+		unlink(n)
+		insertBefore(hm.list, n)
+	} else {
+		hm.Put(key, value)
+	}
+}
+
+// First returns the first key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) First() (K, V) {
+	if hm.Size() == 0 {
+		panic("First called on empty map")
+	}
+	e := hm.list.next
+	return e.key, e.value
+}
+
+// Last returns the last key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) Last() (K, V) {
+	if hm.Size() == 0 {
+		panic("Last called on empty map")
+	}
+	e := hm.list.prev
+	return e.key, e.value
+}
+
+// PollFirst removes and returns the first key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) PollFirst() (K, V) {
+	if hm.Size() == 0 {
+		panic("PollFirst called on empty map")
+	}
+	e := hm.list.next
+	unlink(e)
+	delete(hm.hashtable, e.key)
+	return e.key, e.value
+}
+
+// PollLast removes and returns the last key-value pair in the map.
+func (hm *LinkedHashMap[K, V]) PollLast() (K, V) {
+	if hm.Size() == 0 {
+		panic("PollLast called on empty map")
+	}
+	e := hm.list.prev
+	unlink(e)
+	delete(hm.hashtable, e.key)
+	return e.key, e.value
+}
+
 func (hm *LinkedHashMap[K, V]) Get(key K) (V, bool) {
 	n, ok := hm.hashtable[key]
 	if !ok {
@@ -165,6 +237,34 @@ func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
 		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+			if !yield(cur.value) {
+				return
+			}
+		}
+	}
+}
+
+func (hm *LinkedHashMap[K, V]) ReversedAll() iter.Seq2[K, V] {
+	return func(yield func(K, V) bool) {
+		for cur := hm.list.prev; cur != hm.list && yield(cur.key, cur.value); {
+			cur = cur.prev
+		}
+	}
+}
+
+func (hm *LinkedHashMap[K, V]) ReversedKeys() iter.Seq[K] {
+	return func(yield func(K) bool) {
+		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
+			if !yield(cur.key) {
+				return
+			}
+		}
+	}
+}
+
+func (hm *LinkedHashMap[K, V]) ReversedValues() iter.Seq[V] {
+	return func(yield func(V) bool) {
+		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
 			if !yield(cur.value) {
 				return
 			}

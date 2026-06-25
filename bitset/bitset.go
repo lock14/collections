@@ -23,7 +23,7 @@ type BitSet struct {
 	size         int
 }
 
-var _ collections.MutableSet[int] = (*BitSet)(nil)
+var _ collections.MutableNavigableSet[int] = (*BitSet)(nil)
 
 // Config holds the values for configuring a BitSet.
 type Config struct {
@@ -412,4 +412,291 @@ func (b *BitSet) ContainsAll(col collections.Collection[int]) bool {
 		}
 	}
 	return true
+}
+
+// First returns the first element in the bitset.
+func (b *BitSet) First() int {
+	if b.Empty() {
+		panic("First called on empty bitset")
+	}
+	for i := 0; i < b.maxWordInUse; i++ {
+		if b.bits[i] != 0 {
+			tz := bits.TrailingZeros64(b.bits[i])
+			return i*wordSize + tz
+		}
+	}
+	panic("unreachable")
+}
+
+// Last returns the last element in the bitset.
+func (b *BitSet) Last() int {
+	if b.Empty() {
+		panic("Last called on empty bitset")
+	}
+	for i := b.maxWordInUse - 1; i >= 0; i-- {
+		if b.bits[i] != 0 {
+			lz := bits.LeadingZeros64(b.bits[i])
+			return i*wordSize + (wordSize - 1 - lz)
+		}
+	}
+	panic("unreachable")
+}
+
+// PollFirst removes and returns the first element in the bitset.
+func (b *BitSet) PollFirst() int {
+	if b.Empty() {
+		panic("PollFirst called on empty bitset")
+	}
+	val := b.First()
+	b.ClearBit(val)
+	return val
+}
+
+// PollLast removes and returns the last element in the bitset.
+func (b *BitSet) PollLast() int {
+	if b.Empty() {
+		panic("PollLast called on empty bitset")
+	}
+	val := b.Last()
+	b.ClearBit(val)
+	return val
+}
+
+func (b *BitSet) AddFirst(t int) {
+	panic("AddFirst is not supported on SortedSet")
+}
+
+func (b *BitSet) AddLast(t int) {
+	panic("AddLast is not supported on SortedSet")
+}
+
+func (b *BitSet) Lower(t int) (int, bool) {
+	if t <= 0 {
+		return 0, false
+	}
+	index, shift := convert(t - 1)
+	if index >= b.maxWordInUse {
+		if b.Empty() {
+			return 0, false
+		}
+		return b.Last(), true
+	}
+
+	var mask uint64
+	if shift == wordSize-1 {
+		mask = ^uint64(0)
+	} else {
+		mask = (1 << (shift + 1)) - 1
+	}
+
+	w := b.bits[index] & mask
+	if w != 0 {
+		lz := bits.LeadingZeros64(w)
+		return index*wordSize + (wordSize - 1 - lz), true
+	}
+
+	for i := index - 1; i >= 0; i-- {
+		if b.bits[i] != 0 {
+			lz := bits.LeadingZeros64(b.bits[i])
+			return i*wordSize + (wordSize - 1 - lz), true
+		}
+	}
+	return 0, false
+}
+
+func (b *BitSet) Floor(t int) (int, bool) {
+	if t < 0 {
+		return 0, false
+	}
+	index, shift := convert(t)
+	if index >= b.maxWordInUse {
+		if b.Empty() {
+			return 0, false
+		}
+		return b.Last(), true
+	}
+
+	var mask uint64
+	if shift == wordSize-1 {
+		mask = ^uint64(0)
+	} else {
+		mask = (1 << (shift + 1)) - 1
+	}
+
+	w := b.bits[index] & mask
+	if w != 0 {
+		lz := bits.LeadingZeros64(w)
+		return index*wordSize + (wordSize - 1 - lz), true
+	}
+
+	for i := index - 1; i >= 0; i-- {
+		if b.bits[i] != 0 {
+			lz := bits.LeadingZeros64(b.bits[i])
+			return i*wordSize + (wordSize - 1 - lz), true
+		}
+	}
+	return 0, false
+}
+
+func (b *BitSet) Ceiling(t int) (int, bool) {
+	if t < 0 {
+		t = 0
+	}
+	index, shift := convert(t)
+	if index >= b.maxWordInUse {
+		return 0, false
+	}
+
+	mask := ^uint64(0) << shift
+	w := b.bits[index] & mask
+	if w != 0 {
+		tz := bits.TrailingZeros64(w)
+		return index*wordSize + tz, true
+	}
+
+	for i := index + 1; i < b.maxWordInUse; i++ {
+		if b.bits[i] != 0 {
+			tz := bits.TrailingZeros64(b.bits[i])
+			return i*wordSize + tz, true
+		}
+	}
+	return 0, false
+}
+
+func (b *BitSet) Higher(t int) (int, bool) {
+	if t < 0 {
+		if b.Empty() {
+			return 0, false
+		}
+		return b.First(), true
+	}
+	index, shift := convert(t + 1)
+	if index >= b.maxWordInUse {
+		return 0, false
+	}
+
+	mask := ^uint64(0) << shift
+	w := b.bits[index] & mask
+	if w != 0 {
+		tz := bits.TrailingZeros64(w)
+		return index*wordSize + tz, true
+	}
+
+	for i := index + 1; i < b.maxWordInUse; i++ {
+		if b.bits[i] != 0 {
+			tz := bits.TrailingZeros64(b.bits[i])
+			return i*wordSize + tz, true
+		}
+	}
+	return 0, false
+}
+
+func (b *BitSet) ReversedAll() iter.Seq[int] {
+	return func(yield func(int) bool) {
+		for i := b.maxWordInUse - 1; i >= 0; i-- {
+			w := b.bits[i]
+			for w != 0 {
+				lz := bits.LeadingZeros64(w)
+				bit := wordSize - 1 - lz
+				if !yield(i*wordSize + bit) {
+					return
+				}
+				w &= ^(1 << bit)
+			}
+		}
+	}
+}
+
+func (b *BitSet) AllFrom(from int) iter.Seq[int] {
+	return func(yield func(int) bool) {
+		if from < 0 {
+			from = 0
+		}
+		index, shift := convert(from)
+		if index >= b.maxWordInUse {
+			return
+		}
+
+		w := b.bits[index] & (^uint64(0) << shift)
+		for w != 0 {
+			tz := bits.TrailingZeros64(w)
+			if !yield(index*wordSize + tz) {
+				return
+			}
+			w &= w - 1
+		}
+
+		for i := index + 1; i < b.maxWordInUse; i++ {
+			w = b.bits[i]
+			for w != 0 {
+				tz := bits.TrailingZeros64(w)
+				if !yield(i*wordSize + tz) {
+					return
+				}
+				w &= w - 1
+			}
+		}
+	}
+}
+
+func (b *BitSet) AllTo(to int) iter.Seq[int] {
+	return func(yield func(int) bool) {
+		if to <= 0 {
+			return
+		}
+		endIndex, endShift := convert(to)
+
+		for i := 0; i < b.maxWordInUse && i <= endIndex; i++ {
+			w := b.bits[i]
+			if i == endIndex {
+				if endShift == 0 {
+					return
+				}
+				w &= (1 << endShift) - 1
+			}
+			for w != 0 {
+				tz := bits.TrailingZeros64(w)
+				if !yield(i*wordSize + tz) {
+					return
+				}
+				w &= w - 1
+			}
+		}
+	}
+}
+
+func (b *BitSet) AllBetween(from, to int) iter.Seq[int] {
+	return func(yield func(int) bool) {
+		if from >= to || to <= 0 {
+			return
+		}
+		if from < 0 {
+			from = 0
+		}
+		index, shift := convert(from)
+		if index >= b.maxWordInUse {
+			return
+		}
+		endIndex, endShift := convert(to)
+
+		for i := index; i < b.maxWordInUse && i <= endIndex; i++ {
+			w := b.bits[i]
+			if i == index {
+				w &= (^uint64(0) << shift)
+			}
+			if i == endIndex {
+				if endShift == 0 {
+					return
+				}
+				w &= (1 << endShift) - 1
+			}
+			for w != 0 {
+				tz := bits.TrailingZeros64(w)
+				if !yield(i*wordSize + tz) {
+					return
+				}
+				w &= w - 1
+			}
+		}
+	}
 }
