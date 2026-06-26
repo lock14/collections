@@ -9,15 +9,7 @@ type Comparator[T any] func(t1, t2 T) int
 
 // NaturalOrder returns a comparator that orders elements using their natural ordering.
 func NaturalOrder[T cmp.Ordered]() Comparator[T] {
-	return func(t1, t2 T) int {
-		if t1 < t2 {
-			return -1
-		} else if t1 > t2 {
-			return 1
-		} else {
-			return 0
-		}
-	}
+	return cmp.Compare[T]
 }
 
 // Reverse returns a comparator that reverses the ordering of the given comparator.
