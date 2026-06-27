@@ -39,7 +39,7 @@ func BenchmarkArrayDeque_AddRemove(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_AddFront_Preallocated(b *testing.B) {
-	d := New[int](func(c *Config) { c.Capacity = b.N })
+	d := New[int](func(c *config) { c.Capacity = b.N })
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		d.AddFront(i)
@@ -47,7 +47,7 @@ func BenchmarkArrayDeque_AddFront_Preallocated(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_AddBack_Preallocated(b *testing.B) {
-	d := New[int](func(c *Config) { c.Capacity = b.N })
+	d := New[int](func(c *config) { c.Capacity = b.N })
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		d.AddBack(i)

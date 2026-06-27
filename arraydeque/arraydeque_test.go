@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "zero_capacity",
-			opts: []Option{func(c *Config) { c.Capacity = 0 }},
+			opts: []Option{func(c *config) { c.Capacity = 0 }},
 			check: func(t *testing.T, d *ArrayDeque[int]) {
 				d.Add(1) // Should not panic
 				if size := d.Size(); size != 1 {

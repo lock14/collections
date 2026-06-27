@@ -33,13 +33,13 @@ type ArrayDeque[T any] struct {
 	size  int
 }
 
-// Config holds the values for configuring a ArrayDeque.
-type Config struct {
+// config holds the values for configuring a ArrayDeque.
+type config struct {
 	Capacity int
 }
 
 // Option configures a ArrayDeque config
-type Option func(*Config)
+type Option func(*config)
 
 // New creates an empty ArrayDeque whose initial size is 0.
 func New[T any](opts ...Option) *ArrayDeque[T] {
@@ -260,8 +260,8 @@ func (d *ArrayDeque[T]) resize() {
 	d.back = d.size
 }
 
-func defaultConfig() *Config {
-	return &Config{
+func defaultConfig() *config {
+	return &config{
 		Capacity: DefaultCapacity,
 	}
 }

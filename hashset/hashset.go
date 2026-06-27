@@ -16,17 +16,17 @@ type HashSet[T comparable] struct {
 	m map[T]struct{}
 }
 
-// Config holds the values for configuring a HashSet.
-type Config struct {
+// config holds the values for configuring a HashSet.
+type config struct {
 	capacity int
 }
 
 // Option configures a HashSet config
-type Option func(*Config)
+type Option func(*config)
 
 // WithCapacity configures the initial capacity of the HashSet.
 func WithCapacity(capacity int) Option {
-	return func(c *Config) {
+	return func(c *config) {
 		c.capacity = capacity
 	}
 }
@@ -118,6 +118,6 @@ func (s *HashSet[T]) All() iter.Seq[T] {
 	return maps.Keys(s.m)
 }
 
-func defaultConfig() *Config {
-	return &Config{}
+func defaultConfig() *config {
+	return &config{}
 }

@@ -11,25 +11,25 @@ const (
 	DefaultDegree = 32
 )
 
-// Config holds the values for configuring a TreeMap.
-type Config[K any] struct {
+// config holds the values for configuring a TreeMap.
+type config[K any] struct {
 	degree     int
 	comparator comparator.Comparator[K]
 }
 
 // Option configures a TreeMap config
-type Option[K any] func(*Config[K])
+type Option[K any] func(*config[K])
 
 // WithDegree configures the minimum degree of the B-Tree.
 func WithDegree[K any](degree int) Option[K] {
-	return func(c *Config[K]) {
+	return func(c *config[K]) {
 		c.degree = degree
 	}
 }
 
 // WithComparator configures the comparator used by the TreeMap.
 func WithComparator[K any](cmpFunc comparator.Comparator[K]) Option[K] {
-	return func(c *Config[K]) {
+	return func(c *config[K]) {
 		c.comparator = cmpFunc
 	}
 }
@@ -44,7 +44,7 @@ type TreeMap[K any, V any] struct {
 
 // New creates an empty TreeMap with the given options.
 func New[K any, V any](opts ...Option[K]) *TreeMap[K, V] {
-	config := &Config[K]{
+	config := &config[K]{
 		degree: DefaultDegree,
 	}
 	for _, option := range opts {

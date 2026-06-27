@@ -17,40 +17,40 @@ var _ collections.MutableSequencedMap[int, int] = (*LinkedHashMap[int, int])(nil
 // KeyOrder represents the iteration order of the linked hash map.
 type KeyOrder bool
 
-// Config holds the configuration for a LinkedHashMap.
-type Config struct {
+// config holds the configuration for a LinkedHashMap.
+type config struct {
 	keyOrder    KeyOrder
 	maxElements int
 	capacity    int
 }
 
 // Opt is a function that configures a LinkedHashMap.
-type Opt func(*Config)
+type Opt func(*config)
 
 // WithAccessOrder configures the LinkedHashMap to iterate over elements in the order they were last accessed.
 func WithAccessOrder() Opt {
-	return func(config *Config) {
+	return func(config *config) {
 		config.keyOrder = AccessOrder
 	}
 }
 
 // WithInsertionOrder configures the LinkedHashMap to iterate over elements in the order they were inserted.
 func WithInsertionOrder() Opt {
-	return func(config *Config) {
+	return func(config *config) {
 		config.keyOrder = InsertionOrder
 	}
 }
 
 // WithMaxElements configures the maximum number of elements the LinkedHashMap can hold before evicting.
 func WithMaxElements(max int) Opt {
-	return func(config *Config) {
+	return func(config *config) {
 		config.maxElements = max
 	}
 }
 
 // WithCapacity configures the initial capacity of the underlying map.
 func WithCapacity(capacity int) Opt {
-	return func(config *Config) {
+	return func(config *config) {
 		config.capacity = capacity
 	}
 }
@@ -276,8 +276,8 @@ func (hm *LinkedHashMap[K, V]) removeEldest() bool {
 	return hm.Size() > hm.maxElements
 }
 
-func defaultConfig() *Config {
-	return &Config{
+func defaultConfig() *config {
+	return &config{
 		keyOrder:    false,
 		maxElements: math.MaxInt,
 	}

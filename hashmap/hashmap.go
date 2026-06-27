@@ -14,24 +14,24 @@ type HashMap[K comparable, V any] struct {
 	m map[K]V
 }
 
-// Config holds the values for configuring a HashMap.
-type Config struct {
+// config holds the values for configuring a HashMap.
+type config struct {
 	capacity int
 }
 
 // Option configures a HashMap config
-type Option func(*Config)
+type Option func(*config)
 
 // WithCapacity configures the initial capacity of the HashMap.
 func WithCapacity(capacity int) Option {
-	return func(c *Config) {
+	return func(c *config) {
 		c.capacity = capacity
 	}
 }
 
 // New creates an empty HashMap.
 func New[K comparable, V any](opts ...Option) *HashMap[K, V] {
-	config := &Config{}
+	config := &config{}
 	for _, option := range opts {
 		option(config)
 	}

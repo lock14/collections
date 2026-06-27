@@ -9,25 +9,25 @@ import (
 	"strings"
 )
 
-// Config holds configuration values for New to use when contracting a LabeledGraph.
-type Config struct {
+// config holds configuration values for New to use when contracting a LabeledGraph.
+type config struct {
 	directed bool
 	capacity int
 }
 
 // Opt represents a configuration option for constructing a LabeledGraph.
-type Opt func(g *Config)
+type Opt func(g *config)
 
 // Directed is an option that configures New to return a directed graph.
 func Directed() Opt {
-	return func(g *Config) {
+	return func(g *config) {
 		g.directed = true
 	}
 }
 
 // Capacity is an option that configures New to pre-allocate the graph with the given capacity.
 func Capacity(n int) Opt {
-	return func(g *Config) {
+	return func(g *config) {
 		g.capacity = n
 	}
 }
@@ -438,8 +438,8 @@ func (g *LabeledGraph[V, L]) nodeData() nodeData[V, L] {
 	}
 }
 
-func defaultConfig() *Config {
-	return &Config{
+func defaultConfig() *config {
+	return &config{
 		directed: false,
 	}
 }
