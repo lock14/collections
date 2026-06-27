@@ -25,17 +25,17 @@ type BitSet struct {
 
 var _ collections.MutableNavigableSet[int] = (*BitSet)(nil)
 
-// Config holds the values for configuring a BitSet.
-type Config struct {
+// config holds the values for configuring a BitSet.
+type config struct {
 	numBits int
 }
 
 // Option configures a BitSet config
-type Option func(*Config)
+type Option func(*config)
 
 // NumBits provides the option to set the number of bits used in a BitSet.
 func NumBits(n int) Option {
-	return func(c *Config) {
+	return func(c *config) {
 		c.numBits = n
 	}
 }
@@ -250,8 +250,8 @@ func convert(bit int) (int, int) {
 	return bit / wordSize, bit % wordSize
 }
 
-func defaultConfig() *Config {
-	return &Config{
+func defaultConfig() *config {
+	return &config{
 		numBits: DefaultNumBits,
 	}
 }

@@ -11,32 +11,32 @@ type TreeSet[T any] struct {
 	m *treemap.TreeMap[T, struct{}]
 }
 
-// Config holds the values for configuring a TreeSet.
-type Config[T any] struct {
+// config holds the values for configuring a TreeSet.
+type config[T any] struct {
 	degree     *int
 	comparator comparator.Comparator[T]
 }
 
 // Option configures a TreeSet config.
-type Option[T any] func(*Config[T])
+type Option[T any] func(*config[T])
 
 // WithDegree configures the degree of the underlying B-Tree.
 func WithDegree[T any](degree int) Option[T] {
-	return func(c *Config[T]) {
+	return func(c *config[T]) {
 		c.degree = &degree
 	}
 }
 
 // WithComparator configures the comparator for the TreeSet.
 func WithComparator[T any](comp comparator.Comparator[T]) Option[T] {
-	return func(c *Config[T]) {
+	return func(c *config[T]) {
 		c.comparator = comp
 	}
 }
 
 // New creates an empty TreeSet.
 func New[T any](opts ...Option[T]) *TreeSet[T] {
-	config := &Config[T]{}
+	config := &config[T]{}
 	for _, option := range opts {
 		option(config)
 	}

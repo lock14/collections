@@ -8,24 +8,24 @@ import (
 	"strings"
 )
 
-// Config holds configuration values for New to use when contracting a Graph.
-type Config struct {
+// config holds configuration values for New to use when contracting a Graph.
+type config struct {
 	delegateOps []labeledgraph.Opt
 }
 
 // Opt represents a configuration option for constructing a Graph.
-type Opt func(g *Config)
+type Opt func(g *config)
 
 // Directed is an option that configures New to return a directed graph.
 func Directed() Opt {
-	return func(g *Config) {
+	return func(g *config) {
 		g.delegateOps = append(g.delegateOps, labeledgraph.Directed())
 	}
 }
 
 // Capacity is an option that configures New to pre-allocate the graph with the given capacity.
 func Capacity(n int) Opt {
-	return func(g *Config) {
+	return func(g *config) {
 		g.delegateOps = append(g.delegateOps, labeledgraph.Capacity(n))
 	}
 }
@@ -208,6 +208,6 @@ func (g *Graph[V]) String() string {
 	return sb.String()
 }
 
-func defaultConfig() *Config {
-	return &Config{}
+func defaultConfig() *config {
+	return &config{}
 }

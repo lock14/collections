@@ -16,24 +16,24 @@ const (
 var _ collections.MutableQueue[int] = (*Heap[int])(nil)
 
 // Option is a function that configures a Heap.
-type Option[T any] func(config *Config[T])
+type Option[T any] func(config *config[T])
 
-// Config holds the configuration for a Heap.
-type Config[T any] struct {
+// config holds the configuration for a Heap.
+type config[T any] struct {
 	capacity   int
 	comparator comparator.Comparator[T]
 }
 
 // WithComparator configures the comparator used by the Heap.
 func WithComparator[T any](cmpFunc comparator.Comparator[T]) Option[T] {
-	return func(config *Config[T]) {
+	return func(config *config[T]) {
 		config.comparator = cmpFunc
 	}
 }
 
 // Capacity configures the initial pre-allocated capacity of the heap.
 func Capacity[T any](capacity int) Option[T] {
-	return func(config *Config[T]) {
+	return func(config *config[T]) {
 		config.capacity = capacity
 	}
 }
@@ -120,8 +120,8 @@ func (h *Heap[T]) All() iter.Seq[T] {
 
 // Private Functions
 
-func defaultConfig[T any]() *Config[T] {
-	return &Config[T]{
+func defaultConfig[T any]() *config[T] {
+	return &config[T]{
 		capacity: DefaultCapacity,
 	}
 }
