@@ -46,7 +46,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "zero_bits",
-			opts: []Option{WithNumBits(0)},
+			opts: []Option{WithCapacity(0)},
 			check: func(t *testing.T, b *BitSet) {
 				if got := b.Capacity(); got != 0 {
 					t.Errorf("Capacity() = %v, want %v", got, 0)
@@ -59,7 +59,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "exact_word_size",
-			opts: []Option{WithNumBits(64)},
+			opts: []Option{WithCapacity(64)},
 			check: func(t *testing.T, b *BitSet) {
 				if got := b.Capacity(); got != 64 {
 					t.Errorf("expected Capacity 64, got %d", got)
@@ -68,7 +68,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "non_exact_word_size",
-			opts: []Option{WithNumBits(100)},
+			opts: []Option{WithCapacity(100)},
 			check: func(t *testing.T, b *BitSet) {
 				if got := b.Capacity(); got != 128 { // 100 bits requires 2 words
 					t.Errorf("Capacity() = %v, want %v", got, 128)
@@ -582,7 +582,7 @@ func TestSetBits(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			b := New(WithNumBits(128))
+			b := New(WithCapacity(128))
 			tc.check(t, b)
 		})
 	}
@@ -625,7 +625,7 @@ func TestBitSetPrimeGen(t *testing.T) {
 }
 
 func primesLessThan(n int) *BitSet {
-	b := New(WithNumBits(n))
+	b := New(WithCapacity(n))
 	if n > 2 {
 		b.SetBit(0)
 		b.SetBit(1)
