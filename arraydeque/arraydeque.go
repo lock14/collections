@@ -35,7 +35,7 @@ type ArrayDeque[T any] struct {
 
 // config holds the values for configuring a ArrayDeque.
 type config struct {
-	Capacity int
+	capacity int
 }
 
 // Option configures a ArrayDeque config
@@ -44,7 +44,7 @@ type Option func(*config)
 // WithCapacity configures the initial capacity of the ArrayDeque.
 func WithCapacity(capacity int) Option {
 	return func(c *config) {
-		c.Capacity = capacity
+		c.capacity = capacity
 	}
 }
 
@@ -55,7 +55,7 @@ func New[T any](opts ...Option) *ArrayDeque[T] {
 		option(config)
 	}
 	return &ArrayDeque[T]{
-		slice: make([]T, config.Capacity),
+		slice: make([]T, config.capacity),
 	}
 }
 
@@ -269,6 +269,6 @@ func (d *ArrayDeque[T]) resize() {
 
 func defaultConfig() *config {
 	return &config{
-		Capacity: DefaultCapacity,
+		capacity: DefaultCapacity,
 	}
 }
