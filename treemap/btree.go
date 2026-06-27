@@ -143,6 +143,10 @@ func (tm *TreeMap[K, V]) deleteNode(x *node[K, V], key K) {
 	if found {
 		if x.leaf {
 			// Case 1: The key is in a leaf node
+			var zeroK K
+			var zeroV V
+			x.keys[i] = zeroK
+			x.values[i] = zeroV
 			x.keys = slices.Delete(x.keys, i, i+1)
 			x.values = slices.Delete(x.values, i, i+1)
 		} else {

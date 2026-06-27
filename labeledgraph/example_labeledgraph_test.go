@@ -364,7 +364,7 @@ type PathNode struct {
 
 func ExampleLabeledGraph_shortestPath() {
 	// Create a directed graph with string vertices and int edge weights (distances)
-	g := labeledgraph.New[string, int](labeledgraph.Directed())
+	g := labeledgraph.New[string, int](labeledgraph.WithDirected())
 
 	// Add edges and their weights
 	g.AddEdge("A", "B", 4)
