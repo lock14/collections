@@ -145,10 +145,6 @@ func (tm *TreeMap[K, V]) deleteNode(x *node[K, V], key K) {
 			// Case 1: The key is in a leaf node
 			x.keys = slices.Delete(x.keys, i, i+1)
 			x.values = slices.Delete(x.values, i, i+1)
-			// Optional: clearing the trailing element to avoid memory leaks
-			// But slices.Delete takes care of returning the right slice.
-			// Wait, we should zero out the popped elements if we reuse capacity, but slices.Delete doesn't zero them out.
-			// Let's rely on standard GC for now, or just leave it.
 		} else {
 			// Case 2: The key is in an internal node
 			y := x.children[i]
