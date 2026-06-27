@@ -17,16 +17,16 @@ type config struct {
 type Opt func(g *config)
 
 // Directed is an option that configures New to return a directed graph.
-func Directed() Opt {
+func WithDirected() Opt {
 	return func(g *config) {
-		g.delegateOps = append(g.delegateOps, labeledgraph.Directed())
+		g.delegateOps = append(g.delegateOps, labeledgraph.WithDirected())
 	}
 }
 
 // Capacity is an option that configures New to pre-allocate the graph with the given capacity.
-func Capacity(n int) Opt {
+func WithCapacity(n int) Opt {
 	return func(g *config) {
-		g.delegateOps = append(g.delegateOps, labeledgraph.Capacity(n))
+		g.delegateOps = append(g.delegateOps, labeledgraph.WithCapacity(n))
 	}
 }
 

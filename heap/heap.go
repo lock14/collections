@@ -31,8 +31,8 @@ func WithComparator[T any](cmpFunc comparator.Comparator[T]) Option[T] {
 	}
 }
 
-// Capacity configures the initial pre-allocated capacity of the heap.
-func Capacity[T any](capacity int) Option[T] {
+// WithCapacity configures the initial pre-allocated capacity of the heap.
+func WithCapacity[T any](capacity int) Option[T] {
 	return func(config *config[T]) {
 		config.capacity = capacity
 	}

@@ -15,7 +15,7 @@ func BenchmarkHeap_Add(b *testing.B) {
 }
 
 func BenchmarkHeap_Add_Preallocated(b *testing.B) {
-	h := heap.New[int](heap.Capacity[int](b.N), heap.WithComparator(comparator.NaturalOrder[int]()))
+	h := heap.New[int](heap.WithCapacity[int](b.N), heap.WithComparator(comparator.NaturalOrder[int]()))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		h.Add(i)

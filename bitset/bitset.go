@@ -33,8 +33,8 @@ type config struct {
 // Option configures a BitSet config
 type Option func(*config)
 
-// NumBits provides the option to set the number of bits used in a BitSet.
-func NumBits(n int) Option {
+// WithNumBits provides the option to set the number of bits used in a BitSet.
+func WithNumBits(n int) Option {
 	return func(c *config) {
 		c.numBits = n
 	}
@@ -177,7 +177,7 @@ func (b *BitSet) FlipRange(start int, end int) {
 
 // FromBytes returns new BitSet containing all the bits in the given byte array.
 func FromBytes(bytes []byte) *BitSet {
-	b := New(NumBits(len(bytes) * 8))
+	b := New(WithNumBits(len(bytes) * 8))
 	k := 0
 	for i := 0; i < len(bytes); i += 8 {
 		word := uint64(0)
@@ -381,7 +381,7 @@ func (b *BitSet) RetainAll(col collections.Collection[int]) {
 	}
 
 	// For generic non-set collections, build a temporary BitSet to avoid O(N*M).
-	temp := New(NumBits(b.Capacity()))
+	temp := New(WithNumBits(b.Capacity()))
 	for v := range col.All() {
 		if b.Contains(v) {
 			temp.SetBit(v)

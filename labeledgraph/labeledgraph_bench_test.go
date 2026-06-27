@@ -14,7 +14,7 @@ func BenchmarkLabeledGraph_AddVertex(b *testing.B) {
 }
 
 func BenchmarkLabeledGraph_AddEdge_Directed(b *testing.B) {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		g.AddEdge(i, i+1, "label")

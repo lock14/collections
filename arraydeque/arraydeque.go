@@ -41,6 +41,13 @@ type config struct {
 // Option configures a ArrayDeque config
 type Option func(*config)
 
+// WithCapacity configures the initial capacity of the ArrayDeque.
+func WithCapacity(capacity int) Option {
+	return func(c *config) {
+		c.Capacity = capacity
+	}
+}
+
 // New creates an empty ArrayDeque whose initial size is 0.
 func New[T any](opts ...Option) *ArrayDeque[T] {
 	config := defaultConfig()
