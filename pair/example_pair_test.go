@@ -27,3 +27,38 @@ func ExamplePair() {
 	// At origin: Start
 	// At target: End
 }
+
+func ExamplePair_Fst() {
+	p := pair.New("hello", 42)
+	fmt.Println(p.Fst())
+
+	// Output:
+	// hello
+}
+
+func ExamplePair_Snd() {
+	p := pair.New("hello", 42)
+	fmt.Println(p.Snd())
+
+	// Output:
+	// 42
+}
+
+func ExamplePair_Unwrap() {
+	p := pair.New("hello", 42)
+	fst, snd := p.Unwrap()
+	fmt.Println(fst)
+	fmt.Println(snd)
+
+	// Output:
+	// hello
+	// 42
+}
+
+func ExamplePair_String() {
+	p := pair.New("hello", 42)
+	fmt.Println(p.String())
+
+	// Output:
+	// (hello, 42)
+}

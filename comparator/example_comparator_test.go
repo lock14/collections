@@ -45,3 +45,22 @@ func ExampleReverse() {
 	// - 30
 	// - 20
 }
+
+func ExampleNaturalOrder() {
+	numbers := []int{5, 2, 9, 1, 7}
+
+	// comparator.NaturalOrder returns a comparator that sorts in ascending order
+	// based on the natural ordering of cmp.Ordered types.
+	slices.SortFunc(numbers, comparator.NaturalOrder[int]())
+
+	fmt.Println("Ascending:", numbers)
+
+	strings := []string{"banana", "apple", "cherry"}
+	slices.SortFunc(strings, comparator.NaturalOrder[string]())
+
+	fmt.Println("Strings Ascending:", strings)
+
+	// Output:
+	// Ascending: [1 2 5 7 9]
+	// Strings Ascending: [apple banana cherry]
+}

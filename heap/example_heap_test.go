@@ -3,6 +3,8 @@ package heap_test
 import (
 	"cmp"
 	"fmt"
+	"slices"
+
 	"github.com/lock14/collections/heap"
 )
 
@@ -56,4 +58,109 @@ func ExampleHeap_priorityQueue() {
 	// - Database outage (Priority: 100)
 	// - Update dependencies (Priority: 5)
 	// - Fix typo (Priority: 1)
+}
+
+func ExampleHeap_Add() {
+	h := heap.Min[int]()
+	h.Add(42)
+	h.Add(10)
+
+	fmt.Println(h.Remove())
+	fmt.Println(h.Remove())
+
+	// Output:
+	// 10
+	// 42
+}
+
+func ExampleHeap_AddAll() {
+	h := heap.Min[int]()
+	h.AddAll(slices.Values([]int{30, 10, 20}))
+
+	for !h.Empty() {
+		fmt.Println(h.Remove())
+	}
+
+	// Output:
+	// 10
+	// 20
+	// 30
+}
+
+func ExampleHeap_Remove() {
+	h := heap.Min[int]()
+	h.Add(100)
+	h.Add(50)
+
+	fmt.Println(h.Remove())
+
+	// Output:
+	// 50
+}
+
+func ExampleHeap_Peek() {
+	h := heap.Min[int]()
+	h.Add(7)
+	h.Add(3)
+
+	fmt.Println(h.Peek())
+	fmt.Println(h.Size())
+
+	// Output:
+	// 3
+	// 2
+}
+
+func ExampleHeap_Size() {
+	h := heap.Min[int]()
+	fmt.Println(h.Size())
+	h.Add(1)
+	fmt.Println(h.Size())
+
+	// Output:
+	// 0
+	// 1
+}
+
+func ExampleHeap_Empty() {
+	h := heap.Min[int]()
+	fmt.Println(h.Empty())
+	h.Add(1)
+	fmt.Println(h.Empty())
+
+	// Output:
+	// true
+	// false
+}
+
+func ExampleHeap_Clear() {
+	h := heap.Min[int]()
+	h.Add(1)
+	h.Add(2)
+	fmt.Println(h.Size())
+	h.Clear()
+	fmt.Println(h.Size())
+	fmt.Println(h.Empty())
+
+	// Output:
+	// 2
+	// 0
+	// true
+}
+
+func ExampleHeap_All() {
+	h := heap.Min[int]()
+	h.Add(3)
+	h.Add(1)
+	h.Add(2)
+
+	// The elements are returned in their current heap array order.
+	for v := range h.All() {
+		fmt.Println(v)
+	}
+
+	// Output:
+	// 1
+	// 3
+	// 2
 }
