@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	DefaultNumBits = 64
-	wordSize       = 64
-	wordFmt        = "%016X"
+	DefaultCapacity = 64
+	wordSize        = 64
+	wordFmt         = "%016X"
 )
 
 // BitSet represents a vector of bits that grows as needed.
@@ -27,31 +27,31 @@ var _ collections.MutableNavigableSet[int] = (*BitSet)(nil)
 
 // config holds the values for configuring a BitSet.
 type config struct {
-	numBits int
+	capacity int
 }
 
 // Option configures a BitSet config
 type Option func(*config)
 
-// NumBits provides the option to set the number of bits used in a BitSet.
-func NumBits(n int) Option {
+// WithCapacity provides the option to set the number of bits used in a BitSet.
+func WithCapacity(n int) Option {
 	return func(c *config) {
-		c.numBits = n
+		c.capacity = n
 	}
 }
 
 // New creates a BitSet whose initial size is large enough to explicitly
 // represent bits with indices in the range 0 through NumBits-1. If no
-// configuration is used the DefaultNumBits is used as the number of bits.
+// configuration is used the DefaultCapacity is used as the number of bits.
 // All bits are initially false.
 func New(opts ...Option) *BitSet {
 	config := defaultConfig()
 	for _, option := range opts {
 		option(config)
 	}
-	ensureNonNegative(config.numBits)
+	ensureNonNegative(config.capacity)
 	return &BitSet{
-		bits:         make([]uint64, (config.numBits/wordSize)+min(1, config.numBits%wordSize)),
+		bits:         make([]uint64, (config.capacity/wordSize)+min(1, config.capacity%wordSize)),
 		maxWordInUse: 0,
 		size:         0,
 	}
@@ -177,7 +177,7 @@ func (b *BitSet) FlipRange(start int, end int) {
 
 // FromBytes returns new BitSet containing all the bits in the given byte array.
 func FromBytes(bytes []byte) *BitSet {
-	b := New(NumBits(len(bytes) * 8))
+	b := New(WithCapacity(len(bytes) * 8))
 	k := 0
 	for i := 0; i < len(bytes); i += 8 {
 		word := uint64(0)
@@ -252,7 +252,7 @@ func convert(bit int) (int, int) {
 
 func defaultConfig() *config {
 	return &config{
-		numBits: DefaultNumBits,
+		capacity: DefaultCapacity,
 	}
 }
 
@@ -381,7 +381,7 @@ func (b *BitSet) RetainAll(col collections.Collection[int]) {
 	}
 
 	// For generic non-set collections, build a temporary BitSet to avoid O(N*M).
-	temp := New(NumBits(b.Capacity()))
+	temp := New(WithCapacity(b.Capacity()))
 	for v := range col.All() {
 		if b.Contains(v) {
 			temp.SetBit(v)

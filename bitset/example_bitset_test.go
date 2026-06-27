@@ -73,7 +73,7 @@ func ExampleBitSet_GetBit() {
 }
 
 func ExampleBitSet_Capacity() {
-	b := bitset.New(bitset.NumBits(100))
+	b := bitset.New(bitset.WithCapacity(100))
 	fmt.Println(b.Capacity() >= 100)
 	// Output:
 	// true

@@ -9,7 +9,7 @@ import (
 
 func TestBitSet_MutableSet(t *testing.T) {
 	t.Parallel()
-	b := New(NumBits(100))
+	b := New(WithCapacity(100))
 	b.Add(10)
 	b.Add(20)
 
@@ -51,7 +51,7 @@ func TestBitSet_MutableSet(t *testing.T) {
 		t.Errorf("AddAll failed")
 	}
 
-	other := New(NumBits(100))
+	other := New(WithCapacity(100))
 	other.Add(2)
 	other.Add(3)
 	other.Add(4)

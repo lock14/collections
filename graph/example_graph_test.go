@@ -8,7 +8,7 @@ import (
 
 func ExampleGraph_directed() {
 	// Create a directed graph
-	g := graph.New[string](graph.Directed())
+	g := graph.New[string](graph.WithDirected())
 
 	g.AddEdge("A", "B")
 	g.AddEdge("A", "C")
@@ -133,7 +133,7 @@ func ExampleGraph_RemoveEdge() {
 
 func ExampleGraph_Directed() {
 	g1 := graph.New[int]()
-	g2 := graph.New[int](graph.Directed())
+	g2 := graph.New[int](graph.WithDirected())
 
 	fmt.Println(g1.Directed())
 	fmt.Println(g2.Directed())
@@ -183,7 +183,7 @@ func ExampleGraph_Degree() {
 }
 
 func ExampleGraph_InDegree() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(3, 2)
 
@@ -195,7 +195,7 @@ func ExampleGraph_InDegree() {
 }
 
 func ExampleGraph_OutDegree() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(1, 3)
 
@@ -234,7 +234,7 @@ func ExampleGraph_Neighbors() {
 }
 
 func ExampleGraph_Successors() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(1, 3)
 
@@ -247,7 +247,7 @@ func ExampleGraph_Successors() {
 }
 
 func ExampleGraph_Predecessors() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 3)
 	g.AddEdge(2, 3)
 
@@ -260,7 +260,7 @@ func ExampleGraph_Predecessors() {
 }
 
 func ExampleGraph_Edges() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(2, 3)
 
@@ -306,7 +306,7 @@ func ExampleGraph_IncidentEdges() {
 }
 
 func ExampleGraph_InIncidentEdges() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 3)
 	g.AddEdge(2, 3)
 
@@ -327,7 +327,7 @@ func ExampleGraph_InIncidentEdges() {
 }
 
 func ExampleGraph_OutIncidentEdges() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(1, 3)
 
@@ -396,7 +396,7 @@ func ExampleGraph_Equal() {
 }
 
 func ExampleGraph_String() {
-	g := graph.New[int](graph.Directed())
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
 	g.AddVertex(3)
 

@@ -35,7 +35,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "custom_capacity",
-			opts: []Option[int]{Capacity[int](100)},
+			opts: []Option[int]{WithCapacity[int](100)},
 			check: func(t *testing.T, h *Heap[int]) {
 				if cap(h.elements) < 100 {
 					t.Errorf("expected capacity >= 100, got %d", cap(h.elements))

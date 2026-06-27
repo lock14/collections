@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *Graph[int]) {
 				if !g.Directed() {
 					t.Errorf("expected directed graph")
@@ -38,7 +38,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "capacity",
-			opts: []Opt{Capacity(100)},
+			opts: []Opt{WithCapacity(100)},
 			check: func(t *testing.T, g *Graph[int]) {
 				g.AddVertex(1)
 				if g.Order() != 1 {
@@ -88,7 +88,7 @@ func TestGraph_AddRemoveEdge(t *testing.T) {
 
 func TestGraph_Degree(t *testing.T) {
 	t.Parallel()
-	g := New[int](Directed())
+	g := New[int](WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(2, 1)
 	g.AddEdge(1, 3)
@@ -108,7 +108,7 @@ type edge struct{ u, v int }
 
 func TestGraph_Iterators(t *testing.T) {
 	t.Parallel()
-	g := New[int](Directed())
+	g := New[int](WithDirected())
 	g.AddEdge(1, 2)
 	g.AddEdge(2, 3)
 
@@ -223,7 +223,7 @@ func TestGraph_Equal(t *testing.T) {
 func TestGraph_String(t *testing.T) {
 	t.Parallel()
 
-	g1 := New[int](Directed())
+	g1 := New[int](WithDirected())
 	g1.AddEdge(1, 2)
 	g1.AddVertex(3)
 	str1 := g1.String()

@@ -11,7 +11,7 @@ import (
 
 func ExampleLabeledGraph() {
 	// Create a directed graph with string vertices and string edge labels (relationships)
-	g := labeledgraph.New[string, string](labeledgraph.Directed())
+	g := labeledgraph.New[string, string](labeledgraph.WithDirected())
 
 	g.AddEdge("Alice", "Bob", "Knows")
 	g.AddEdge("Bob", "Charlie", "Likes")
@@ -102,7 +102,7 @@ func ExampleLabeledGraph_SetLabel() {
 
 func ExampleLabeledGraph_Directed() {
 	g1 := labeledgraph.New[int, string]()
-	g2 := labeledgraph.New[int, string](labeledgraph.Directed())
+	g2 := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	fmt.Println(g1.Directed())
 	fmt.Println(g2.Directed())
 	// Output:
@@ -151,7 +151,7 @@ func ExampleLabeledGraph_Degree() {
 }
 
 func ExampleLabeledGraph_InDegree() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(3, 2, "B")
 	deg, ok := g.InDegree(2)
@@ -161,7 +161,7 @@ func ExampleLabeledGraph_InDegree() {
 }
 
 func ExampleLabeledGraph_OutDegree() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(1, 3, "B")
 	deg, ok := g.OutDegree(1)
@@ -196,7 +196,7 @@ func ExampleLabeledGraph_Neighbors() {
 }
 
 func ExampleLabeledGraph_Successors() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(1, 3, "B")
 	g.AddEdge(3, 1, "C") // In-edge shouldn't be counted in successors
@@ -209,7 +209,7 @@ func ExampleLabeledGraph_Successors() {
 }
 
 func ExampleLabeledGraph_Predecessors() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C") // Out-edge shouldn't be counted in predecessors
@@ -222,7 +222,7 @@ func ExampleLabeledGraph_Predecessors() {
 }
 
 func ExampleLabeledGraph_Edges() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(2, 3, "B")
 
@@ -242,7 +242,7 @@ func ExampleLabeledGraph_Edges() {
 }
 
 func ExampleLabeledGraph_IncidentEdges() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C")
@@ -263,7 +263,7 @@ func ExampleLabeledGraph_IncidentEdges() {
 }
 
 func ExampleLabeledGraph_InIncidentEdges() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C")
@@ -283,7 +283,7 @@ func ExampleLabeledGraph_InIncidentEdges() {
 }
 
 func ExampleLabeledGraph_OutIncidentEdges() {
-	g := labeledgraph.New[int, string](labeledgraph.Directed())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C")
@@ -350,7 +350,7 @@ func ExampleLabeledGraph_Equal() {
 }
 
 func ExampleLabeledGraph_String() {
-	g2 := labeledgraph.New[int, string](labeledgraph.Directed())
+	g2 := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	g2.AddEdge(1, 2, "A")
 	fmt.Println(g2.String())
 	// Output:
@@ -364,7 +364,7 @@ type PathNode struct {
 
 func ExampleLabeledGraph_shortestPath() {
 	// Create a directed graph with string vertices and int edge weights (distances)
-	g := labeledgraph.New[string, int](labeledgraph.Directed())
+	g := labeledgraph.New[string, int](labeledgraph.WithDirected())
 
 	// Add edges and their weights
 	g.AddEdge("A", "B", 4)

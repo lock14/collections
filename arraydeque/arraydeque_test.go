@@ -29,11 +29,20 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "zero_capacity",
-			opts: []Option{func(c *config) { c.Capacity = 0 }},
+			opts: []Option{WithCapacity(0)},
 			check: func(t *testing.T, d *ArrayDeque[int]) {
 				d.Add(1) // Should not panic
 				if size := d.Size(); size != 1 {
 					t.Errorf("expected size 1, got: %d", size)
+				}
+			},
+		},
+		{
+			name: "custom_capacity",
+			opts: []Option{WithCapacity(10)},
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				if cap(d.slice) != 10 {
+					t.Errorf("expected capacity 10, got: %d", cap(d.slice))
 				}
 			},
 		},

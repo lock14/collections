@@ -29,7 +29,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				if !g.Directed() {
 					t.Errorf("expected directed graph")
@@ -38,7 +38,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "capacity",
-			opts: []Opt{Capacity(100)},
+			opts: []Opt{WithCapacity(100)},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddVertex(1)
 				if g.Order() != 1 {
@@ -127,7 +127,7 @@ func TestLabeledGraph_RemoveVertex(t *testing.T) {
 		},
 		{
 			name: "remove_with_edges_directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "1->2")
 				g.AddEdge(2, 3, "2->3")
@@ -178,7 +178,7 @@ func TestLabeledGraph_AddRemoveEdge(t *testing.T) {
 	}{
 		{
 			name: "add_edge_directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "1->2")
 				if !g.ContainsEdge(1, 2) {
@@ -253,7 +253,7 @@ func TestLabeledGraph_Degree(t *testing.T) {
 	}{
 		{
 			name: "directed_degree",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "1->2")
 				g.AddEdge(2, 1, "2->1")
@@ -340,7 +340,7 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 		},
 		{
 			name: "successors_and_predecessors_directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "")
 				g.AddEdge(1, 3, "")
@@ -369,7 +369,7 @@ func TestLabeledGraph_Iterators(t *testing.T) {
 		},
 		{
 			name: "edges_and_incident_directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "")
 				g.AddEdge(2, 3, "")
@@ -470,7 +470,7 @@ func TestLabeledGraph_Clone(t *testing.T) {
 	}{
 		{
 			name: "clone",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "1->2")
 				g.AddVertex(3)
@@ -507,12 +507,12 @@ func TestLabeledGraph_Equal(t *testing.T) {
 	}{
 		{
 			name: "equal",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "A")
 				g.AddVertex(3)
 
-				other := New[int, string](Directed())
+				other := New[int, string](WithDirected())
 				other.AddEdge(1, 2, "A")
 				other.AddVertex(3)
 
@@ -548,7 +548,7 @@ func TestLabeledGraph_String(t *testing.T) {
 	}{
 		{
 			name: "string_directed",
-			opts: []Opt{Directed()},
+			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
 				g.AddEdge(1, 2, "A")
 				g.AddVertex(3)
@@ -617,7 +617,7 @@ func TestLabeledGraph_Coverage(t *testing.T) {
 	un.setSuccessorLabel(3, 30)
 	_ = un.containsPredecessor(2)
 
-	d := New[int, int](Directed())
+	d := New[int, int](WithDirected())
 	d.AddEdge(1, 2, 10)
 	_ = d.graph[2].containsPredecessor(1)
 
@@ -641,6 +641,6 @@ func TestLabeledGraph_Coverage(t *testing.T) {
 	g4.AddEdge(1, 3, 10)
 	_ = g3.Equal(g4, func(a, b int) bool { return a == b })
 
-	g5 := New[int, int](Directed())
+	g5 := New[int, int](WithDirected())
 	_ = g3.Equal(g5, func(a, b int) bool { return a == b })
 }
