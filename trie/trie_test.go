@@ -603,6 +603,52 @@ func TestMoreCoverage(t *testing.T) {
 	if count != 0 {
 		t.Errorf("expected 0")
 	}
+
+	// SliceMap missing key Get
+	if _, ok := sm.Get([]byte("missing")); ok {
+		t.Errorf("expected false")
+	}
+
+	// Root values
+	m.Put("", 999)
+	if m.Size() != 2 {
+		t.Errorf("size should be 2")
+	}
+	if v, ok := m.Get(""); !ok || v != 999 {
+		t.Errorf("Get empty string failed")
+	}
+	if !m.HasPrefix("") {
+		t.Errorf("HasPrefix empty string failed")
+	}
+	lk, lv, lok := m.LongestPrefixOf("xyz")
+	if !lok || lk != "" || lv != 999 {
+		t.Errorf("LongestPrefixOf empty failed")
+	}
+
+	sm.Put([]byte{}, 999)
+	if sm.Size() != 2 {
+		t.Errorf("size should be 2")
+	}
+	if v, ok := sm.Get([]byte{}); !ok || v != 999 {
+		t.Errorf("Get empty slice failed")
+	}
+	if !sm.HasPrefix([]byte{}) {
+		t.Errorf("HasPrefix empty slice failed")
+	}
+	slk, slv, slok := sm.LongestPrefixOf([]byte("xyz"))
+	if !slok || len(slk) != 0 || slv != 999 {
+		t.Errorf("LongestPrefixOf empty slice failed")
+	}
+
+	// Remove root values
+	m.Remove("")
+	if m.Size() != 1 {
+		t.Errorf("Remove empty string failed")
+	}
+	sm.Remove([]byte{})
+	if sm.Size() != 1 {
+		t.Errorf("Remove empty slice failed")
+	}
 }
 
 func BenchmarkStringMap_Put(b *testing.B) {
