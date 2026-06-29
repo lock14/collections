@@ -262,14 +262,14 @@ func TestStringSet_Basic(t *testing.T) {
 	s := NewSet()
 	s.Add("hello")
 	s.Add("world")
-	
+
 	if s.Size() != 2 {
 		t.Errorf("size = %d", s.Size())
 	}
 	if !s.Contains("hello") {
 		t.Errorf("Contains(hello) = false")
 	}
-	
+
 	lk, lok := s.LongestPrefixOf("hello world")
 	if !lok || lk != "hello" {
 		t.Errorf("LongestPrefixOf = %v, %v", lk, lok)
@@ -280,12 +280,12 @@ func TestStringMap_Values(t *testing.T) {
 	m := NewMap[int]()
 	m.Put("a", 1)
 	m.Put("b", 2)
-	
+
 	vals := slices.Collect(m.Values())
 	if !slices.Contains(vals, 1) || !slices.Contains(vals, 2) {
 		t.Errorf("Values failed")
 	}
-	
+
 	vp := slices.Collect(m.ValuesWithPrefix("a"))
 	if len(vp) != 1 || vp[0] != 1 {
 		t.Errorf("ValuesWithPrefix failed")
@@ -295,30 +295,30 @@ func TestStringMap_Values(t *testing.T) {
 func TestStringSet_Remaining(t *testing.T) {
 	s := NewSet()
 	s.Add("x")
-	
+
 	s2 := NewSet()
 	s2.AddAll(s.All())
 	if !s2.ContainsAll(s) {
 		t.Errorf("ContainsAll failed")
 	}
-	
+
 	s2.RemoveAll(s)
 	if !s2.Empty() {
 		t.Errorf("RemoveAll failed")
 	}
-	
+
 	s2.Add("x")
 	s2.Add("y")
 	s2.RetainAll(s)
 	if s2.Size() != 1 {
 		t.Errorf("RetainAll failed")
 	}
-	
+
 	v := s2.Remove()
 	if v != "x" {
 		t.Errorf("Remove failed")
 	}
-	
+
 	func() {
 		defer func() {
 			if r := recover(); r == nil {
@@ -334,18 +334,18 @@ func TestStringMap_EarlyExit(t *testing.T) {
 	m.Put("a", 1)
 	m.Put("ab", 2)
 	m.Put("b", 3)
-	
+
 	count := 0
-	for _, _ = range m.All() {
+	for range m.All() {
 		count++
 		break
 	}
 	if count != 1 {
 		t.Errorf("All() early exit failed")
 	}
-	
+
 	count = 0
-	for _ = range m.KeysWithPrefix("a") {
+	for range m.KeysWithPrefix("a") {
 		count++
 		break
 	}
@@ -354,7 +354,7 @@ func TestStringMap_EarlyExit(t *testing.T) {
 	}
 
 	count = 0
-	for _, _ = range m.PrefixesOf("abc") {
+	for range m.PrefixesOf("abc") {
 		count++
 		break
 	}
@@ -368,18 +368,18 @@ func TestSliceMap_EarlyExit(t *testing.T) {
 	m.Put([]byte("a"), 1)
 	m.Put([]byte("ab"), 2)
 	m.Put([]byte("b"), 3)
-	
+
 	count := 0
-	for _, _ = range m.All() {
+	for range m.All() {
 		count++
 		break
 	}
 	if count != 1 {
 		t.Errorf("All() early exit failed")
 	}
-	
+
 	count = 0
-	for _ = range m.KeysWithPrefix([]byte("a")) {
+	for range m.KeysWithPrefix([]byte("a")) {
 		count++
 		break
 	}
@@ -388,7 +388,7 @@ func TestSliceMap_EarlyExit(t *testing.T) {
 	}
 
 	count = 0
-	for _, _ = range m.PrefixesOf([]byte("abc")) {
+	for range m.PrefixesOf([]byte("abc")) {
 		count++
 		break
 	}
@@ -402,7 +402,7 @@ func TestStringSet_EarlyExit(t *testing.T) {
 	s.Add("a")
 	s.Add("b")
 	count := 0
-	for _ = range s.All() {
+	for range s.All() {
 		count++
 		break
 	}
@@ -410,7 +410,7 @@ func TestStringSet_EarlyExit(t *testing.T) {
 		t.Errorf("All early exit failed")
 	}
 	count = 0
-	for _ = range s.PrefixesOf("abc") {
+	for range s.PrefixesOf("abc") {
 		count++
 		break
 	}
@@ -424,7 +424,7 @@ func TestSliceSet_EarlyExit(t *testing.T) {
 	s.Add([]byte("a"))
 	s.Add([]byte("b"))
 	count := 0
-	for _ = range s.All() {
+	for range s.All() {
 		count++
 		break
 	}
@@ -432,7 +432,7 @@ func TestSliceSet_EarlyExit(t *testing.T) {
 		t.Errorf("All early exit failed")
 	}
 	count = 0
-	for _ = range s.PrefixesOf([]byte("abc")) {
+	for range s.PrefixesOf([]byte("abc")) {
 		count++
 		break
 	}
@@ -453,13 +453,13 @@ func TestStringMap_EdgeCases(t *testing.T) {
 	if ok {
 		t.Errorf("expected false")
 	}
-	
+
 	// RemovePrefix empty string clears map
 	m.RemovePrefix("")
 	if !m.Empty() {
 		t.Errorf("expected empty map")
 	}
-	
+
 	// RemovePrefix where prefix doesn't exist
 	m.Put("a", 1)
 	m.RemovePrefix("ab")
@@ -483,7 +483,7 @@ func TestSliceMap_EdgeCases(t *testing.T) {
 	if ok {
 		t.Errorf("expected false")
 	}
-	
+
 	m.RemovePrefix(nil) // should clear map
 	if !m.Empty() {
 		t.Errorf("expected empty map")
@@ -493,7 +493,7 @@ func TestSliceMap_EdgeCases(t *testing.T) {
 	if !m.Empty() {
 		t.Errorf("expected empty map")
 	}
-	
+
 	m.Put([]byte("a"), 1)
 	m.RemovePrefix([]byte("ab"))
 	if m.Size() != 1 {
@@ -510,19 +510,19 @@ func TestStringMap_MoreEdgeCases(t *testing.T) {
 	m.Put("a", 1)
 	// Try to remove "ab", depth reaches 'a', but 'b' is not in 'a's children
 	m.RemovePrefix("ab")
-	
+
 	// Values tests with early exit
 	count := 0
-	for _ = range m.Values() {
+	for range m.Values() {
 		count++
 		break
 	}
 	if count != 1 {
 		t.Errorf("Values early exit failed")
 	}
-	
+
 	count = 0
-	for _ = range m.ValuesWithPrefix("a") {
+	for range m.ValuesWithPrefix("a") {
 		count++
 		break
 	}
@@ -535,18 +535,18 @@ func TestSliceMap_MoreEdgeCases(t *testing.T) {
 	m := NewSliceMap[byte, int]()
 	m.Put([]byte("a"), 1)
 	m.RemovePrefix([]byte("ab"))
-	
+
 	count := 0
-	for _ = range m.Values() {
+	for range m.Values() {
 		count++
 		break
 	}
 	if count != 1 {
 		t.Errorf("Values early exit failed")
 	}
-	
+
 	count = 0
-	for _ = range m.ValuesWithPrefix([]byte("a")) {
+	for range m.ValuesWithPrefix([]byte("a")) {
 		count++
 		break
 	}
@@ -566,22 +566,22 @@ func TestMoreCoverage(t *testing.T) {
 	if m.HasPrefix("ab") {
 		t.Errorf("expected false")
 	}
-	
+
 	// EntriesWithPrefix on missing
 	count := 0
-	for _ = range m.EntriesWithPrefix("ab") {
+	for range m.EntriesWithPrefix("ab") {
 		count++
 	}
 	if count != 0 {
 		t.Errorf("expected 0")
 	}
-	for _ = range m.KeysWithPrefix("ab") {
+	for range m.KeysWithPrefix("ab") {
 		count++
 	}
 	if count != 0 {
 		t.Errorf("expected 0")
 	}
-	
+
 	// SliceMap edge cases
 	sm := NewSliceMap[byte, int]()
 	if sm.HasPrefix([]byte("a")) {
@@ -591,13 +591,13 @@ func TestMoreCoverage(t *testing.T) {
 	if sm.HasPrefix([]byte("ab")) {
 		t.Errorf("expected false")
 	}
-	for _ = range sm.EntriesWithPrefix([]byte("ab")) {
+	for range sm.EntriesWithPrefix([]byte("ab")) {
 		count++
 	}
 	if count != 0 {
 		t.Errorf("expected 0")
 	}
-	for _ = range sm.KeysWithPrefix([]byte("ab")) {
+	for range sm.KeysWithPrefix([]byte("ab")) {
 		count++
 	}
 	if count != 0 {
