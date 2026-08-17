@@ -232,6 +232,34 @@ func TestTreeSet_Constructors(t *testing.T) {
 			},
 			expectPanic: true,
 		},
+		{
+			name: "custom degree and comparator",
+			constructor: func() {
+				s := New[int](
+					WithDegree[int](4),
+					WithComparator[int](func(a, b int) int {
+						return a - b
+					}),
+				)
+				s.Add(1)
+				s.Add(2)
+				if s.Size() != 2 || !s.Contains(1) {
+					panic("unexpected set state")
+				}
+			},
+			expectPanic: false,
+		},
+		{
+			name: "NewOrdered with degree",
+			constructor: func() {
+				s := NewOrdered[int](WithDegree[int](3))
+				s.Add(10)
+				if !s.Contains(10) {
+					panic("unexpected set state")
+				}
+			},
+			expectPanic: false,
+		},
 	}
 
 	for _, tc := range cases {
