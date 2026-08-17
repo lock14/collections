@@ -55,9 +55,14 @@ Implementations leverage Go generics to eliminate `interface{}` boxing and runti
     *   `linkedlist`: Doubly-linked list.
     *   `arraydeque`: Double-ended queue backed by a ring buffer.
     *   `heap`: Priority queue.
+*   **Strings & Prefixes**
+    *   `trie`: String and generic slice (`[]E`) prefix trees with prefix queries (`KeysWithPrefix`, `LongestPrefixOf`, etc.).
 *   **Graphs**
     *   `graph`: Directed and undirected graphs.
     *   `labeledgraph`: Graphs with labeled edges.
+*   **Utilities**
+    *   `comparator`: Type-safe element comparison functions (`NaturalOrder`, `Reverse`).
+    *   `pair`: Generic 2-element tuple type.
 
 ## Performance & Testing
 
