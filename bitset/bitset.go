@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"math/bits"
+	"strconv"
 	"strings"
 
 	"github.com/lock14/collections"
@@ -219,13 +220,13 @@ func (b *BitSet) ToBytes() []byte {
 	return bytes
 }
 
-// String returns a hexadecimal representation of the bits in this BitSet
+// String returns a string representation of the elements in this BitSet.
 func (b *BitSet) String() string {
-	s := make([]string, len(b.bits))
-	for i := 0; i < len(s); i++ {
-		s[i] = fmt.Sprintf(wordFmt, b.bits[len(b.bits)-1-i])
+	vals := make([]string, 0, b.Size())
+	for bit := range b.All() {
+		vals = append(vals, strconv.Itoa(bit))
 	}
-	return strings.Join(s, "")
+	return "[" + strings.Join(vals, ", ") + "]"
 }
 
 // SetBits returns an iterator that iterates over the set bits of this BitSet.
