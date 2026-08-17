@@ -444,7 +444,7 @@ func defaultConfig() *config {
 	}
 }
 
-type nodeData[V, L any] interface {
+type nodeData[V comparable, L any] interface {
 	addPredecessor(V, L)
 	addSuccessor(V, L)
 	containsPredecessor(V) bool
