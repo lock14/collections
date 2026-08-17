@@ -67,6 +67,10 @@ Design prioritizes mechanical sympathy and GC pressure reduction.
 *   **Continuous Benchmarking**: CI gates PRs via `cob`, comparing allocation metrics and execution times against `main`. Regressions fail the build.
 *   **Test Coverage**: Table-driven tests are mandatory. Edge cases, bounds checks, and generic fallback paths must be explicitly exercised.
 
+## Concurrency
+
+Implementations in this library are **not thread-safe** by design, matching Go standard library types like slices and maps. If a collection is accessed concurrently by multiple goroutines and at least one modifies it, access must be synchronized externally (e.g. using `sync.RWMutex` or `sync.Mutex`).
+
 ## Contributing
 
 Submit PRs with passing tests and benchmarks. Table-driven testing is required. Performance regressions will not be merged.
@@ -74,3 +78,4 @@ Submit PRs with passing tests and benchmarks. Table-driven testing is required. 
 ## License
 
 Apache 2.0. See [LICENSE](LICENSE).
+
