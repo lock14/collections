@@ -69,7 +69,7 @@ Implementations leverage Go generics to eliminate `interface{}` boxing and runti
 Design prioritizes mechanical sympathy and GC pressure reduction.
 
 *   **Zero-Allocation Reads**: Read paths (`Get`, `Contains`, etc.) bypass heap allocations.
-*   **Continuous Benchmarking**: CI gates PRs via `cob`, comparing allocation metrics and execution times against `main`. Regressions fail the build.
+*   **Continuous Benchmarking**: CI evaluates PRs via `benchdiff` (powered by `benchstat`), performing statistical comparisons across allocation metrics and execution times against `main`.
 *   **Test Coverage**: Table-driven tests are mandatory. Edge cases, bounds checks, and generic fallback paths must be explicitly exercised.
 
 ## Concurrency
