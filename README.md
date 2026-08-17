@@ -2,9 +2,9 @@
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/lock14/collections)](https://go.dev/)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/lock14/collections/go.yml?branch=main)](https://github.com/lock14/collections/actions)
+[![golangci-lint](https://img.shields.io/badge/golangci--lint-enabled-brightgreen)](https://golangci-lint.run/)
 [![Benchmarks](https://img.shields.io/github/actions/workflow/status/lock14/collections/benchmark.yml?branch=main&label=Benchmarks)](https://github.com/lock14/collections/actions/workflows/benchmark.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/lock14/collections)](https://codecov.io/gh/lock14/collections)
-[![Go Report Card](https://goreportcard.com/badge/github.com/lock14/collections)](https://goreportcard.com/report/github.com/lock14/collections)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lock14/collections.svg)](https://pkg.go.dev/github.com/lock14/collections)
 
 Generic data structures for Go 1.23+. Focuses on type safety, minimal allocations, and predictable performance.

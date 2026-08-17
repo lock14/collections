@@ -504,7 +504,9 @@ func ExampleLabeledGraph_minimumSpanningTree() {
 	}
 
 	fmt.Printf("Total MST Cost: %d\n", totalCost)
+	fmt.Printf("MST Edge Count: %d\n", len(mstEdges))
 
 	// Output:
 	// Total MST Cost: 37
+	// MST Edge Count: 8
 }
