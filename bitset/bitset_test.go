@@ -439,30 +439,31 @@ func TestString(t *testing.T) {
 		check func(*testing.T, *BitSet)
 	}{
 		{
-			name: "new_bit_set_all_zeros",
+			name: "new_bit_set_empty",
 			check: func(t *testing.T, b *BitSet) {
-				want := "0000000000000000"
+				want := "[]"
 				if got := b.String(); got != want {
 					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
 				}
 			},
 		},
 		{
-			name: "new_flip_all_f",
+			name: "single_and_multiple_elements",
 			check: func(t *testing.T, b *BitSet) {
-				b.Flip()
-				want := "FFFFFFFFFFFFFFFF"
+				b.SetBit(0)
+				b.SetBit(4)
+				want := "[0, 4]"
 				if got := b.String(); got != want {
 					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
 				}
 			},
 		},
 		{
-			name: "two_words_bottom_word_1_top_word_2",
+			name: "two_words_elements",
 			check: func(t *testing.T, b *BitSet) {
 				b.SetBit(0)
 				b.SetBit(127) // expands to 2 words
-				want := "80000000000000000000000000000001"
+				want := "[0, 127]"
 				if got := b.String(); got != want {
 					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
 				}

@@ -5,6 +5,42 @@ import (
 	"github.com/lock14/collections/bitset"
 )
 
+func Example_sieveOfEratosthenes() {
+	// Find all prime numbers less than 30 using the Sieve of Eratosthenes.
+	n := 30
+	sieve := bitset.New(bitset.WithCapacity(n))
+
+	// Mark 0 and 1 as non-prime
+	sieve.SetBit(0)
+	sieve.SetBit(1)
+
+	// Mark even numbers > 2
+	for i := 4; i < n; i += 2 {
+		sieve.SetBit(i)
+	}
+
+	// Sieve odd composite numbers
+	for i := 3; i*i < n; i += 2 {
+		if !sieve.GetBit(i) {
+			for j := i * i; j < n; j += i {
+				sieve.SetBit(j)
+			}
+		}
+	}
+
+	// Flip bits in range [0, n) so set bits represent prime numbers
+	sieve.FlipRange(0, n)
+
+	// Iterate and print all discovered primes
+	for p := range sieve.SetBits() {
+		fmt.Printf("%d ", p)
+	}
+	fmt.Println()
+
+	// Output:
+	// 2 3 5 7 11 13 17 19 23 29
+}
+
 func ExampleBitSet_setOperations() {
 	// BitSet provides a highly optimized set of non-negative integers
 	// with support for fast bitwise set operations.
@@ -126,11 +162,27 @@ func ExampleBitSet_FlipRange() {
 
 func ExampleBitSet_ToBytes() {
 	b := bitset.New()
-	b.SetBit(0)
-	b.SetBit(8)
-	fmt.Printf("%x\n", b.ToBytes())
+	b.SetBit(0) // Bit 0 -> Byte 0 has value 0x01
+	b.SetBit(8) // Bit 8 -> Byte 1 has value 0x01
+
+	// ToBytes returns a little-endian byte slice: []byte{0x01, 0x01}
+	fmt.Printf("%v\n", b.ToBytes())
 	// Output:
-	// 0101
+	// [1 1]
+}
+
+func ExampleFromBytes() {
+	// Reconstruct a BitSet from a little-endian byte slice
+	// 0x05 (binary 00000101) sets bits 0 and 2
+	b := bitset.FromBytes([]byte{0x05})
+
+	fmt.Println("Contains 0:", b.Contains(0))
+	fmt.Println("Contains 1:", b.Contains(1))
+	fmt.Println("Contains 2:", b.Contains(2))
+	// Output:
+	// Contains 0: true
+	// Contains 1: false
+	// Contains 2: true
 }
 
 func ExampleBitSet_String() {
@@ -139,7 +191,7 @@ func ExampleBitSet_String() {
 	b.SetBit(4)
 	fmt.Println(b.String())
 	// Output:
-	// 0000000000000011
+	// [0, 4]
 }
 
 func ExampleBitSet_SetBits() {
