@@ -13,6 +13,14 @@ func BenchmarkLabeledGraph_AddVertex(b *testing.B) {
 	}
 }
 
+func BenchmarkLabeledGraph_AddVertex_Preallocated(b *testing.B) {
+	g := labeledgraph.New[int, string](labeledgraph.WithCapacity(b.N))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g.AddVertex(i)
+	}
+}
+
 func BenchmarkLabeledGraph_AddEdge_Directed(b *testing.B) {
 	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
 	b.ResetTimer()
@@ -21,8 +29,24 @@ func BenchmarkLabeledGraph_AddEdge_Directed(b *testing.B) {
 	}
 }
 
+func BenchmarkLabeledGraph_AddEdge_Directed_Preallocated(b *testing.B) {
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected(), labeledgraph.WithCapacity(b.N))
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g.AddEdge(i, i+1, "label")
+	}
+}
+
 func BenchmarkLabeledGraph_AddEdge_Undirected(b *testing.B) {
 	g := labeledgraph.New[int, string]()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		g.AddEdge(i, i+1, "label")
+	}
+}
+
+func BenchmarkLabeledGraph_AddEdge_Undirected_Preallocated(b *testing.B) {
+	g := labeledgraph.New[int, string](labeledgraph.WithCapacity(b.N))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		g.AddEdge(i, i+1, "label")
