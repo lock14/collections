@@ -4,7 +4,8 @@ import (
 	"testing"
 )
 
-func BenchmarkSetBit(b *testing.B) {
+func BenchmarkBitSet_SetBit(b *testing.B) {
+	b.ReportAllocs()
 	bs := New(WithCapacity(10000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -12,7 +13,8 @@ func BenchmarkSetBit(b *testing.B) {
 	}
 }
 
-func BenchmarkGetBit(b *testing.B) {
+func BenchmarkBitSet_GetBit(b *testing.B) {
+	b.ReportAllocs()
 	bs := New(WithCapacity(10000))
 	for i := 0; i < 10000; i++ {
 		if i%2 == 0 {
@@ -25,7 +27,8 @@ func BenchmarkGetBit(b *testing.B) {
 	}
 }
 
-func BenchmarkClearBit(b *testing.B) {
+func BenchmarkBitSet_ClearBit(b *testing.B) {
+	b.ReportAllocs()
 	bs := New(WithCapacity(10000))
 	for i := 0; i < 10000; i++ {
 		bs.SetBit(i)
@@ -36,7 +39,8 @@ func BenchmarkClearBit(b *testing.B) {
 	}
 }
 
-func BenchmarkFlipRange(b *testing.B) {
+func BenchmarkBitSet_FlipRange(b *testing.B) {
+	b.ReportAllocs()
 	bs := New(WithCapacity(100_000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -44,7 +48,8 @@ func BenchmarkFlipRange(b *testing.B) {
 	}
 }
 
-func BenchmarkSetBits(b *testing.B) {
+func BenchmarkBitSet_SetBits(b *testing.B) {
+	b.ReportAllocs()
 	bs := New(WithCapacity(100_000))
 	for i := 0; i < 100_000; i++ {
 		if i%2 == 0 {
@@ -58,7 +63,8 @@ func BenchmarkSetBits(b *testing.B) {
 	}
 }
 
-func BenchmarkPrimesLessThan(b *testing.B) {
+func BenchmarkBitSet_PrimesLessThan(b *testing.B) {
+	b.ReportAllocs()
 	n := 10_000
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -66,7 +72,8 @@ func BenchmarkPrimesLessThan(b *testing.B) {
 	}
 }
 
-func BenchmarkSetBits_Sparse(b *testing.B) {
+func BenchmarkBitSet_SetBits_Sparse(b *testing.B) {
+	b.ReportAllocs()
 	// Allocate 1 million bits
 	bs := New(WithCapacity(1_000_000))
 	// Only set a few bits at the very beginning

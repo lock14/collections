@@ -463,14 +463,17 @@ func (b *BitSet) PollLast() int {
 	return val
 }
 
+// AddFirst is not supported on SortedSet / NavigableSet and will panic.
 func (b *BitSet) AddFirst(t int) {
 	panic("AddFirst is not supported on SortedSet")
 }
 
+// AddLast is not supported on SortedSet / NavigableSet and will panic.
 func (b *BitSet) AddLast(t int) {
 	panic("AddLast is not supported on SortedSet")
 }
 
+// Lower returns the greatest element in this set strictly less than the given element, or (0, false) if no such element exists.
 func (b *BitSet) Lower(t int) (int, bool) {
 	if t <= 0 {
 		return 0, false
@@ -505,6 +508,7 @@ func (b *BitSet) Lower(t int) (int, bool) {
 	return 0, false
 }
 
+// Floor returns the greatest element in this set less than or equal to the given element, or (0, false) if no such element exists.
 func (b *BitSet) Floor(t int) (int, bool) {
 	if t < 0 {
 		return 0, false
@@ -539,6 +543,7 @@ func (b *BitSet) Floor(t int) (int, bool) {
 	return 0, false
 }
 
+// Ceiling returns the least element in this set greater than or equal to the given element, or (0, false) if no such element exists.
 func (b *BitSet) Ceiling(t int) (int, bool) {
 	if t < 0 {
 		t = 0
@@ -564,6 +569,7 @@ func (b *BitSet) Ceiling(t int) (int, bool) {
 	return 0, false
 }
 
+// Higher returns the least element in this set strictly greater than the given element, or (0, false) if no such element exists.
 func (b *BitSet) Higher(t int) (int, bool) {
 	if t < 0 {
 		if b.Empty() {
@@ -592,6 +598,7 @@ func (b *BitSet) Higher(t int) (int, bool) {
 	return 0, false
 }
 
+// Backward returns a reverse iterator over the elements of this set in descending order.
 func (b *BitSet) Backward() iter.Seq[int] {
 	return func(yield func(int) bool) {
 		for i := b.maxWordInUse - 1; i >= 0; i-- {
@@ -608,6 +615,7 @@ func (b *BitSet) Backward() iter.Seq[int] {
 	}
 }
 
+// From returns an iterator over the elements of this set greater than or equal to from.
 func (b *BitSet) From(from int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if from < 0 {
@@ -640,6 +648,7 @@ func (b *BitSet) From(from int) iter.Seq[int] {
 	}
 }
 
+// To returns an iterator over the elements of this set strictly less than to.
 func (b *BitSet) To(to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if to <= 0 {
@@ -666,6 +675,7 @@ func (b *BitSet) To(to int) iter.Seq[int] {
 	}
 }
 
+// Between returns an iterator over the elements of this set in the half-open range [from, to).
 func (b *BitSet) Between(from, to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if from >= to || to <= 0 {
