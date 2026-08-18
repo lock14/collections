@@ -1394,9 +1394,15 @@ func TestBitSet_IteratorsTableDriven(t *testing.T) {
 
 				b.Add(63)
 				b.Add(64)
-				slices.Collect(b.From(64))
-				slices.Collect(b.To(64))
-				slices.Collect(b.Between(63, 65))
+				if got := slices.Collect(b.From(64)); !slices.Equal(got, []int{64}) {
+					t.Fatalf("expected [64], got %v", got)
+				}
+				if got := slices.Collect(b.To(64)); !slices.Equal(got, []int{5, 10, 15, 63}) {
+					t.Fatalf("expected [5 10 15 63], got %v", got)
+				}
+				if got := slices.Collect(b.Between(63, 65)); !slices.Equal(got, []int{63, 64}) {
+					t.Fatalf("expected [63 64], got %v", got)
+				}
 
 			},
 		},
