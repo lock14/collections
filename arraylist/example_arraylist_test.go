@@ -34,6 +34,15 @@ func ExampleSliceWrapper() {
 	// - Cherry
 }
 
+func ExampleNew() {
+	list := arraylist.New[int](arraylist.WithCapacity(10))
+	list.Add(1)
+	list.Add(2)
+	fmt.Println(list.String())
+	// Output:
+	// [1, 2]
+}
+
 func ExampleSliceWrapper_Add() {
 	list := arraylist.Wrap([]int{})
 	list.Add(1)

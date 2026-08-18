@@ -5,6 +5,47 @@ import (
 	"testing"
 )
 
+func TestNew(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		opts  []Option
+		check func(*testing.T, *SliceWrapper[int])
+	}{
+		{
+			name: "default",
+			check: func(t *testing.T, l *SliceWrapper[int]) {
+				if !l.Empty() || l.Size() != 0 {
+					t.Errorf("expected empty list")
+				}
+				if cap(l.slice) != 0 {
+					t.Errorf("expected cap 0, got %d", cap(l.slice))
+				}
+			},
+		},
+		{
+			name: "with_capacity",
+			opts: []Option{WithCapacity(10)},
+			check: func(t *testing.T, l *SliceWrapper[int]) {
+				if !l.Empty() || l.Size() != 0 {
+					t.Errorf("expected empty list")
+				}
+				if cap(l.slice) != 10 {
+					t.Errorf("expected cap 10, got %d", cap(l.slice))
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			l := New[int](tc.opts...)
+			tc.check(t, l)
+		})
+	}
+}
+
 func TestWrap(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -120,13 +161,38 @@ func TestSliceWrapper_AddRemove(t *testing.T) {
 
 func TestSliceWrapper_GetSet(t *testing.T) {
 	t.Parallel()
-	l := Wrap([]int{1, 2, 3})
-	if l.Get(1) != 2 {
-		t.Errorf("expected 2")
+	cases := []struct {
+		name     string
+		initial  []int
+		getIndex int
+		wantGet  int
+		setIndex int
+		setItem  int
+		wantSet  int
+	}{
+		{
+			name:     "get_and_set",
+			initial:  []int{1, 2, 3},
+			getIndex: 1,
+			wantGet:  2,
+			setIndex: 1,
+			setItem:  4,
+			wantSet:  4,
+		},
 	}
-	l.Set(1, 4)
-	if l.Get(1) != 4 {
-		t.Errorf("expected 4")
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			l := Wrap(slices.Clone(tc.initial))
+			if got := l.Get(tc.getIndex); got != tc.wantGet {
+				t.Errorf("Get(%d) = %v, want %v", tc.getIndex, got, tc.wantGet)
+			}
+			l.Set(tc.setIndex, tc.setItem)
+			if got := l.Get(tc.setIndex); got != tc.wantSet {
+				t.Errorf("Get(%d) after Set = %v, want %v", tc.setIndex, got, tc.wantSet)
+			}
+		})
 	}
 }
 

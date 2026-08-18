@@ -6,6 +6,7 @@ import (
 )
 
 func BenchmarkSliceWrapper_Add(b *testing.B) {
+	b.ReportAllocs()
 	l := arraylist.Wrap([]int{})
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -14,6 +15,7 @@ func BenchmarkSliceWrapper_Add(b *testing.B) {
 }
 
 func BenchmarkSliceWrapper_Remove(b *testing.B) {
+	b.ReportAllocs()
 	l := arraylist.Wrap(make([]int, 0, b.N))
 	for i := 0; i < b.N; i++ {
 		l.Add(i)
@@ -25,6 +27,7 @@ func BenchmarkSliceWrapper_Remove(b *testing.B) {
 }
 
 func BenchmarkSliceWrapper_Get(b *testing.B) {
+	b.ReportAllocs()
 	l := arraylist.Wrap(make([]int, 1000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -33,6 +36,7 @@ func BenchmarkSliceWrapper_Get(b *testing.B) {
 }
 
 func BenchmarkSliceWrapper_Set(b *testing.B) {
+	b.ReportAllocs()
 	l := arraylist.Wrap(make([]int, 1000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -41,6 +45,7 @@ func BenchmarkSliceWrapper_Set(b *testing.B) {
 }
 
 func BenchmarkSliceWrapper_IterateAll(b *testing.B) {
+	b.ReportAllocs()
 	l := arraylist.Wrap(make([]int, 1000))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
