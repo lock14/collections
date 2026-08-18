@@ -14,9 +14,9 @@ const (
 	// if an arraydeque's capacity is under this amount its capacity
 	// will double when it needs to be resized.
 	doublingThreshold = 512
-	// if an arraydeque's capacity over the doublingThreshhold but under
+	// if an arraydeque's capacity is over the doublingThreshold but under
 	// this amount, then the capacity will increase by 50% when it needs
-	// to be resized. Otherwise, if if an arraydeque's capacity over this
+	// to be resized. Otherwise, if an arraydeque's capacity is over this
 	// amount then the capacity will increase by 25%.
 	fiftyPercentThreshold = 2048
 )
@@ -33,12 +33,12 @@ type ArrayDeque[T any] struct {
 	size  int
 }
 
-// config holds the values for configuring a ArrayDeque.
+// config holds the values for configuring an ArrayDeque.
 type config struct {
 	capacity int
 }
 
-// Option configures a ArrayDeque config
+// Option configures an ArrayDeque config
 type Option func(*config)
 
 // WithCapacity configures the initial capacity of the ArrayDeque.
@@ -166,6 +166,7 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 	return t
 }
 
+// AddAll adds all elements from the given sequence to the back of this deque.
 func (d *ArrayDeque[T]) AddAll(sequence iter.Seq[T]) {
 	for t := range sequence {
 		d.Add(t)

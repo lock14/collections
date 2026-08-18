@@ -5,6 +5,7 @@ import (
 )
 
 func BenchmarkArrayDeque_AddFront(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -13,6 +14,7 @@ func BenchmarkArrayDeque_AddFront(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_AddBack(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -21,6 +23,7 @@ func BenchmarkArrayDeque_AddBack(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_PushPop(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -30,6 +33,7 @@ func BenchmarkArrayDeque_PushPop(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_AddRemove(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -39,7 +43,8 @@ func BenchmarkArrayDeque_AddRemove(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_AddFront_Preallocated(b *testing.B) {
-	d := New[int](func(c *config) { c.capacity = b.N })
+	b.ReportAllocs()
+	d := New[int](WithCapacity(b.N))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		d.AddFront(i)
@@ -47,7 +52,8 @@ func BenchmarkArrayDeque_AddFront_Preallocated(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_AddBack_Preallocated(b *testing.B) {
-	d := New[int](func(c *config) { c.capacity = b.N })
+	b.ReportAllocs()
+	d := New[int](WithCapacity(b.N))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		d.AddBack(i)
@@ -55,6 +61,7 @@ func BenchmarkArrayDeque_AddBack_Preallocated(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_IterateAll(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	for i := 0; i < 1000; i++ {
 		d.AddBack(i)
@@ -67,6 +74,7 @@ func BenchmarkArrayDeque_IterateAll(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_IterateBackward(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	for i := 0; i < 1000; i++ {
 		d.AddBack(i)
@@ -83,6 +91,7 @@ type largeStruct struct {
 }
 
 func BenchmarkArrayDeque_StructAddBack(b *testing.B) {
+	b.ReportAllocs()
 	d := New[largeStruct]()
 	item := largeStruct{}
 	b.ResetTimer()
@@ -92,6 +101,7 @@ func BenchmarkArrayDeque_StructAddBack(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_ClearAndReuse_NewEachTime(b *testing.B) {
+	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		d := New[int]()
@@ -103,6 +113,7 @@ func BenchmarkArrayDeque_ClearAndReuse_NewEachTime(b *testing.B) {
 }
 
 func BenchmarkArrayDeque_ClearAndReuse_Existing(b *testing.B) {
+	b.ReportAllocs()
 	d := New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
