@@ -9,6 +9,11 @@
 *   **Zero-Allocation Reads:** Read operations (e.g., `Get`, `Contains`, `Peek`, `PeekFront`, `PeekBack`, `Size`, `Empty`) must avoid heap allocations (guaranteed 0 B/op and 0 allocs/op in benchmarks).
 *   **Predictable Memory & Growth:** Growth policies should be amortized O(1) (e.g. geometric resizing) and shrink gracefully where appropriate or support explicit capacity/trim APIs (e.g. `NewWithCapacity`).
 
+# Go Version & Toolchain Consistency
+
+*   **Single Source of Truth (`go.mod`):** The Go version specified in `go.mod` is the canonical version for the entire repository.
+*   **CI Workflow Consistency:** GitHub Actions workflows must use `go-version-file: 'go.mod'` with `actions/setup-go@v5` rather than hardcoded version strings.
+
 # Testing Conventions
 
 For all tests in this repository, strictly adhere to the following conventions:
