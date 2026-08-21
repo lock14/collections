@@ -7,7 +7,7 @@
 [![Coverage](https://img.shields.io/codecov/c/github/lock14/collections)](https://codecov.io/gh/lock14/collections)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lock14/collections.svg)](https://pkg.go.dev/github.com/lock14/collections)
 
-Generic data structures for Go 1.23+. Focuses on type safety, minimal allocations, and predictable performance.
+Generic data structures for Go 1.27+. Focuses on type safety, minimal allocations, and predictable performance.
 
 ## Usage
 
@@ -61,6 +61,7 @@ Implementations leverage Go generics to eliminate `interface{}` boxing and runti
     *   `graph`: Directed and undirected graphs.
     *   `labeledgraph`: Graphs with labeled edges.
 *   **Utilities**
+    *   `optional`: Generic optional value container with Go 1.27 method-level generics (`Map`, `FlatMap`).
     *   `comparator`: Type-safe element comparison functions (`NaturalOrder`, `Reverse`).
     *   `pair`: Generic 2-element tuple type.
 
