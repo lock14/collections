@@ -18,7 +18,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: '1.23'
 
       - name: Install benchstat and benchdiff
         run: |
@@ -39,6 +39,8 @@ jobs:
           if [ -z "$GO_FILES" ]; then
             echo "No Go files changed. Skipping benchmarks."
             echo "skip=true" >> $GITHUB_OUTPUT
+            echo "## 📊 Benchmark Regression Check" >> $GITHUB_STEP_SUMMARY
+            echo "No Go files changed. Benchmarks skipped." >> $GITHUB_STEP_SUMMARY
           else
             # Extract unique directories and prepend ./
             PKGS=""
@@ -57,6 +59,8 @@ jobs:
             if [ -z "$PKGS" ]; then
               echo "No existing packages changed. Skipping benchmarks."
               echo "skip=true" >> $GITHUB_OUTPUT
+              echo "## 📊 Benchmark Regression Check" >> $GITHUB_STEP_SUMMARY
+              echo "No existing package changes detected. Benchmarks skipped." >> $GITHUB_STEP_SUMMARY
             else
               echo "Testing packages: $PKGS"
               echo "pkgs=$PKGS" >> $GITHUB_OUTPUT
@@ -72,4 +76,30 @@ jobs:
           else
             BASE="HEAD~1"
           fi
-          benchdiff -base-ref $BASE -- -run '^$' -bench . -benchmem -count=5 -benchtime=500ms -timeout=30m ${{ steps.changed-pkgs.outputs.pkgs }}
+
+          echo "Running benchdiff against $BASE on: ${{ steps.changed-pkgs.outputs.pkgs }}"
+          
+          # -count=6 allows benchstat to compute valid 95% confidence intervals
+          set -o pipefail
+          OUTPUT=$(benchdiff -base-ref $BASE -- -run '^$' -bench . -benchmem -count=6 -benchtime=500ms -timeout=30m ${{ steps.changed-pkgs.outputs.pkgs }})
+          EXIT_CODE=$?
+          
+          echo "$OUTPUT"
+
+          # Write Markdown summary to GitHub Actions Step Summary UI
+          {
+            echo "## 📊 Benchmark Regression Check"
+            echo ""
+            echo "**Base Ref:** \`$BASE\`"
+            echo "**Tested Packages:** \`${{ steps.changed-pkgs.outputs.pkgs }}\`"
+            echo ""
+            echo "<details><summary><b>Click to expand benchmark diff report</b></summary>"
+            echo ""
+            echo '```'
+            echo "$OUTPUT"
+            echo '```'
+            echo ""
+            echo "</details>"
+          } >> $GITHUB_STEP_SUMMARY
+
+          exit $EXIT_CODE
