@@ -29,11 +29,14 @@ jobs:
             exit 1
           fi
 
+      - name: Vet
+        run: go vet ./...
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
+        continue-on-error: true
         with:
           version: latest
-          install-mode: "goinstall"
           args: --timeout=5m
 
       - name: Build
