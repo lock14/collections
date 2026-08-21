@@ -52,6 +52,11 @@ For all tests in this repository, strictly adhere to the following conventions:
 *   **Documentation:** All exported packages, types, interfaces, constants, and functions must have comprehensive, up-to-date Go doc comments adhering to standard Go conventions (checked by `revive`).
 *   **Linting:** Verify code with `golangci-lint run ./...` before completing tasks.
 
+# Pull Request & Workflow Conventions
+
+*   **Accurate & Detailed PR Descriptions:** PR descriptions must comprehensively capture all introduced features, constructors, public APIs, performance benchmarks, and any toolchain or CI workflow modifications made in the branch.
+*   **PR Description Synchronization:** Whenever subsequent commits in a PR branch modify, fix, or expand upon the original changeset (e.g. CI adjustments, bug fixes, refactoring), the PR description must be proactively updated via `gh pr edit` to reflect the latest state of the PR.
+
 # Continuous Learning & Self-Correction
 
 *   **Codifying Corrections:** Whenever an agent is corrected by the user regarding an architectural decision, code style, testing pattern, or repository convention, the agent MUST update `AGENTS.md` (or the relevant package documentation) to codify the underlying principle so future agent sessions adhere to it automatically.
