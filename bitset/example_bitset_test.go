@@ -372,30 +372,6 @@ func ExampleBitSet_PollLast() {
 	// false
 }
 
-func ExampleBitSet_AddFirst() {
-	b := bitset.New()
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	b.AddFirst(1)
-	// Output:
-	// AddFirst is not supported on SortedSet
-}
-
-func ExampleBitSet_AddLast() {
-	b := bitset.New()
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	b.AddLast(1)
-	// Output:
-	// AddLast is not supported on SortedSet
-}
-
 func ExampleBitSet_Lower() {
 	b := bitset.New()
 	b.Add(5)

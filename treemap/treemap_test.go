@@ -428,8 +428,6 @@ func TestTreeMap_Sequenced(t *testing.T) {
 		t.Errorf("PollLast didn't remove")
 	}
 
-	assertPanic("PutFirst", func() { tm.PutFirst(1, 1) })
-	assertPanic("PutLast", func() { tm.PutLast(1, 1) })
 }
 
 func TestTreeMap_Backward(t *testing.T) {

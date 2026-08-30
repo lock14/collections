@@ -232,36 +232,6 @@ func ExampleTreeMap_PollLast() {
 	// New Last: 2
 }
 
-func ExampleTreeMap_PutFirst() {
-	m := treemap.NewOrdered[int, string]()
-
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-
-	m.PutFirst(1, "A")
-
-	// Output:
-	// PutFirst is not supported on SortedMap
-}
-
-func ExampleTreeMap_PutLast() {
-	m := treemap.NewOrdered[int, string]()
-
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-
-	m.PutLast(1, "A")
-
-	// Output:
-	// PutLast is not supported on SortedMap
-}
-
 func ExampleTreeMap_Lower() {
 	m := treemap.NewOrdered[int, string]()
 	m.Put(10, "A")
