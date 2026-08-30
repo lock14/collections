@@ -485,5 +485,3 @@ func (s *stringSet) String() string {
 	}
 	return "[" + strings.Join(vals, " ") + "]"
 }
-
-// benchmark matrix test trigger

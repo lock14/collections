@@ -217,5 +217,3 @@ func (g *Graph[V]) String() string {
 func defaultConfig() *config {
 	return &config{}
 }
-
-// benchmark matrix test trigger

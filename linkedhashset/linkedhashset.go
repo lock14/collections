@@ -199,5 +199,3 @@ func (s *LinkedHashSet[T]) String() string {
 	sb.WriteString("]")
 	return sb.String()
 }
-
-// benchmark matrix test trigger

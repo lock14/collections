@@ -18,5 +18,3 @@ func Reverse[T any](comparator Comparator[T]) Comparator[T] {
 		return -comparator(t1, t2)
 	}
 }
-
-// benchmark matrix test trigger

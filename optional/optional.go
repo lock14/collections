@@ -144,5 +144,3 @@ func (o Option[T]) String() string {
 	}
 	return "None"
 }
-
-// benchmark matrix test trigger

@@ -102,5 +102,3 @@ func (hm *HashMap[K, V]) String() string {
 	}
 	return "map[" + strings.Join(vals, " ") + "]"
 }
-
-// benchmark matrix test trigger

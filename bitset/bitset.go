@@ -714,5 +714,3 @@ func (b *BitSet) Between(from, to int) iter.Seq[int] {
 		}
 	}
 }
-
-// benchmark matrix test trigger

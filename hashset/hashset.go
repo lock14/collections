@@ -125,5 +125,3 @@ func (s *HashSet[T]) All() iter.Seq[T] {
 func defaultConfig() *config {
 	return &config{}
 }
-
-// benchmark matrix test trigger

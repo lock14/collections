@@ -275,5 +275,3 @@ func defaultConfig() *config {
 		capacity: DefaultCapacity,
 	}
 }
-
-// benchmark matrix test trigger
