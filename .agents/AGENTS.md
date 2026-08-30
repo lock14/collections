@@ -16,7 +16,7 @@
 # Go Version & Toolchain Consistency
 
 *   **Single Source of Truth (`go.mod`):** The Go version specified in `go.mod` is the canonical version for the entire repository.
-*   **CI Workflow Consistency:** GitHub Actions workflows must use `go-version-file: 'go.mod'` with `actions/setup-go@v5` rather than hardcoded version strings.
+*   **CI Workflow Consistency:** GitHub Actions workflows must use `go-version-file: 'go.mod'` with `actions/setup-go@v5` rather than hardcoded version strings. Benchmark regression checks must use a dynamic matrix strategy across changed packages to ensure parallel execution and sub-minute feedback loops.
 
 # Testing Conventions
 
