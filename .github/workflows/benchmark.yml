@@ -46,11 +46,11 @@ jobs:
             if [ "$dir" = "." ]; then
               continue
             fi
-            # Check if the directory existed in the base branch
-            if git rev-parse --verify "$BASE:$dir" >/dev/null 2>&1; then
+            # Check if the directory exists in both base branch (to compare against) and current HEAD (to run benchmarks on)
+            if git rev-parse --verify "$BASE:$dir" >/dev/null 2>&1 && [ -d "$dir" ]; then
               PKGS+=("./$dir")
             else
-              echo "Skipping new package $dir as it does not exist in $BASE"
+              echo "Skipping package $dir as it does not exist in both $BASE and current branch"
             fi
           done
 

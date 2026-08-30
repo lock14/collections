@@ -60,11 +60,8 @@ Implementations leverage Go generics to eliminate `interface{}` boxing and runti
 *   **Graphs**
     *   `graph`: Directed and undirected graphs.
     *   `labeledgraph`: Graphs with labeled edges.
-*   **Utilities**
-    *   `optional`: Generic optional value container with Go 1.27 method-level generics (`Map`, `FlatMap`).
-    *   `result`: Generic success or failure result container (`Result[T, E]`) with Go 1.27 method-level generics (`Map`, `MapErr`, `FlatMap`).
+*   **Comparators**
     *   `comparator`: Type-safe element comparison functions (`NaturalOrder`, `Reverse`).
-    *   `pair`: Generic 2-element tuple type.
 
 ## Performance & Testing
 
