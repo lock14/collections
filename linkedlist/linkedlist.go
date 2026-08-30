@@ -243,3 +243,5 @@ func unlink[T any](n *node[T]) {
 	n.prev = nil
 	n.next = nil
 }
+
+// benchmark matrix test trigger

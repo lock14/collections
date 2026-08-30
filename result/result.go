@@ -167,3 +167,5 @@ func (r Result[T, E]) String() string {
 	}
 	return fmt.Sprintf("Err(%v)", r.err)
 }
+
+// benchmark matrix test trigger

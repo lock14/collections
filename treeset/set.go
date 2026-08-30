@@ -189,3 +189,5 @@ func (s *TreeSet[T]) String() string {
 	}
 	return "[" + strings.Join(vals, " ") + "]"
 }
+
+// benchmark matrix test trigger

@@ -203,3 +203,5 @@ func (h *Heap[T]) siftDown(cur int) {
 	}
 	elements[cur] = item
 }
+
+// benchmark matrix test trigger

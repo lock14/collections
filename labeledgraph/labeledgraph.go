@@ -583,3 +583,5 @@ func (u *undirectedNodeData[V, L]) setSuccessorLabel(v V, label L) {
 func (u *undirectedNodeData[V, L]) successors() iter.Seq[V] {
 	return maps.Keys(u.adjacentLabels)
 }
+
+// benchmark matrix test trigger

@@ -348,3 +348,5 @@ func unlink[K, V any](n *node[K, V]) {
 	n.prev = nil
 	n.next = nil
 }
+
+// benchmark matrix test trigger

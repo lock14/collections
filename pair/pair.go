@@ -38,3 +38,5 @@ func (p Pair[T1, T2]) Unwrap() (T1, T2) {
 func (p Pair[T1, T2]) String() string {
 	return fmt.Sprintf("(%v, %v)", p.fst, p.snd)
 }
+
+// benchmark matrix test trigger

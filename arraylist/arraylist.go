@@ -143,3 +143,5 @@ func (l *SliceWrapper[T]) String() string {
 func (l *SliceWrapper[T]) All() iter.Seq[T] {
 	return slices.Values(l.slice)
 }
+
+// benchmark matrix test trigger
