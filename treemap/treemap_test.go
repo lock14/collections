@@ -500,18 +500,24 @@ func TestTreeMap_Iterators_Bounds(t *testing.T) {
 }
 
 type Dummy struct {
-	v int
+	v   int
+	pad [24]byte
 }
 
 //go:noinline
-func makeDummy(tm *TreeMap[int, *Dummy], k int, mu *sync.Mutex, collected *[]int) {
-	d := &Dummy{v: k}
-	runtime.SetFinalizer(d, func(obj *Dummy) {
-		mu.Lock()
-		*collected = append(*collected, obj.v)
-		mu.Unlock()
-	})
-	tm.Put(k, d)
+func populateAndRemove(tm *TreeMap[int, *Dummy], keys []int, del []int, mu *sync.Mutex, collected *[]int) {
+	for _, k := range keys {
+		d := &Dummy{v: k}
+		runtime.SetFinalizer(d, func(obj *Dummy) {
+			mu.Lock()
+			*collected = append(*collected, obj.v)
+			mu.Unlock()
+		})
+		tm.Put(k, d)
+	}
+	for _, k := range del {
+		tm.Remove(k)
+	}
 }
 
 func TestTreeMap_MemoryLeak(t *testing.T) {
@@ -531,7 +537,7 @@ func TestTreeMap_MemoryLeak(t *testing.T) {
 			name:   "borrowFromPrev and multi-delete should not leak memory",
 			degree: 2,
 			keys:   []int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100},
-			del:    []int{50, 60, 70, 40, 80, 30, 90, 20, 100, 10},
+			del:    []int{10, 50, 60, 70, 40, 80, 30, 90, 20, 100},
 		},
 	}
 
@@ -544,13 +550,12 @@ func TestTreeMap_MemoryLeak(t *testing.T) {
 			var collected []int
 			targetCount := len(tc.del)
 
-			for _, k := range tc.keys {
-				makeDummy(tm, k, &mu, &collected)
-			}
-
-			for _, k := range tc.del {
-				tm.Remove(k)
-			}
+			done := make(chan struct{})
+			go func() {
+				populateAndRemove(tm, tc.keys, tc.del, &mu, &collected)
+				close(done)
+			}()
+			<-done
 
 			// Force GC and wait for finalizers to run
 			for i := 0; i < 50; i++ {
@@ -563,6 +568,8 @@ func TestTreeMap_MemoryLeak(t *testing.T) {
 				}
 				time.Sleep(10 * time.Millisecond)
 			}
+
+			runtime.KeepAlive(tm)
 
 			mu.Lock()
 			count := len(collected)
