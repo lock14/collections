@@ -209,8 +209,8 @@ func TestSliceWrapper_BulkOperations(t *testing.T) {
 				if l.Size() != 3 {
 					t.Errorf("expected 3")
 				}
-				if str := l.String(); str != "[1, 2, 3]" {
-					t.Errorf("expected [1, 2, 3], got %s", str)
+				if str := l.String(); str != "[1 2 3]" {
+					t.Errorf("expected [1 2 3], got %s", str)
 				}
 			},
 		},

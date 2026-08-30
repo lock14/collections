@@ -1,5 +1,5 @@
 // Package linkedlist provides a doubly-linked list implementation.
-package linked_list
+package linkedlist
 
 import (
 	"fmt"
@@ -8,10 +8,14 @@ import (
 	"strings"
 )
 
-var _ collections.MutableList[int] = (*LinkedList[int])(nil)
-var _ collections.MutableDeque[int] = (*LinkedList[int])(nil)
+var (
+	_ collections.MutableList[int]  = (*LinkedList[int])(nil)
+	_ collections.MutableDeque[int] = (*LinkedList[int])(nil)
+	_ fmt.Stringer                  = (*LinkedList[int])(nil)
+)
 
 // LinkedList is a doubly-linked list implementation.
+// The zero value for LinkedList is an empty list ready to use.
 type LinkedList[T any] struct {
 	list node[T]
 	size int
@@ -33,11 +37,22 @@ func New[T any]() *LinkedList[T] {
 	return l
 }
 
+func (l *LinkedList[T]) lazyInit() {
+	if l.list.next == nil {
+		l.list.next = &l.list
+		l.list.prev = &l.list
+	}
+}
+
+// AddFront inserts the specified element at the front of the list.
 func (l *LinkedList[T]) AddFront(t T) {
+	l.lazyInit()
 	insertBefore(l.list.next, t)
 	l.size++
 }
 
+// RemoveFront removes and returns the element at the front of the list.
+// Panics if the list is empty.
 func (l *LinkedList[T]) RemoveFront() T {
 	if l.Empty() {
 		panic("cannot remove from an empty list")
@@ -48,11 +63,15 @@ func (l *LinkedList[T]) RemoveFront() T {
 	return n.data
 }
 
+// AddBack inserts the specified element at the back of the list.
 func (l *LinkedList[T]) AddBack(t T) {
+	l.lazyInit()
 	insertBefore(&l.list, t)
 	l.size++
 }
 
+// RemoveBack removes and returns the element at the back of the list.
+// Panics if the list is empty.
 func (l *LinkedList[T]) RemoveBack() T {
 	if l.Empty() {
 		panic("cannot remove from an empty list")
@@ -63,10 +82,14 @@ func (l *LinkedList[T]) RemoveBack() T {
 	return n.data
 }
 
+// Peek returns the element at the front of the list without removing it.
+// Panics if the list is empty.
 func (l *LinkedList[T]) Peek() T {
 	return l.PeekFront()
 }
 
+// PeekFront returns the element at the front of the list without removing it.
+// Panics if the list is empty.
 func (l *LinkedList[T]) PeekFront() T {
 	if l.Empty() {
 		panic("cannot peek from an empty list")
@@ -74,6 +97,8 @@ func (l *LinkedList[T]) PeekFront() T {
 	return l.list.next.data
 }
 
+// PeekBack returns the element at the back of the list without removing it.
+// Panics if the list is empty.
 func (l *LinkedList[T]) PeekBack() T {
 	if l.Empty() {
 		panic("cannot peek from an empty list")
@@ -81,18 +106,24 @@ func (l *LinkedList[T]) PeekBack() T {
 	return l.list.prev.data
 }
 
+// Add appends the specified element to the end of the list.
 func (l *LinkedList[T]) Add(t T) {
 	l.AddBack(t)
 }
 
+// Remove removes and returns the element at the front of the list.
+// Panics if the list is empty.
 func (l *LinkedList[T]) Remove() T {
 	return l.RemoveFront()
 }
 
+// Push adds the specified element to the front of the list.
 func (l *LinkedList[T]) Push(t T) {
 	l.AddFront(t)
 }
 
+// Get returns the element at the specified index.
+// Panics if index is out of bounds.
 func (l *LinkedList[T]) Get(idx int) T {
 	if n := l.get(idx); n != nil {
 		return n.data
@@ -100,6 +131,8 @@ func (l *LinkedList[T]) Get(idx int) T {
 	panic("index out of bounds")
 }
 
+// Set replaces the element at the specified index with the given element.
+// Panics if index is out of bounds.
 func (l *LinkedList[T]) Set(idx int, t T) {
 	if n := l.get(idx); n != nil {
 		n.data = t
@@ -108,42 +141,69 @@ func (l *LinkedList[T]) Set(idx int, t T) {
 	panic("index out of bounds")
 }
 
+// Pop removes and returns the element at the front of the list.
+// Panics if the list is empty.
 func (l *LinkedList[T]) Pop() T {
 	return l.RemoveFront()
 }
 
+// Size returns the number of elements in the list.
 func (l *LinkedList[T]) Size() int {
 	return l.size
 }
 
+// AddAll inserts all elements from the given sequence into the list.
 func (l *LinkedList[T]) AddAll(sequence iter.Seq[T]) {
 	for t := range sequence {
 		l.Add(t)
 	}
 }
 
+// Empty returns true if the list contains no elements.
 func (l *LinkedList[T]) Empty() bool {
 	return l.Size() == 0
 }
 
+// Clear removes all elements from the list.
 func (l *LinkedList[T]) Clear() {
 	l.list.next = &l.list
 	l.list.prev = &l.list
 	l.size = 0
 }
 
+// String returns a string representation of the list matching Go slice formatting.
 func (l *LinkedList[T]) String() string {
 	str := make([]string, 0, l.Size())
 	for t := range l.All() {
-		str = append(str, fmt.Sprintf("%+v", t))
+		str = append(str, fmt.Sprintf("%v", t))
 	}
-	return "[" + strings.Join(str, ", ") + "]"
+	return "[" + strings.Join(str, " ") + "]"
 }
 
+// All returns an iterator over all elements of the list from front to back.
 func (l *LinkedList[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
-		for cur := l.list.next; cur != &l.list && yield(cur.data); {
-			cur = cur.next
+		if l.list.next == nil {
+			return
+		}
+		for cur := l.list.next; cur != &l.list; cur = cur.next {
+			if !yield(cur.data) {
+				return
+			}
+		}
+	}
+}
+
+// Backward returns an iterator over all elements of the list in reverse order (from back to front).
+func (l *LinkedList[T]) Backward() iter.Seq[T] {
+	return func(yield func(T) bool) {
+		if l.list.prev == nil {
+			return
+		}
+		for cur := l.list.prev; cur != &l.list; cur = cur.prev {
+			if !yield(cur.data) {
+				return
+			}
 		}
 	}
 }

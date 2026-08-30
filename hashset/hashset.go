@@ -9,7 +9,10 @@ import (
 	"strings"
 )
 
-var _ collections.MutableSet[int] = (*HashSet[int])(nil)
+var (
+	_ collections.MutableSet[int] = (*HashSet[int])(nil)
+	_ fmt.Stringer                = (*HashSet[int])(nil)
+)
 
 // HashSet represents a set of elements of type T.
 type HashSet[T comparable] struct {
@@ -106,12 +109,13 @@ func (s *HashSet[T]) Empty() bool {
 	return len(s.m) == 0
 }
 
+// String returns a string representation of the set matching Go slice formatting.
 func (s *HashSet[T]) String() string {
 	vals := make([]string, 0, len(s.m))
 	for item := range s.m {
-		vals = append(vals, fmt.Sprintf("%+v", item))
+		vals = append(vals, fmt.Sprintf("%v", item))
 	}
-	return "[" + strings.Join(vals, ", ") + "]"
+	return "[" + strings.Join(vals, " ") + "]"
 }
 
 func (s *HashSet[T]) All() iter.Seq[T] {

@@ -1,4 +1,4 @@
-package linked_list_test
+package linkedlist_test
 
 import (
 	"github.com/lock14/collections/linkedlist"
@@ -6,7 +6,8 @@ import (
 )
 
 func BenchmarkLinkedList_AddFront(b *testing.B) {
-	l := linked_list.New[int]()
+	b.ReportAllocs()
+	l := linkedlist.New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		l.AddFront(i)
@@ -14,7 +15,8 @@ func BenchmarkLinkedList_AddFront(b *testing.B) {
 }
 
 func BenchmarkLinkedList_AddBack(b *testing.B) {
-	l := linked_list.New[int]()
+	b.ReportAllocs()
+	l := linkedlist.New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		l.AddBack(i)
@@ -22,7 +24,8 @@ func BenchmarkLinkedList_AddBack(b *testing.B) {
 }
 
 func BenchmarkLinkedList_RemoveFront(b *testing.B) {
-	l := linked_list.New[int]()
+	b.ReportAllocs()
+	l := linkedlist.New[int]()
 	for i := 0; i < b.N; i++ {
 		l.AddBack(i)
 	}
@@ -33,7 +36,8 @@ func BenchmarkLinkedList_RemoveFront(b *testing.B) {
 }
 
 func BenchmarkLinkedList_RemoveBack(b *testing.B) {
-	l := linked_list.New[int]()
+	b.ReportAllocs()
+	l := linkedlist.New[int]()
 	for i := 0; i < b.N; i++ {
 		l.AddBack(i)
 	}
@@ -44,7 +48,8 @@ func BenchmarkLinkedList_RemoveBack(b *testing.B) {
 }
 
 func BenchmarkLinkedList_Get(b *testing.B) {
-	l := linked_list.New[int]()
+	b.ReportAllocs()
+	l := linkedlist.New[int]()
 	for i := 0; i < 1000; i++ {
 		l.AddBack(i)
 	}
@@ -55,7 +60,8 @@ func BenchmarkLinkedList_Get(b *testing.B) {
 }
 
 func BenchmarkLinkedList_IterateAll(b *testing.B) {
-	l := linked_list.New[int]()
+	b.ReportAllocs()
+	l := linkedlist.New[int]()
 	for i := 0; i < 1000; i++ {
 		l.AddBack(i)
 	}

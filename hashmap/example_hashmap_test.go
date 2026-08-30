@@ -185,3 +185,15 @@ func ExampleHashMap_Values() {
 	// 25
 	// 30
 }
+
+func ExampleHashMap_String() {
+	m := hashmap.New[string, int]()
+	fmt.Println(m.String())
+
+	m.Put("Alice", 25)
+	fmt.Println(m.String())
+
+	// Output:
+	// map[]
+	// map[Alice:25]
+}

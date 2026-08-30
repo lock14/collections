@@ -40,7 +40,7 @@ func ExampleNew() {
 	list.Add(2)
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2]
+	// [1 2]
 }
 
 func ExampleSliceWrapper_Add() {
@@ -49,7 +49,7 @@ func ExampleSliceWrapper_Add() {
 	list.Add(2)
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2]
+	// [1 2]
 }
 
 func ExampleSliceWrapper_Remove() {
@@ -59,7 +59,7 @@ func ExampleSliceWrapper_Remove() {
 	fmt.Println(list.String())
 	// Output:
 	// 3
-	// [1, 2]
+	// [1 2]
 }
 
 func ExampleSliceWrapper_Push() {
@@ -68,7 +68,7 @@ func ExampleSliceWrapper_Push() {
 	stack.Push(20)
 	fmt.Println(stack.String())
 	// Output:
-	// [10, 20]
+	// [10 20]
 }
 
 func ExampleSliceWrapper_Pop() {
@@ -88,7 +88,7 @@ func ExampleSliceWrapper_Peek() {
 	fmt.Println(stack.String())
 	// Output:
 	// 20
-	// [10, 20]
+	// [10 20]
 }
 
 func ExampleSliceWrapper_Clear() {
@@ -106,7 +106,7 @@ func ExampleSliceWrapper_AddAll() {
 	list.AddAll(slices.Values([]int{3, 4}))
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2, 3, 4]
+	// [1 2 3 4]
 }
 
 func ExampleSliceWrapper_Size() {
@@ -141,14 +141,14 @@ func ExampleSliceWrapper_Set() {
 	list.Set(1, 99)
 	fmt.Println(list.String())
 	// Output:
-	// [10, 99, 30]
+	// [10 99 30]
 }
 
 func ExampleSliceWrapper_String() {
 	list := arraylist.Wrap([]string{"A", "B", "C"})
 	fmt.Println(list.String())
 	// Output:
-	// [A, B, C]
+	// [A B C]
 }
 
 func ExampleSliceWrapper_All() {

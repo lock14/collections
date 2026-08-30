@@ -164,3 +164,15 @@ func ExampleHeap_All() {
 	// 3
 	// 2
 }
+
+func ExampleHeap_String() {
+	h := heap.Min[int]()
+	h.Add(3)
+	h.Add(1)
+	h.Add(2)
+
+	fmt.Println(h.String())
+
+	// Output:
+	// [1 3 2]
+}

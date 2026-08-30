@@ -222,4 +222,23 @@ func TestStringSet_Comprehensive(t *testing.T) {
 	if str != "[x]" {
 		t.Errorf("String failed, got %s", str)
 	}
+
+	// Test stringMap.String() and sliceMap.String()
+	sm := NewMap[int]()
+	if got := fmt.Sprintf("%s", sm); got != "map[]" {
+		t.Errorf("String failed on empty stringMap, got %s", got)
+	}
+	sm.Put("a", 1)
+	if got := fmt.Sprintf("%s", sm); got != "map[a:1]" {
+		t.Errorf("String failed on stringMap, got %s", got)
+	}
+
+	slm := NewSliceMap[byte, int]()
+	if got := fmt.Sprintf("%s", slm); got != "map[]" {
+		t.Errorf("String failed on empty sliceMap, got %s", got)
+	}
+	slm.Put([]byte("a"), 1)
+	if got := fmt.Sprintf("%s", slm); got != "map[[97]:1]" {
+		t.Errorf("String failed on sliceMap, got %s", got)
+	}
 }

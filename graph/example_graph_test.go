@@ -403,5 +403,5 @@ func ExampleGraph_String() {
 	fmt.Println(g.String())
 
 	// Output:
-	// [1 -> 2, 3]
+	// digraph[1 -> 2, 3]
 }

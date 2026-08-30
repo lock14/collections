@@ -12,6 +12,8 @@ type Result[T any, E any] struct {
 	isOk  bool
 }
 
+var _ fmt.Stringer = Result[int, error]{}
+
 // Ok creates a success Result containing value.
 func Ok[T any, E any](value T) Result[T, E] {
 	return Result[T, E]{

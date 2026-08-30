@@ -8,7 +8,7 @@ import (
 )
 
 func TestHeapImplementsQueue(t *testing.T) {
-	queue[int](New[int]())
+	queue[int](NewOrdered[int]())
 }
 
 func queue[T any](q collections.Queue[T]) collections.Queue[T] {
@@ -18,12 +18,18 @@ func queue[T any](q collections.Queue[T]) collections.Queue[T] {
 func TestNew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name  string
-		opts  []Option[int]
-		check func(*testing.T, *Heap[int])
+		name        string
+		opts        []Option[int]
+		shouldPanic bool
+		check       func(*testing.T, *Heap[int])
 	}{
 		{
+			name:        "nil_comparator_panics",
+			shouldPanic: true,
+		},
+		{
 			name: "default_capacity",
+			opts: []Option[int]{WithComparator(comparator.NaturalOrder[int]())},
 			check: func(t *testing.T, h *Heap[int]) {
 				if h.Size() != 0 {
 					t.Errorf("expected size 0")
@@ -35,7 +41,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "custom_capacity",
-			opts: []Option[int]{WithCapacity[int](100)},
+			opts: []Option[int]{WithComparator(comparator.NaturalOrder[int]()), WithCapacity[int](100)},
 			check: func(t *testing.T, h *Heap[int]) {
 				if cap(h.elements) < 100 {
 					t.Errorf("expected capacity >= 100, got %d", cap(h.elements))
@@ -47,9 +53,31 @@ func TestNew(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			if tc.shouldPanic {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic, but did not panic")
+					}
+				}()
+				_ = New[int](tc.opts...)
+				return
+			}
 			h := New[int](tc.opts...)
 			tc.check(t, h)
 		})
+	}
+}
+
+func TestNewOrdered(t *testing.T) {
+	t.Parallel()
+	h := NewOrdered[int](WithCapacity[int](50))
+	if cap(h.elements) < 50 {
+		t.Errorf("expected capacity >= 50, got %d", cap(h.elements))
+	}
+	h.Add(10)
+	h.Add(5)
+	if h.Peek() != 5 {
+		t.Errorf("expected min 5, got %d", h.Peek())
 	}
 }
 
@@ -236,7 +264,7 @@ func TestHeap_Panics(t *testing.T) {
 }
 
 func TestHeap_Coverage(t *testing.T) {
-	h := New[int]()
+	h := NewOrdered[int]()
 	assertPanics := func(f func()) {
 		defer func() {
 			if r := recover(); r == nil {
@@ -247,4 +275,43 @@ func TestHeap_Coverage(t *testing.T) {
 	}
 	assertPanics(func() { h.Remove() })
 	_ = comparator.NaturalOrder[int]()(1, 2)
+}
+
+func TestHeap_String(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name     string
+		elements []int
+		want     string
+	}{
+		{
+			name:     "empty",
+			elements: nil,
+			want:     "[]",
+		},
+		{
+			name:     "single",
+			elements: []int{42},
+			want:     "[42]",
+		},
+		{
+			name:     "multiple",
+			elements: []int{3, 1, 2},
+			want:     "[1 3 2]",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			h := Min[int]()
+			for _, v := range tc.elements {
+				h.Add(v)
+			}
+			if got := h.String(); got != tc.want {
+				t.Errorf("String() = %q, want %q", got, tc.want)
+			}
+		})
+	}
 }

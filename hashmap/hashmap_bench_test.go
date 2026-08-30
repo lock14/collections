@@ -6,6 +6,7 @@ import (
 )
 
 func BenchmarkHashMap_Put(b *testing.B) {
+	b.ReportAllocs()
 	hm := hashmap.New[int, int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -14,6 +15,7 @@ func BenchmarkHashMap_Put(b *testing.B) {
 }
 
 func BenchmarkHashMap_Put_Preallocated(b *testing.B) {
+	b.ReportAllocs()
 	hm := hashmap.New[int, int](hashmap.WithCapacity(b.N))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -22,6 +24,7 @@ func BenchmarkHashMap_Put_Preallocated(b *testing.B) {
 }
 
 func BenchmarkHashMap_Get(b *testing.B) {
+	b.ReportAllocs()
 	hm := hashmap.New[int, int]()
 	for i := 0; i < 1000; i++ {
 		hm.Put(i, i)
@@ -33,6 +36,7 @@ func BenchmarkHashMap_Get(b *testing.B) {
 }
 
 func BenchmarkHashMap_Remove(b *testing.B) {
+	b.ReportAllocs()
 	hm := hashmap.New[int, int]()
 	for i := 0; i < b.N; i++ {
 		hm.Put(i, i)
@@ -44,6 +48,7 @@ func BenchmarkHashMap_Remove(b *testing.B) {
 }
 
 func BenchmarkHashMap_IterateAll(b *testing.B) {
+	b.ReportAllocs()
 	hm := hashmap.New[int, int]()
 	for i := 0; i < 1000; i++ {
 		hm.Put(i, i)

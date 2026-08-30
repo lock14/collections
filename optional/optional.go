@@ -11,6 +11,8 @@ type Option[T any] struct {
 	ok    bool
 }
 
+var _ fmt.Stringer = Option[int]{}
+
 // Of creates an Option containing the specified non-empty value.
 func Of[T any](value T) Option[T] {
 	return Option[T]{

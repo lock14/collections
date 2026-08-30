@@ -550,10 +550,15 @@ func TestLabeledGraph_String(t *testing.T) {
 			name: "string_directed",
 			opts: []Opt{WithDirected()},
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				if got := g.String(); got != "digraph[]" {
+					t.Errorf("expected digraph[], got: %s", got)
+				}
 				g.AddEdge(1, 2, "A")
 				g.AddVertex(3)
 				str := g.String()
-				// Non-deterministic map iteration means we should just check contains
+				if !strings.HasPrefix(str, "digraph[") || !strings.HasSuffix(str, "]") {
+					t.Errorf("expected digraph[...] format, got: %s", str)
+				}
 				if !strings.Contains(str, "1 -> 2: A") {
 					t.Errorf("string missing edge: %s", str)
 				}
@@ -565,8 +570,14 @@ func TestLabeledGraph_String(t *testing.T) {
 		{
 			name: "string_undirected",
 			check: func(t *testing.T, g *LabeledGraph[int, string]) {
+				if got := g.String(); got != "graph[]" {
+					t.Errorf("expected graph[], got: %s", got)
+				}
 				g.AddEdge(1, 2, "A")
 				str := g.String()
+				if !strings.HasPrefix(str, "graph[") || !strings.HasSuffix(str, "]") {
+					t.Errorf("expected graph[...] format, got: %s", str)
+				}
 				if !strings.Contains(str, "1 - 2: A") && !strings.Contains(str, "2 - 1: A") {
 					t.Errorf("string missing edge: %s", str)
 				}

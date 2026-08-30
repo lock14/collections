@@ -21,8 +21,10 @@ const (
 	fiftyPercentThreshold = 2048
 )
 
-// ensure ArrayDeque implements a MutableDeque
-var _ collections.MutableDeque[int] = (*ArrayDeque[int])(nil)
+var (
+	_ collections.MutableDeque[int] = (*ArrayDeque[int])(nil)
+	_ fmt.Stringer                  = (*ArrayDeque[int])(nil)
+)
 
 // ArrayDeque represents a deque of elements of type T backed by an array.
 // The zero value for ArrayDeque is an empty deque ready to use.
@@ -194,13 +196,13 @@ func (d *ArrayDeque[T]) Clear() {
 	d.size = 0
 }
 
-// String returns a string representation of this deque.
+// String returns a string representation of this deque matching Go slice formatting.
 func (d *ArrayDeque[T]) String() string {
 	str := make([]string, 0, d.Size())
 	for t := range d.All() {
-		str = append(str, fmt.Sprintf("%+v", t))
+		str = append(str, fmt.Sprintf("%v", t))
 	}
-	return "[" + strings.Join(str, ", ") + "]"
+	return "[" + strings.Join(str, " ") + "]"
 }
 
 // All returns an iterator over all elements,

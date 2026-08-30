@@ -1,12 +1,17 @@
 package treemap
 
 import (
+	"fmt"
 	"github.com/lock14/collections"
 	"iter"
 	"slices"
+	"strings"
 )
 
-var _ collections.MutableNavigableMap[int, int] = (*TreeMap[int, int])(nil)
+var (
+	_ collections.MutableNavigableMap[int, int] = (*TreeMap[int, int])(nil)
+	_ fmt.Stringer                              = (*TreeMap[int, int])(nil)
+)
 
 func (tm *TreeMap[K, V]) Get(key K) (V, bool) {
 	if tm.root == nil {
@@ -40,6 +45,15 @@ func (tm *TreeMap[K, V]) Clear() {
 func (tm *TreeMap[K, V]) ContainsKey(key K) bool {
 	_, ok := tm.Get(key)
 	return ok
+}
+
+// String returns a string representation of the map matching Go built-in map formatting.
+func (tm *TreeMap[K, V]) String() string {
+	vals := make([]string, 0, tm.Size())
+	for k, v := range tm.All() {
+		vals = append(vals, fmt.Sprintf("%v:%v", k, v))
+	}
+	return "map[" + strings.Join(vals, " ") + "]"
 }
 
 func (tm *TreeMap[K, V]) All() iter.Seq2[K, V] {

@@ -1,13 +1,17 @@
 # Repository Design Principles
 
 *   **Generics & Type Safety:** Leverage Go 1.23+ generics (`any`, `comparable`, `cmp.Ordered`, custom constraints). Avoid `interface{}` / `any` boxing or runtime type assertions where type parameters can be used. Sorted collections must provide both `New` accepting a custom `comparator.Comparator[T]` and `NewOrdered` for `cmp.Ordered` types.
-*   **Interface Compliance:** Where applicable, concrete data structures should implement the generic collection interfaces defined in `collections.go` (`Collection[T]`, `MutableCollection[T]`, `List[T]`, `Queue[T]`, `Stack[T]`, `Deque[T]`, `Set[T]`, `Map[K, V]`, etc.).
+*   **Interface Compliance & Compile-Time Assertions:** Where applicable, concrete data structures should implement the generic collection interfaces defined in `collections.go` (`Collection[T]`, `MutableCollection[T]`, `List[T]`, `Queue[T]`, `Stack[T]`, `Deque[T]`, `Set[T]`, `Map[K, V]`, etc.) and `fmt.Stringer`. Every struct must declare compile-time interface assertions using the standard Go idiom `var _ Interface = (*Type)(nil)` (or `var _ fmt.Stringer = Type{}` for value receivers) to guarantee interface compliance at build time.
 *   **Standard Iteration (Go 1.23+ `iter`):**
     *   Collections must expose standard range-over-func iterators using `iter.Seq[T]` (e.g. `All()`) or `iter.Seq2[K, V]` for associative types (e.g. `All()`, `Keys()`, `Values()`).
     *   Iterator implementations should minimize or eliminate allocation overhead when consumed in `for ... range` loops.
 *   **Non-Concurrent by Design:** Implementations are single-threaded by contract (matching Go's standard slice/map philosophy). Do not add internal mutexes, sync primitives, or goroutines to collection structs. Concurrency is strictly the caller's responsibility.
 *   **Zero-Allocation Reads:** Read operations (e.g., `Get`, `Contains`, `Peek`, `PeekFront`, `PeekBack`, `Size`, `Empty`) must avoid heap allocations (guaranteed 0 B/op and 0 allocs/op in benchmarks).
 *   **Predictable Memory & Growth:** Growth policies should be amortized O(1) (e.g. geometric resizing) and shrink gracefully where appropriate or support explicit capacity/trim APIs (e.g. `NewWithCapacity`).
+*   **String Representations (`fmt.Stringer`):**
+    *   **`Collection[T]` Types:** String representations MUST match the format of Go's built-in slice: `[e1 e2 e3]` (space-separated, `[]` when empty).
+    *   **`Map[K, V]` Types:** String representations MUST match the format of Go's built-in map: `map[k1:v1 k2:v2]` (prefixed by `map[`, space-separated `k:v` with no space after the colon, `map[]` when empty).
+    *   **`Graph[V]` / `LabeledGraph[V, L]` Types:** String representations MUST use `graph[...]` (for undirected graphs) or `digraph[...]` (for directed graphs), containing comma-separated edges (`u - v` / `u -> v: label`) and isolated vertices (`graph[]` / `digraph[]` when empty).
 
 # Go Version & Toolchain Consistency
 

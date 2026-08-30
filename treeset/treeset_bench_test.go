@@ -11,6 +11,7 @@ import (
 func BenchmarkTreeSet_Add(b *testing.B) {
 	for _, size := range []int{1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
+			b.ReportAllocs()
 			b.StopTimer()
 			keys := make([]int, size)
 			for i := 0; i < size; i++ {
@@ -34,6 +35,7 @@ func BenchmarkTreeSet_Add(b *testing.B) {
 func BenchmarkTreeSet_Contains(b *testing.B) {
 	for _, size := range []int{1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
+			b.ReportAllocs()
 			b.StopTimer()
 			s := treeset.NewOrdered[int]()
 			keys := make([]int, size)

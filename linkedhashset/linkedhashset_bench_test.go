@@ -6,6 +6,7 @@ import (
 )
 
 func BenchmarkLinkedHashSet_Add(b *testing.B) {
+	b.ReportAllocs()
 	s := linkedhashset.New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -14,6 +15,7 @@ func BenchmarkLinkedHashSet_Add(b *testing.B) {
 }
 
 func BenchmarkLinkedHashSet_Add_Preallocated(b *testing.B) {
+	b.ReportAllocs()
 	s := linkedhashset.New[int](linkedhashset.WithCapacity(b.N))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -22,6 +24,7 @@ func BenchmarkLinkedHashSet_Add_Preallocated(b *testing.B) {
 }
 
 func BenchmarkLinkedHashSet_Contains(b *testing.B) {
+	b.ReportAllocs()
 	s := linkedhashset.New[int]()
 	for i := 0; i < 1000; i++ {
 		s.Add(i)
@@ -33,6 +36,7 @@ func BenchmarkLinkedHashSet_Contains(b *testing.B) {
 }
 
 func BenchmarkLinkedHashSet_RemoveElement(b *testing.B) {
+	b.ReportAllocs()
 	s := linkedhashset.New[int]()
 	for i := 0; i < b.N; i++ {
 		s.Add(i)
@@ -44,16 +48,18 @@ func BenchmarkLinkedHashSet_RemoveElement(b *testing.B) {
 }
 
 func BenchmarkLinkedHashSet_RetainAll(b *testing.B) {
-	s := linkedhashset.New[int]()
-	for i := 0; i < 1000; i++ {
-		s.Add(i)
-	}
+	b.ReportAllocs()
 	other := linkedhashset.New[int]()
 	for i := 0; i < 500; i++ {
 		other.Add(i)
 	}
-	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		s := linkedhashset.New[int]()
+		for j := 0; j < 1000; j++ {
+			s.Add(j)
+		}
+		b.StartTimer()
 		s.RetainAll(other)
 	}
 }

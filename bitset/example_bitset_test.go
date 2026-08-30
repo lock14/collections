@@ -191,7 +191,7 @@ func ExampleBitSet_String() {
 	b.SetBit(4)
 	fmt.Println(b.String())
 	// Output:
-	// [0, 4]
+	// [0 4]
 }
 
 func ExampleBitSet_SetBits() {

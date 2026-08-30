@@ -40,6 +40,8 @@ type LabeledGraph[V comparable, L any] struct {
 	edgeCount int
 }
 
+var _ fmt.Stringer = (*LabeledGraph[int, string])(nil)
+
 // New returns a new LabeledGraph constructed according to the given options.
 func New[V comparable, L any](opts ...Opt) *LabeledGraph[V, L] {
 	config := defaultConfig()
@@ -384,7 +386,11 @@ func (g *LabeledGraph[V, L]) Equal(other *LabeledGraph[V, L], eq func(L, L) bool
 // String returns a string representation of the graph.
 func (g *LabeledGraph[V, L]) String() string {
 	var sb strings.Builder
-	sb.WriteString("[")
+	if g.directed {
+		sb.WriteString("digraph[")
+	} else {
+		sb.WriteString("graph[")
+	}
 	first := true
 
 	type edgePair struct{ u, v V }

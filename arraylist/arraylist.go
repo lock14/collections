@@ -12,6 +12,7 @@ import (
 var (
 	_ collections.MutableList[int]  = (*SliceWrapper[int])(nil)
 	_ collections.MutableStack[int] = (*SliceWrapper[int])(nil)
+	_ fmt.Stringer                  = (*SliceWrapper[int])(nil)
 )
 
 // SliceWrapper is a wrapper around the built-in slice that implements collections.MutableList and collections.MutableStack.
@@ -129,13 +130,13 @@ func (l *SliceWrapper[T]) Set(index int, item T) {
 	l.slice[index] = item
 }
 
-// String returns a string representation of the list.
+// String returns a string representation of the list matching Go slice formatting.
 func (l *SliceWrapper[T]) String() string {
 	vals := make([]string, 0, l.Size())
 	for v := range l.All() {
-		vals = append(vals, fmt.Sprintf("%+v", v))
+		vals = append(vals, fmt.Sprintf("%v", v))
 	}
-	return "[" + strings.Join(vals, ", ") + "]"
+	return "[" + strings.Join(vals, " ") + "]"
 }
 
 // All returns an iterator over all elements in the list from first to last.
