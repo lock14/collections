@@ -148,14 +148,6 @@ func (tm *TreeMap[K, V]) PollLast() (K, V) {
 	return k, v
 }
 
-func (tm *TreeMap[K, V]) PutFirst(key K, value V) {
-	panic("PutFirst is not supported on SortedMap")
-}
-
-func (tm *TreeMap[K, V]) PutLast(key K, value V) {
-	panic("PutLast is not supported on SortedMap")
-}
-
 func (tm *TreeMap[K, V]) Lower(key K) (K, V, bool) {
 	var bestK K
 	var bestV V

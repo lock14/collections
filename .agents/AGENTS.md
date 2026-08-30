@@ -12,6 +12,11 @@
     *   **`Collection[T]` Types:** String representations MUST match the format of Go's built-in slice: `[e1 e2 e3]` (space-separated, `[]` when empty).
     *   **`Map[K, V]` Types:** String representations MUST match the format of Go's built-in map: `map[k1:v1 k2:v2]` (prefixed by `map[`, space-separated `k:v` with no space after the colon, `map[]` when empty).
     *   **`Graph[V]` / `LabeledGraph[V, L]` Types:** String representations MUST use `graph[...]` (for undirected graphs) or `digraph[...]` (for directed graphs), containing comma-separated edges (`u - v` / `u -> v: label`) and isolated vertices (`graph[]` / `digraph[]` when empty).
+*   **Panic & Error Handling Alignment with Built-in Types:**
+    *   **Slice-Like Indexing (`Get`, `Set`):** Bounds check violations (`idx < 0 || idx >= size`) MUST panic with a clear index error (matching built-in Go slice index panic `slice[i]`).
+    *   **Consumable Extraction & Positional Access (`Remove()`, `First()`, `Last()`, `Peek()`, `Pop()`, `RemoveFront()`, `RemoveBack()`, `PollFirst()`, `PollLast()`):** Unconditional element extraction or positional access on an empty collection MUST panic with a clear error (matching built-in slice head/tail indexing `s[0]` / `s[len-1]` and `slices.Min`/`slices.Max` semantics). Every `MutableCollection[T]` (including sets) supports `Remove() T` to enable the consumable worklist/drain pattern (popping elements until `Empty()`).
+    *   **Targeted Deletions & Map Lookups (`RemoveElement(T)`, `Map.Remove(K)`, `Map.Get(K)`):** Targeted removal of a specific element from a set (`RemoveElement(T)`) or key from a map (`Map.Remove(K)`) MUST be a silent no-op if the item/key is absent (matching built-in `delete(m, k)`). Key lookup MUST use the standard Go comma-ok idiom `(V, bool)` (never panic for missing keys or empty maps).
+    *   **No "Unsupported Operation" Runtime Panics:** Interfaces must strictly adhere to the Interface Segregation Principle. Collections must never declare or embed methods that compile but throw runtime panics due to being unsupported (e.g., `AddFirst`/`PutFirst` on sorted collections).
 
 # Go Version & Toolchain Consistency
 

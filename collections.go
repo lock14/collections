@@ -223,7 +223,11 @@ type SortedSet[T any] interface {
 // MutableSortedSet represents a sorted set that can be modified.
 type MutableSortedSet[T any] interface {
 	SortedSet[T]
-	MutableSequencedSet[T]
+	MutableSet[T]
+	// PollFirst removes and returns the first element in the set. Panics if empty.
+	PollFirst() T
+	// PollLast removes and returns the last element in the set. Panics if empty.
+	PollLast() T
 }
 
 // SortedMap represents a map that maintains its entries in ascending order of keys.
@@ -240,7 +244,11 @@ type SortedMap[K any, V any] interface {
 // MutableSortedMap represents a sorted map that can be modified.
 type MutableSortedMap[K any, V any] interface {
 	SortedMap[K, V]
-	MutableSequencedMap[K, V]
+	MutableMap[K, V]
+	// PollFirst removes and returns the first key-value pair in the map. Panics if empty.
+	PollFirst() (K, V)
+	// PollLast removes and returns the last key-value pair in the map. Panics if empty.
+	PollLast() (K, V)
 }
 
 // NavigableSet represents a sorted set with routing methods for finding closest matches.

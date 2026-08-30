@@ -119,14 +119,6 @@ func (s *TreeSet[T]) PollLast() T {
 	return k
 }
 
-func (s *TreeSet[T]) AddFirst(item T) {
-	panic("AddFirst is not supported on SortedSet")
-}
-
-func (s *TreeSet[T]) AddLast(item T) {
-	panic("AddLast is not supported on SortedSet")
-}
-
 func (s *TreeSet[T]) Lower(item T) (T, bool) {
 	k, _, ok := s.m.Lower(item)
 	return k, ok

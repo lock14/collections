@@ -748,8 +748,6 @@ func TestBitSet_Sequenced(t *testing.T) {
 		t.Errorf("PollLast didn't remove")
 	}
 
-	assertPanic("AddFirst", func() { b.AddFirst(1) })
-	assertPanic("AddLast", func() { b.AddLast(1) })
 }
 
 func TestBitSet_Backward(t *testing.T) {
@@ -1203,43 +1201,6 @@ func TestBitSet_PollFirstLastTableDriven(t *testing.T) {
 				if b.Contains(10) {
 					t.Fatal("expected 10 to be removed")
 				}
-
-			},
-		},
-	}
-
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, tc.run)
-	}
-}
-
-func TestBitSet_AddFirstLastTableDriven(t *testing.T) {
-	cases := []struct {
-		name string
-		run  func(t *testing.T)
-	}{
-		{
-			name: "TestBitSet_AddFirstLast",
-			run: func(t *testing.T) {
-
-				b := New()
-				func() {
-					defer func() {
-						if r := recover(); r == nil {
-							t.Fatal("expected panic on AddFirst")
-						}
-					}()
-					b.AddFirst(1)
-				}()
-				func() {
-					defer func() {
-						if r := recover(); r == nil {
-							t.Fatal("expected panic on AddLast")
-						}
-					}()
-					b.AddLast(1)
-				}()
 
 			},
 		},

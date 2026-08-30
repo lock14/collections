@@ -379,8 +379,6 @@ func TestTreeSet_Sequenced(t *testing.T) {
 		t.Errorf("PollLast didn't remove")
 	}
 
-	assertPanic("AddFirst", func() { s.AddFirst(1) })
-	assertPanic("AddLast", func() { s.AddLast(1) })
 }
 
 func TestTreeSet_Backward(t *testing.T) {

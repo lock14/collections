@@ -249,30 +249,6 @@ func ExampleTreeSet_PollLast() {
 	// 2
 }
 
-func ExampleTreeSet_AddFirst() {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	set := treeset.NewOrdered[int]()
-	set.AddFirst(1)
-	// Output:
-	// AddFirst is not supported on SortedSet
-}
-
-func ExampleTreeSet_AddLast() {
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println(r)
-		}
-	}()
-	set := treeset.NewOrdered[int]()
-	set.AddLast(1)
-	// Output:
-	// AddLast is not supported on SortedSet
-}
-
 func ExampleTreeSet_Lower() {
 	set := treeset.NewOrdered[int]()
 	set.Add(1)

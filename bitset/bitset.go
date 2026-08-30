@@ -466,16 +466,6 @@ func (b *BitSet) PollLast() int {
 	return val
 }
 
-// AddFirst is not supported on SortedSet / NavigableSet and will panic.
-func (b *BitSet) AddFirst(t int) {
-	panic("AddFirst is not supported on SortedSet")
-}
-
-// AddLast is not supported on SortedSet / NavigableSet and will panic.
-func (b *BitSet) AddLast(t int) {
-	panic("AddLast is not supported on SortedSet")
-}
-
 // Lower returns the greatest element in this set strictly less than the given element, or (0, false) if no such element exists.
 func (b *BitSet) Lower(t int) (int, bool) {
 	if t <= 0 {
