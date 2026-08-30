@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// DefaultCapacity is the default initial capacity for a Heap.
 	DefaultCapacity = 10
 )
 
@@ -80,11 +81,13 @@ func Max[T cmp.Ordered]() *Heap[T] {
 	return New[T](WithComparator(comparator.Reverse(comparator.NaturalOrder[T]())))
 }
 
+// Add inserts the specified element into the heap.
 func (h *Heap[T]) Add(t T) {
 	h.elements = append(h.elements, t)
 	h.siftUp(len(h.elements) - 1)
 }
 
+// AddAll inserts all elements from the given sequence into the heap.
 func (h *Heap[T]) AddAll(sequence iter.Seq[T]) {
 	for t := range sequence {
 		h.Add(t)
@@ -111,14 +114,17 @@ func (h *Heap[T]) Peek() T {
 	return h.elements[0]
 }
 
+// Size returns the number of elements in the heap.
 func (h *Heap[T]) Size() int {
 	return len(h.elements)
 }
 
+// Empty returns true if the heap contains no elements.
 func (h *Heap[T]) Empty() bool {
 	return len(h.elements) == 0
 }
 
+// Clear removes all elements from the heap.
 func (h *Heap[T]) Clear() {
 	// Zero out elements to allow GC
 	var zero T
@@ -128,6 +134,7 @@ func (h *Heap[T]) Clear() {
 	h.elements = h.elements[:0]
 }
 
+// All returns an iterator over all elements in the heap in internal slice order.
 func (h *Heap[T]) All() iter.Seq[T] {
 	return slices.Values(h.elements)
 }

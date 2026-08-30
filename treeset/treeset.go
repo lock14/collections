@@ -1,3 +1,4 @@
+// Package treeset provides a B-Tree backed set implementation.
 package treeset
 
 import (

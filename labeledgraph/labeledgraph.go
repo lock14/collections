@@ -18,14 +18,14 @@ type config struct {
 // Opt represents a configuration option for constructing a LabeledGraph.
 type Opt func(g *config)
 
-// Directed is an option that configures New to return a directed graph.
+// WithDirected configures New to return a directed graph.
 func WithDirected() Opt {
 	return func(g *config) {
 		g.directed = true
 	}
 }
 
-// Capacity is an option that configures New to pre-allocate the graph with the given capacity.
+// WithCapacity configures New to pre-allocate the graph with the given capacity.
 func WithCapacity(n int) Opt {
 	return func(g *config) {
 		g.capacity = n
@@ -166,9 +166,8 @@ func (g *LabeledGraph[V, L]) Degree(u V) (int, bool) {
 			ok = true
 		}
 		return degree, ok
-	} else {
-		return g.OutDegree(u)
 	}
+	return g.OutDegree(u)
 }
 
 // InDegree return the number of edges coming into the given vertex
@@ -281,9 +280,8 @@ func (g *LabeledGraph[V, L]) IncidentEdges(v V) iter.Seq2[V, V] {
 				}
 			}
 		}
-	} else {
-		return g.OutIncidentEdges(v)
 	}
+	return g.OutIncidentEdges(v)
 }
 
 // InIncidentEdges returns an iterator over the edges coming into the given vertex of the graph.
@@ -437,10 +435,9 @@ func (g *LabeledGraph[V, L]) nodeData() nodeData[V, L] {
 			successorLabels: make(map[V]L),
 			preds:           hashset.New[V](),
 		}
-	} else {
-		return &undirectedNodeData[V, L]{
-			adjacentLabels: make(map[V]L),
-		}
+	}
+	return &undirectedNodeData[V, L]{
+		adjacentLabels: make(map[V]L),
 	}
 }
 
@@ -471,7 +468,7 @@ type directedNodeData[V comparable, L any] struct {
 	preds           *hashset.HashSet[V]
 }
 
-func (d *directedNodeData[V, L]) addPredecessor(v V, l L) {
+func (d *directedNodeData[V, L]) addPredecessor(v V, _ L) {
 	// only successors store the label
 	d.preds.Add(v)
 }
@@ -514,7 +511,7 @@ func (d *directedNodeData[V, L]) removeSuccessor(v V) {
 	delete(d.successorLabels, v)
 }
 
-func (d *directedNodeData[V, L]) setPredecessorLabel(v V, label L) {
+func (d *directedNodeData[V, L]) setPredecessorLabel(_ V, _ L) {
 	// no op
 }
 

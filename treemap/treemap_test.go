@@ -162,7 +162,7 @@ func TestTreeMap_Operations(t *testing.T) {
 		{
 			name:   "get from empty map",
 			degree: 2,
-			ops:    func(tm *TreeMap[int, string]) {},
+			ops:    func(_ *TreeMap[int, string]) {},
 			validate: func(t *testing.T, tm *TreeMap[int, string]) {
 				if _, ok := tm.Get(10); ok {
 					t.Errorf("expected not ok")

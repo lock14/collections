@@ -291,7 +291,7 @@ func TestGraph_String(t *testing.T) {
 	}
 }
 
-func TestGraph_Coverage(t *testing.T) {
+func TestGraph_Coverage(_ *testing.T) {
 	g := New[int]()
 	g.AddEdge(1, 2)
 	_ = g.String()

@@ -45,10 +45,13 @@ func New[T comparable](opts ...Option) *HashSet[T] {
 	}
 }
 
+// Add inserts the specified item into the set.
 func (s *HashSet[T]) Add(item T) {
 	s.m[item] = struct{}{}
 }
 
+// Remove removes and returns an arbitrary element from the set.
+// Panics if the set is empty.
 func (s *HashSet[T]) Remove() T {
 	for item := range s.m {
 		delete(s.m, item)
@@ -57,15 +60,18 @@ func (s *HashSet[T]) Remove() T {
 	panic("cannot remove from an empty set")
 }
 
+// RemoveElement removes the specified item from the set.
 func (s *HashSet[T]) RemoveElement(item T) {
 	delete(s.m, item)
 }
 
+// Contains returns true if the set contains the specified item.
 func (s *HashSet[T]) Contains(item T) bool {
 	_, present := s.m[item]
 	return present
 }
 
+// ContainsAll returns true if the set contains all elements of the specified collection.
 func (s *HashSet[T]) ContainsAll(other collections.Collection[T]) bool {
 	for item := range other.All() {
 		if !s.Contains(item) {
@@ -75,18 +81,21 @@ func (s *HashSet[T]) ContainsAll(other collections.Collection[T]) bool {
 	return true
 }
 
+// AddAll inserts all elements from the given sequence into the set.
 func (s *HashSet[T]) AddAll(sequence iter.Seq[T]) {
 	for t := range sequence {
 		s.Add(t)
 	}
 }
 
+// RemoveAll removes all elements of the specified collection from this set.
 func (s *HashSet[T]) RemoveAll(other collections.Collection[T]) {
 	for t := range other.All() {
 		s.RemoveElement(t)
 	}
 }
 
+// RetainAll retains only the elements in this set that are contained in the specified collection.
 func (s *HashSet[T]) RetainAll(other collections.Collection[T]) {
 	newMap := make(map[T]struct{})
 	for t := range other.All() {
@@ -97,14 +106,17 @@ func (s *HashSet[T]) RetainAll(other collections.Collection[T]) {
 	s.m = newMap
 }
 
+// Clear removes all elements from the set.
 func (s *HashSet[T]) Clear() {
 	s.m = make(map[T]struct{})
 }
 
+// Size returns the number of elements in the set.
 func (s *HashSet[T]) Size() int {
 	return len(s.m)
 }
 
+// Empty returns true if the set contains no elements.
 func (s *HashSet[T]) Empty() bool {
 	return len(s.m) == 0
 }
@@ -118,6 +130,7 @@ func (s *HashSet[T]) String() string {
 	return "[" + strings.Join(vals, " ") + "]"
 }
 
+// All returns an iterator over all elements in the set.
 func (s *HashSet[T]) All() iter.Seq[T] {
 	return maps.Keys(s.m)
 }

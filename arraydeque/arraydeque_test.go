@@ -423,7 +423,7 @@ func TestArrayDeque_Rotate(t *testing.T) {
 	}
 }
 
-func TestType(t *testing.T) {
+func TestType(_ *testing.T) {
 	l := New[int]()
 	testType[int](l)
 }
@@ -484,7 +484,7 @@ func TestArrayDeque_AddAll(t *testing.T) {
 	}
 }
 
-func testType[T any](deque collections.Deque[T]) {}
+func testType[T any](_ collections.Deque[T]) {}
 
 func TestArrayDeque_PeekFront(t *testing.T) {
 	t.Parallel()

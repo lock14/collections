@@ -218,13 +218,12 @@ func (l *LinkedList[T]) get(idx int) *node[T] {
 			cur = cur.next
 		}
 		return cur
-	} else {
-		cur := l.list.prev
-		for i := l.size - 1; i > idx; i-- {
-			cur = cur.prev
-		}
-		return cur
 	}
+	cur := l.list.prev
+	for i := l.size - 1; i > idx; i-- {
+		cur = cur.prev
+	}
+	return cur
 }
 
 func insertBefore[T any](n *node[T], t T) {

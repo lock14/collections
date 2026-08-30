@@ -13,6 +13,7 @@ var (
 	_ fmt.Stringer                              = (*TreeMap[int, int])(nil)
 )
 
+// Get returns the value associated with the specified key, and a boolean indicating if it was found.
 func (tm *TreeMap[K, V]) Get(key K) (V, bool) {
 	if tm.root == nil {
 		var zero V
@@ -21,27 +22,33 @@ func (tm *TreeMap[K, V]) Get(key K) (V, bool) {
 	return tm.get(tm.root, key)
 }
 
+// Put associates the specified value with the specified key in the map.
 func (tm *TreeMap[K, V]) Put(key K, value V) {
 	tm.put(key, value)
 }
 
+// Remove removes the mapping for the specified key from the map if present.
 func (tm *TreeMap[K, V]) Remove(key K) {
 	tm.remove(key)
 }
 
+// Size returns the number of key-value pairs in the map.
 func (tm *TreeMap[K, V]) Size() int {
 	return tm.size
 }
 
+// Empty returns true if the map contains no key-value pairs.
 func (tm *TreeMap[K, V]) Empty() bool {
 	return tm.size == 0
 }
 
+// Clear removes all key-value pairs from the map.
 func (tm *TreeMap[K, V]) Clear() {
 	tm.root = tm.newNode(true)
 	tm.size = 0
 }
 
+// ContainsKey returns true if the map contains a mapping for the specified key.
 func (tm *TreeMap[K, V]) ContainsKey(key K) bool {
 	_, ok := tm.Get(key)
 	return ok
@@ -56,6 +63,7 @@ func (tm *TreeMap[K, V]) String() string {
 	return "map[" + strings.Join(vals, " ") + "]"
 }
 
+// All returns an iterator over all key-value pairs in ascending key order.
 func (tm *TreeMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		tm.inOrder(tm.root, yield)
@@ -84,6 +92,7 @@ func (tm *TreeMap[K, V]) inOrder(n *node[K, V], yield func(K, V) bool) bool {
 	return true
 }
 
+// Keys returns an iterator over all keys in ascending order.
 func (tm *TreeMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
 		for k := range tm.All() {
@@ -94,6 +103,7 @@ func (tm *TreeMap[K, V]) Keys() iter.Seq[K] {
 	}
 }
 
+// Values returns an iterator over all values in ascending key order.
 func (tm *TreeMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
 		for _, v := range tm.All() {
@@ -148,6 +158,7 @@ func (tm *TreeMap[K, V]) PollLast() (K, V) {
 	return k, v
 }
 
+// Lower returns the key-value pair for the greatest key strictly less than the given key, or false if not found.
 func (tm *TreeMap[K, V]) Lower(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
@@ -169,6 +180,7 @@ func (tm *TreeMap[K, V]) Lower(key K) (K, V, bool) {
 	return bestK, bestV, found
 }
 
+// Floor returns the key-value pair for the greatest key less than or equal to the given key, or false if not found.
 func (tm *TreeMap[K, V]) Floor(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
@@ -193,6 +205,7 @@ func (tm *TreeMap[K, V]) Floor(key K) (K, V, bool) {
 	return bestK, bestV, found
 }
 
+// Ceiling returns the key-value pair for the least key greater than or equal to the given key, or false if not found.
 func (tm *TreeMap[K, V]) Ceiling(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
@@ -217,6 +230,7 @@ func (tm *TreeMap[K, V]) Ceiling(key K) (K, V, bool) {
 	return bestK, bestV, found
 }
 
+// Higher returns the key-value pair for the least key strictly greater than the given key, or false if not found.
 func (tm *TreeMap[K, V]) Higher(key K) (K, V, bool) {
 	var bestK K
 	var bestV V
@@ -241,6 +255,7 @@ func (tm *TreeMap[K, V]) Higher(key K) (K, V, bool) {
 	return bestK, bestV, found
 }
 
+// Backward returns an iterator over the key-value pairs in reverse (descending) order.
 func (tm *TreeMap[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		tm.reverseInOrder(tm.root, yield)
@@ -269,6 +284,7 @@ func (tm *TreeMap[K, V]) reverseInOrder(n *node[K, V], yield func(K, V) bool) bo
 	return true
 }
 
+// BackwardKeys returns an iterator over the keys in reverse (descending) order.
 func (tm *TreeMap[K, V]) BackwardKeys() iter.Seq[K] {
 	return func(yield func(K) bool) {
 		for k := range tm.Backward() {
@@ -279,6 +295,7 @@ func (tm *TreeMap[K, V]) BackwardKeys() iter.Seq[K] {
 	}
 }
 
+// BackwardValues returns an iterator over the values in reverse (descending) order.
 func (tm *TreeMap[K, V]) BackwardValues() iter.Seq[V] {
 	return func(yield func(V) bool) {
 		for _, v := range tm.Backward() {
@@ -289,6 +306,7 @@ func (tm *TreeMap[K, V]) BackwardValues() iter.Seq[V] {
 	}
 }
 
+// From returns an iterator over the key-value pairs whose keys are greater than or equal to from.
 func (tm *TreeMap[K, V]) From(from K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		var zero K
@@ -296,6 +314,7 @@ func (tm *TreeMap[K, V]) From(from K) iter.Seq2[K, V] {
 	}
 }
 
+// To returns an iterator over the key-value pairs whose keys are strictly less than to.
 func (tm *TreeMap[K, V]) To(to K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		var zero K
@@ -303,6 +322,7 @@ func (tm *TreeMap[K, V]) To(to K) iter.Seq2[K, V] {
 	}
 }
 
+// Between returns an iterator over the key-value pairs in the half-open interval [from, to).
 func (tm *TreeMap[K, V]) Between(from K, to K) iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		tm.rangeInOrder(tm.root, from, to, true, true, yield)

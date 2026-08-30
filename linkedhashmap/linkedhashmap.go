@@ -10,8 +10,10 @@ import (
 )
 
 const (
+	// InsertionOrder indicates the LinkedHashMap iterates over entries in insertion order.
 	InsertionOrder = false
-	AccessOrder    = true
+	// AccessOrder indicates the LinkedHashMap iterates over entries in order of last access.
+	AccessOrder = true
 )
 
 var (
@@ -47,9 +49,9 @@ func WithInsertionOrder() Opt {
 }
 
 // WithMaxElements configures the maximum number of elements the LinkedHashMap can hold before evicting.
-func WithMaxElements(max int) Opt {
+func WithMaxElements(maxElements int) Opt {
 	return func(config *config) {
-		config.maxElements = max
+		config.maxElements = maxElements
 	}
 }
 
@@ -84,6 +86,7 @@ func New[K comparable, V any](opts ...Opt) *LinkedHashMap[K, V] {
 	}
 }
 
+// Put associates the specified value with the specified key in the map.
 func (hm *LinkedHashMap[K, V]) Put(key K, value V) {
 	n, ok := hm.hashtable[key]
 	if ok {
@@ -109,6 +112,7 @@ func (hm *LinkedHashMap[K, V]) Put(key K, value V) {
 	}
 }
 
+// PutFirst inserts the specified key-value pair at the front of the map.
 func (hm *LinkedHashMap[K, V]) PutFirst(key K, value V) {
 	n, ok := hm.hashtable[key]
 	if ok {
@@ -130,6 +134,7 @@ func (hm *LinkedHashMap[K, V]) PutFirst(key K, value V) {
 	}
 }
 
+// PutLast inserts the specified key-value pair at the end of the map.
 func (hm *LinkedHashMap[K, V]) PutLast(key K, value V) {
 	n, ok := hm.hashtable[key]
 	if ok {
@@ -181,6 +186,7 @@ func (hm *LinkedHashMap[K, V]) PollLast() (K, V) {
 	return e.key, e.value
 }
 
+// Get returns the value associated with the specified key, and a boolean indicating if it was found.
 func (hm *LinkedHashMap[K, V]) Get(key K) (V, bool) {
 	n, ok := hm.hashtable[key]
 	if !ok {
@@ -195,6 +201,7 @@ func (hm *LinkedHashMap[K, V]) Get(key K) (V, bool) {
 	return n.value, true
 }
 
+// Remove removes the mapping for the specified key from the map if present.
 func (hm *LinkedHashMap[K, V]) Remove(key K) {
 	n, ok := hm.hashtable[key]
 	if ok {
@@ -203,24 +210,29 @@ func (hm *LinkedHashMap[K, V]) Remove(key K) {
 	}
 }
 
+// ContainsKey returns true if the map contains a mapping for the specified key.
 func (hm *LinkedHashMap[K, V]) ContainsKey(key K) bool {
 	_, ok := hm.hashtable[key]
 	return ok
 }
 
+// Size returns the number of key-value pairs in the map.
 func (hm *LinkedHashMap[K, V]) Size() int {
 	return len(hm.hashtable)
 }
 
+// Empty returns true if the map contains no key-value pairs.
 func (hm *LinkedHashMap[K, V]) Empty() bool {
 	return hm.Size() == 0
 }
 
+// Clear removes all key-value pairs from the map.
 func (hm *LinkedHashMap[K, V]) Clear() {
 	hm.hashtable = make(map[K]*node[K, V])
 	hm.list = sentinel[K, V]()
 }
 
+// All returns an iterator over all key-value pairs in the map in order.
 func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		if hm.list == nil {
@@ -234,6 +246,7 @@ func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 	}
 }
 
+// Keys returns an iterator over all keys in the map in order.
 func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
 		if hm.list == nil {
@@ -247,6 +260,7 @@ func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 	}
 }
 
+// Values returns an iterator over all values in the map in order.
 func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
 		if hm.list == nil {
@@ -260,6 +274,7 @@ func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	}
 }
 
+// Backward returns an iterator over the key-value pairs in reverse order.
 func (hm *LinkedHashMap[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
 		if hm.list == nil {
@@ -273,6 +288,7 @@ func (hm *LinkedHashMap[K, V]) Backward() iter.Seq2[K, V] {
 	}
 }
 
+// BackwardKeys returns an iterator over the keys in reverse order.
 func (hm *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
 	return func(yield func(K) bool) {
 		if hm.list == nil {
@@ -286,6 +302,7 @@ func (hm *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
 	}
 }
 
+// BackwardValues returns an iterator over the values in reverse order.
 func (hm *LinkedHashMap[K, V]) BackwardValues() iter.Seq[V] {
 	return func(yield func(V) bool) {
 		if hm.list == nil {

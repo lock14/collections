@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestHeapImplementsQueue(t *testing.T) {
+func TestHeapImplementsQueue(_ *testing.T) {
 	queue[int](NewOrdered[int]())
 }
 

@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Map[[]int, int] = (*sliceMap[int, int])(nil)
-	_ fmt.Stringer    = (*sliceMap[int, int])(nil)
+	_ Map[[]int, int]                    = (*sliceMap[int, int])(nil)
+	_ collections.MutableMap[[]int, int] = (*sliceMap[int, int])(nil)
+	_ fmt.Stringer                       = (*sliceMap[int, int])(nil)
 )
 
 type sliceNode[E comparable, V any] struct {
@@ -375,8 +376,9 @@ func (m *sliceMap[E, V]) String() string {
 // -----------------------------------------------------------------------------
 
 var (
-	_ Set[[]int]   = (*sliceSet[int])(nil)
-	_ fmt.Stringer = (*sliceSet[int])(nil)
+	_ Set[[]int]                    = (*sliceSet[int])(nil)
+	_ collections.MutableSet[[]int] = (*sliceSet[int])(nil)
+	_ fmt.Stringer                  = (*sliceSet[int])(nil)
 )
 
 type sliceSet[E comparable] struct {
