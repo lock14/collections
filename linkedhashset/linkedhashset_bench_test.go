@@ -35,14 +35,12 @@ func BenchmarkLinkedHashSet_Contains(b *testing.B) {
 	}
 }
 
-func BenchmarkLinkedHashSet_RemoveElement(b *testing.B) {
+func BenchmarkLinkedHashSet_AddRemove(b *testing.B) {
 	b.ReportAllocs()
 	s := linkedhashset.New[int]()
-	for i := 0; i < b.N; i++ {
-		s.Add(i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		s.Add(i)
 		s.RemoveElement(i)
 	}
 }

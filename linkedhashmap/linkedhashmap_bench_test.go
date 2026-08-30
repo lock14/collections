@@ -59,14 +59,12 @@ func BenchmarkLinkedHashMap_Get_AccessOrder(b *testing.B) {
 	}
 }
 
-func BenchmarkLinkedHashMap_Remove(b *testing.B) {
+func BenchmarkLinkedHashMap_AddRemove(b *testing.B) {
 	b.ReportAllocs()
 	m := linkedhashmap.New[int, int]()
-	for i := 0; i < b.N; i++ {
-		m.Put(i, i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		m.Put(i, i)
 		m.Remove(i)
 	}
 }
