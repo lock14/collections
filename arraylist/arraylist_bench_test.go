@@ -14,14 +14,12 @@ func BenchmarkSliceWrapper_Add(b *testing.B) {
 	}
 }
 
-func BenchmarkSliceWrapper_Remove(b *testing.B) {
+func BenchmarkSliceWrapper_AddRemove(b *testing.B) {
 	b.ReportAllocs()
-	l := arraylist.Wrap(make([]int, 0, b.N))
-	for i := 0; i < b.N; i++ {
-		l.Add(i)
-	}
+	l := arraylist.Wrap([]int{})
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		l.Add(i)
 		l.Remove()
 	}
 }

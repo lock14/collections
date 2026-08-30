@@ -35,14 +35,12 @@ func BenchmarkHashMap_Get(b *testing.B) {
 	}
 }
 
-func BenchmarkHashMap_Remove(b *testing.B) {
+func BenchmarkHashMap_AddRemove(b *testing.B) {
 	b.ReportAllocs()
 	hm := hashmap.New[int, int]()
-	for i := 0; i < b.N; i++ {
-		hm.Put(i, i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		hm.Put(i, i)
 		hm.Remove(i)
 	}
 }

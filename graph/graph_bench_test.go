@@ -60,27 +60,25 @@ func BenchmarkGraph_AddEdge_Undirected_Preallocated(b *testing.B) {
 	}
 }
 
-func BenchmarkGraph_RemoveVertex(b *testing.B) {
+func BenchmarkGraph_AddRemoveVertex(b *testing.B) {
 	b.ReportAllocs()
 	g := graph.New[int]()
-	for i := 0; i < b.N; i++ {
-		g.AddVertex(i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		g.AddVertex(i)
 		g.RemoveVertex(i)
 	}
 }
 
-func BenchmarkGraph_RemoveEdge(b *testing.B) {
+func BenchmarkGraph_AddRemoveEdge(b *testing.B) {
 	b.ReportAllocs()
 	g := graph.New[int]()
-	for i := 0; i < b.N; i++ {
-		g.AddEdge(i, i+1)
-	}
+	g.AddVertex(1)
+	g.AddVertex(2)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		g.RemoveEdge(i, i+1)
+		g.AddEdge(1, 2)
+		g.RemoveEdge(1, 2)
 	}
 }
 

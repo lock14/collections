@@ -59,27 +59,25 @@ func BenchmarkLabeledGraph_AddEdge_Undirected_Preallocated(b *testing.B) {
 	}
 }
 
-func BenchmarkLabeledGraph_RemoveVertex(b *testing.B) {
+func BenchmarkLabeledGraph_AddRemoveVertex(b *testing.B) {
 	b.ReportAllocs()
 	g := labeledgraph.New[int, string]()
-	for i := 0; i < b.N; i++ {
-		g.AddVertex(i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		g.AddVertex(i)
 		g.RemoveVertex(i)
 	}
 }
 
-func BenchmarkLabeledGraph_RemoveEdge(b *testing.B) {
+func BenchmarkLabeledGraph_AddRemoveEdge(b *testing.B) {
 	b.ReportAllocs()
 	g := labeledgraph.New[int, string]()
-	for i := 0; i < b.N; i++ {
-		g.AddEdge(i, i+1, "l")
-	}
+	g.AddVertex(1)
+	g.AddVertex(2)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		g.RemoveEdge(i, i+1)
+		g.AddEdge(1, 2, "l")
+		g.RemoveEdge(1, 2)
 	}
 }
 

@@ -35,14 +35,12 @@ func BenchmarkHashSet_Contains(b *testing.B) {
 	}
 }
 
-func BenchmarkHashSet_RemoveElement(b *testing.B) {
+func BenchmarkHashSet_AddRemove(b *testing.B) {
 	b.ReportAllocs()
 	s := hashset.New[int]()
-	for i := 0; i < b.N; i++ {
-		s.Add(i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		s.Add(i)
 		s.RemoveElement(i)
 	}
 }
