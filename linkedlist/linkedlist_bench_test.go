@@ -23,27 +23,13 @@ func BenchmarkLinkedList_AddBack(b *testing.B) {
 	}
 }
 
-func BenchmarkLinkedList_RemoveFront(b *testing.B) {
+func BenchmarkLinkedList_AddRemove(b *testing.B) {
 	b.ReportAllocs()
 	l := linkedlist.New[int]()
-	for i := 0; i < b.N; i++ {
-		l.AddBack(i)
-	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		l.AddBack(i)
 		l.RemoveFront()
-	}
-}
-
-func BenchmarkLinkedList_RemoveBack(b *testing.B) {
-	b.ReportAllocs()
-	l := linkedlist.New[int]()
-	for i := 0; i < b.N; i++ {
-		l.AddBack(i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		l.RemoveBack()
 	}
 }
 
