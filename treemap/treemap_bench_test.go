@@ -10,6 +10,7 @@ import (
 func BenchmarkTreeMap_Put(b *testing.B) {
 	for _, size := range []int{1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
+			b.ReportAllocs()
 			b.StopTimer()
 			keys := make([]int, size)
 			for i := 0; i < size; i++ {
@@ -33,6 +34,7 @@ func BenchmarkTreeMap_Put(b *testing.B) {
 func BenchmarkTreeMap_Get(b *testing.B) {
 	for _, size := range []int{1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
+			b.ReportAllocs()
 			b.StopTimer()
 			tm := treemap.NewOrdered[int, int]()
 			keys := make([]int, size)
@@ -57,6 +59,7 @@ func BenchmarkTreeMap_Get(b *testing.B) {
 func BenchmarkBuiltinMap_Get(b *testing.B) {
 	for _, size := range []int{1000, 10000, 100000} {
 		b.Run(fmt.Sprintf("size_%d", size), func(b *testing.B) {
+			b.ReportAllocs()
 			b.StopTimer()
 			m := make(map[int]int, size)
 			keys := make([]int, size)

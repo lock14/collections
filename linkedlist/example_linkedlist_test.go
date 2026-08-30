@@ -1,4 +1,4 @@
-package linked_list_test
+package linkedlist_test
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 func ExampleLinkedList() {
 	// LinkedList is a doubly-linked list, providing fast O(1) insertions
 	// and deletions at the front and back.
-	list := linked_list.New[string]()
+	list := linkedlist.New[string]()
 
 	list.AddBack("Middle")
 	list.AddFront("Start")
@@ -30,16 +30,16 @@ func ExampleLinkedList() {
 }
 
 func ExampleLinkedList_AddFront() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddFront(1)
 	list.AddFront(2)
 	fmt.Println(list.String())
 	// Output:
-	// [2, 1]
+	// [2 1]
 }
 
 func ExampleLinkedList_RemoveFront() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddBack(1)
 	list.AddBack(2)
 	val := list.RemoveFront()
@@ -51,16 +51,16 @@ func ExampleLinkedList_RemoveFront() {
 }
 
 func ExampleLinkedList_AddBack() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddBack(1)
 	list.AddBack(2)
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2]
+	// [1 2]
 }
 
 func ExampleLinkedList_RemoveBack() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddBack(1)
 	list.AddBack(2)
 	val := list.RemoveBack()
@@ -72,7 +72,7 @@ func ExampleLinkedList_RemoveBack() {
 }
 
 func ExampleLinkedList_Peek() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddBack(1)
 	list.AddBack(2)
 	fmt.Println(list.Peek())
@@ -81,7 +81,7 @@ func ExampleLinkedList_Peek() {
 }
 
 func ExampleLinkedList_PeekFront() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddBack(1)
 	list.AddBack(2)
 	fmt.Println(list.PeekFront())
@@ -90,7 +90,7 @@ func ExampleLinkedList_PeekFront() {
 }
 
 func ExampleLinkedList_PeekBack() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddBack(1)
 	list.AddBack(2)
 	fmt.Println(list.PeekBack())
@@ -99,16 +99,16 @@ func ExampleLinkedList_PeekBack() {
 }
 
 func ExampleLinkedList_Add() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2]
+	// [1 2]
 }
 
 func ExampleLinkedList_Remove() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	val := list.Remove()
@@ -120,16 +120,16 @@ func ExampleLinkedList_Remove() {
 }
 
 func ExampleLinkedList_Push() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Push(1)
 	list.Push(2)
 	fmt.Println(list.String())
 	// Output:
-	// [2, 1]
+	// [2 1]
 }
 
 func ExampleLinkedList_Get() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(10)
 	list.Add(20)
 	list.Add(30)
@@ -139,17 +139,18 @@ func ExampleLinkedList_Get() {
 }
 
 func ExampleLinkedList_Set() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(10)
 	list.Add(20)
+	list.Add(30)
 	list.Set(1, 99)
 	fmt.Println(list.String())
 	// Output:
-	// [10, 99]
+	// [10 99 30]
 }
 
 func ExampleLinkedList_Pop() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Push(1)
 	list.Push(2)
 	val := list.Pop()
@@ -161,7 +162,7 @@ func ExampleLinkedList_Pop() {
 }
 
 func ExampleLinkedList_Size() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	fmt.Println(list.Size())
@@ -170,15 +171,15 @@ func ExampleLinkedList_Size() {
 }
 
 func ExampleLinkedList_AddAll() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.AddAll(slices.Values([]int{1, 2, 3}))
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2, 3]
+	// [1 2 3]
 }
 
 func ExampleLinkedList_Empty() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	fmt.Println(list.Empty())
 	list.Add(1)
 	fmt.Println(list.Empty())
@@ -188,7 +189,7 @@ func ExampleLinkedList_Empty() {
 }
 
 func ExampleLinkedList_Clear() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	list.Clear()
@@ -200,16 +201,16 @@ func ExampleLinkedList_Clear() {
 }
 
 func ExampleLinkedList_String() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	fmt.Println(list.String())
 	// Output:
-	// [1, 2]
+	// [1 2]
 }
 
 func ExampleLinkedList_All() {
-	list := linked_list.New[int]()
+	list := linkedlist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	for val := range list.All() {
@@ -218,4 +219,16 @@ func ExampleLinkedList_All() {
 	// Output:
 	// 1
 	// 2
+}
+
+func ExampleLinkedList_Backward() {
+	list := linkedlist.New[int]()
+	list.Add(1)
+	list.Add(2)
+	for val := range list.Backward() {
+		fmt.Println(val)
+	}
+	// Output:
+	// 2
+	// 1
 }

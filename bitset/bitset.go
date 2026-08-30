@@ -24,7 +24,10 @@ type BitSet struct {
 	size         int
 }
 
-var _ collections.MutableNavigableSet[int] = (*BitSet)(nil)
+var (
+	_ collections.MutableNavigableSet[int] = (*BitSet)(nil)
+	_ fmt.Stringer                         = (*BitSet)(nil)
+)
 
 // config holds the values for configuring a BitSet.
 type config struct {
@@ -220,13 +223,13 @@ func (b *BitSet) ToBytes() []byte {
 	return bytes
 }
 
-// String returns a string representation of the elements in this BitSet.
+// String returns a string representation of the elements in this BitSet matching Go slice formatting.
 func (b *BitSet) String() string {
 	vals := make([]string, 0, b.Size())
 	for bit := range b.All() {
 		vals = append(vals, strconv.Itoa(bit))
 	}
-	return "[" + strings.Join(vals, ", ") + "]"
+	return "[" + strings.Join(vals, " ") + "]"
 }
 
 // SetBits returns an iterator that iterates over the set bits of this BitSet.
@@ -315,7 +318,7 @@ func (b *BitSet) All() iter.Seq[int] {
 
 // Clear removes all elements from the bit set.
 func (b *BitSet) Clear() {
-	b.bits = make([]uint64, len(b.bits))
+	clear(b.bits)
 	b.maxWordInUse = 0
 	b.size = 0
 }

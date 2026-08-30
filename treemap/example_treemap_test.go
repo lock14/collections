@@ -427,3 +427,17 @@ func ExampleTreeMap_Between() {
 	// 20: B
 	// 30: C
 }
+
+func ExampleTreeMap_String() {
+	m := treemap.NewOrdered[int, string]()
+	fmt.Println(m.String())
+
+	m.Put(10, "A")
+	m.Put(20, "B")
+	m.Put(30, "C")
+	fmt.Println(m.String())
+
+	// Output:
+	// map[]
+	// map[10:A 20:B 30:C]
+}

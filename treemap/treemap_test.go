@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"runtime"
 	"slices"
-	"sync/atomic"
+	"sync"
 	"testing"
 	"time"
 )
@@ -503,49 +503,113 @@ type Dummy struct {
 	v int
 }
 
+//go:noinline
+func makeDummy(tm *TreeMap[int, *Dummy], k int, mu *sync.Mutex, collected *[]int) {
+	d := &Dummy{v: k}
+	runtime.SetFinalizer(d, func(obj *Dummy) {
+		mu.Lock()
+		*collected = append(*collected, obj.v)
+		mu.Unlock()
+	})
+	tm.Put(k, d)
+}
+
 func TestTreeMap_MemoryLeak(t *testing.T) {
 	cases := []struct {
-		name string
+		name   string
+		degree int
+		keys   []int
+		del    []int
 	}{
-		{"remove should not leak memory"},
+		{
+			name:   "single remove should not leak memory",
+			degree: DefaultDegree,
+			keys:   []int{1},
+			del:    []int{1},
+		},
+		{
+			name:   "borrowFromPrev and multi-delete should not leak memory",
+			degree: 2,
+			keys:   []int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100},
+			del:    []int{50, 60, 70, 40, 80, 30, 90, 20, 100, 10},
+		},
 	}
 
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Skip("Flaky test")
-			tm := NewOrdered[int, *Dummy]()
+			tm := NewOrdered[int, *Dummy](WithDegree[int](tc.degree))
 
-			var collected int32
+			var mu sync.Mutex
+			var collected []int
+			targetCount := len(tc.del)
 
-			// Create a closure that creates the dummy object so that there are no
-			// local variables holding references to it in the main test function.
-			func() {
-				d := &Dummy{v: 42}
-				runtime.SetFinalizer(d, func(obj *Dummy) {
-					atomic.AddInt32(&collected, 1)
-				})
+			for _, k := range tc.keys {
+				makeDummy(tm, k, &mu, &collected)
+			}
 
-				tm.Put(1, d)
-			}()
+			for _, k := range tc.del {
+				tm.Remove(k)
+			}
 
-			// Remove the element. If there's a memory leak (e.g., trailing element in slice
-			// not being zeroed out), the pointer will remain in the underlying slice capacity,
-			// and the object won't be collected.
-			tm.Remove(1)
-
-			// Force GC and wait for finalizer to run
+			// Force GC and wait for finalizers to run
 			for i := 0; i < 50; i++ {
 				runtime.GC()
-				if atomic.LoadInt32(&collected) > 0 {
+				mu.Lock()
+				count := len(collected)
+				mu.Unlock()
+				if count >= targetCount {
 					break
 				}
 				time.Sleep(10 * time.Millisecond)
 			}
 
-			// Check if it was collected
-			if atomic.LoadInt32(&collected) == 0 {
-				t.Error("Memory leak detected: removed element was not garbage collected")
+			mu.Lock()
+			count := len(collected)
+			mu.Unlock()
+
+			if count < targetCount {
+				t.Logf("Collected keys: %v", collected)
+				t.Errorf("Memory leak detected: expected %d objects collected, got %d", targetCount, count)
+			}
+		})
+	}
+}
+
+func TestTreeMap_String(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name    string
+		entries [][2]int
+		want    string
+	}{
+		{
+			name:    "empty",
+			entries: nil,
+			want:    "map[]",
+		},
+		{
+			name:    "single",
+			entries: [][2]int{{1, 10}},
+			want:    "map[1:10]",
+		},
+		{
+			name:    "multiple_sorted_order",
+			entries: [][2]int{{3, 30}, {1, 10}, {2, 20}},
+			want:    "map[1:10 2:20 3:30]",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			m := NewOrdered[int, int]()
+			for _, entry := range tc.entries {
+				m.Put(entry[0], entry[1])
+			}
+			if got := m.String(); got != tc.want {
+				t.Errorf("String() = %q, want %q", got, tc.want)
 			}
 		})
 	}

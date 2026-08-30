@@ -8,7 +8,10 @@ import (
 	"github.com/lock14/collections"
 )
 
-var _ Map[string, int] = (*stringMap[int])(nil)
+var (
+	_ Map[string, int] = (*stringMap[int])(nil)
+	_ fmt.Stringer     = (*stringMap[int])(nil)
+)
 
 type stringNode[V any] struct {
 	children map[byte]*stringNode[V]
@@ -351,11 +354,22 @@ func (m *stringMap[V]) PrefixesOf(query string) iter.Seq2[string, V] {
 	}
 }
 
+func (m *stringMap[V]) String() string {
+	vals := make([]string, 0, m.Size())
+	for k, v := range m.All() {
+		vals = append(vals, fmt.Sprintf("%v:%v", k, v))
+	}
+	return "map[" + strings.Join(vals, " ") + "]"
+}
+
 // -----------------------------------------------------------------------------
 // StringSet Implementation
 // -----------------------------------------------------------------------------
 
-var _ Set[string] = (*stringSet)(nil)
+var (
+	_ Set[string]  = (*stringSet)(nil)
+	_ fmt.Stringer = (*stringSet)(nil)
+)
 
 type stringSet struct {
 	m *stringMap[struct{}]
@@ -467,7 +481,7 @@ func (s *stringSet) PrefixesOf(query string) iter.Seq[string] {
 func (s *stringSet) String() string {
 	vals := make([]string, 0, s.Size())
 	for item := range s.All() {
-		vals = append(vals, fmt.Sprintf("%+v", item))
+		vals = append(vals, fmt.Sprintf("%v", item))
 	}
-	return "[" + strings.Join(vals, ", ") + "]"
+	return "[" + strings.Join(vals, " ") + "]"
 }

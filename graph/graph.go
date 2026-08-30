@@ -37,6 +37,8 @@ type Graph[V comparable] struct {
 	delegate *labeledgraph.LabeledGraph[V, void]
 }
 
+var _ fmt.Stringer = (*Graph[int])(nil)
+
 // New returns a new Graph constructed according to the given options.
 func New[V comparable](opts ...Opt) *Graph[V] {
 	config := defaultConfig()
@@ -168,7 +170,11 @@ func (g *Graph[V]) Equal(other *Graph[V]) bool {
 // String returns a string representation of the graph.
 func (g *Graph[V]) String() string {
 	var sb strings.Builder
-	sb.WriteString("[")
+	if g.Directed() {
+		sb.WriteString("digraph[")
+	} else {
+		sb.WriteString("graph[")
+	}
 	first := true
 
 	type edgePair struct{ u, v V }

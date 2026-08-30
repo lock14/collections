@@ -8,7 +8,10 @@ import (
 	"github.com/lock14/collections"
 )
 
-var _ Map[[]int, int] = (*sliceMap[int, int])(nil)
+var (
+	_ Map[[]int, int] = (*sliceMap[int, int])(nil)
+	_ fmt.Stringer    = (*sliceMap[int, int])(nil)
+)
 
 type sliceNode[E comparable, V any] struct {
 	children map[E]*sliceNode[E, V]
@@ -359,11 +362,22 @@ func (m *sliceMap[E, V]) PrefixesOf(query []E) iter.Seq2[[]E, V] {
 	}
 }
 
+func (m *sliceMap[E, V]) String() string {
+	vals := make([]string, 0, m.Size())
+	for k, v := range m.All() {
+		vals = append(vals, fmt.Sprintf("%v:%v", k, v))
+	}
+	return "map[" + strings.Join(vals, " ") + "]"
+}
+
 // -----------------------------------------------------------------------------
 // SliceSet Implementation
 // -----------------------------------------------------------------------------
 
-var _ Set[[]int] = (*sliceSet[int])(nil)
+var (
+	_ Set[[]int]   = (*sliceSet[int])(nil)
+	_ fmt.Stringer = (*sliceSet[int])(nil)
+)
 
 type sliceSet[E comparable] struct {
 	m *sliceMap[E, struct{}]
@@ -475,7 +489,7 @@ func (s *sliceSet[E]) PrefixesOf(query []E) iter.Seq[[]E] {
 func (s *sliceSet[E]) String() string {
 	vals := make([]string, 0, s.Size())
 	for item := range s.All() {
-		vals = append(vals, fmt.Sprintf("%+v", item))
+		vals = append(vals, fmt.Sprintf("%v", item))
 	}
-	return "[" + strings.Join(vals, ", ") + "]"
+	return "[" + strings.Join(vals, " ") + "]"
 }

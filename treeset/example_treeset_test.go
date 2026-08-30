@@ -417,5 +417,5 @@ func ExampleTreeSet_String() {
 	set.Add(3)
 	fmt.Println(set.String())
 	// Output:
-	// [1, 2, 3]
+	// [1 2 3]
 }

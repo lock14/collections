@@ -2,12 +2,17 @@
 package hashmap
 
 import (
+	"fmt"
 	"github.com/lock14/collections"
 	"iter"
 	"maps"
+	"strings"
 )
 
-var _ collections.MutableMap[int, int] = (*HashMap[int, int])(nil)
+var (
+	_ collections.MutableMap[int, int] = (*HashMap[int, int])(nil)
+	_ fmt.Stringer                     = (*HashMap[int, int])(nil)
+)
 
 // HashMap is a wrapper around the built-in map that implements collections.MutableMap.
 type HashMap[K comparable, V any] struct {
@@ -87,4 +92,13 @@ func (hm *HashMap[K, V]) Keys() iter.Seq[K] {
 
 func (hm *HashMap[K, V]) Values() iter.Seq[V] {
 	return maps.Values(hm.m)
+}
+
+// String returns a string representation of the map matching Go built-in map formatting.
+func (hm *HashMap[K, V]) String() string {
+	vals := make([]string, 0, hm.Size())
+	for k, v := range hm.All() {
+		vals = append(vals, fmt.Sprintf("%v:%v", k, v))
+	}
+	return "map[" + strings.Join(vals, " ") + "]"
 }

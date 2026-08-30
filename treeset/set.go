@@ -8,7 +8,10 @@ import (
 	"github.com/lock14/collections"
 )
 
-var _ collections.MutableNavigableSet[int] = (*TreeSet[int])(nil)
+var (
+	_ collections.MutableNavigableSet[int] = (*TreeSet[int])(nil)
+	_ fmt.Stringer                         = (*TreeSet[int])(nil)
+)
 
 // Add inserts the specified element into the set.
 func (s *TreeSet[T]) Add(item T) {
@@ -178,11 +181,11 @@ func (s *TreeSet[T]) Between(from, to T) iter.Seq[T] {
 	}
 }
 
-// String returns a string representation of the set.
+// String returns a string representation of the set matching Go slice formatting.
 func (s *TreeSet[T]) String() string {
 	vals := make([]string, 0, s.Size())
 	for item := range s.All() {
-		vals = append(vals, fmt.Sprintf("%+v", item))
+		vals = append(vals, fmt.Sprintf("%v", item))
 	}
-	return "[" + strings.Join(vals, ", ") + "]"
+	return "[" + strings.Join(vals, " ") + "]"
 }

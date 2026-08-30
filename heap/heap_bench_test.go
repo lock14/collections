@@ -7,6 +7,7 @@ import (
 )
 
 func BenchmarkHeap_Add(b *testing.B) {
+	b.ReportAllocs()
 	h := heap.Min[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -15,6 +16,7 @@ func BenchmarkHeap_Add(b *testing.B) {
 }
 
 func BenchmarkHeap_Add_Preallocated(b *testing.B) {
+	b.ReportAllocs()
 	h := heap.New[int](heap.WithCapacity[int](b.N), heap.WithComparator(comparator.NaturalOrder[int]()))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -23,6 +25,7 @@ func BenchmarkHeap_Add_Preallocated(b *testing.B) {
 }
 
 func BenchmarkHeap_AddReverse(b *testing.B) {
+	b.ReportAllocs()
 	h := heap.Min[int]()
 	b.ResetTimer()
 	for i := b.N; i > 0; i-- {
@@ -31,6 +34,7 @@ func BenchmarkHeap_AddReverse(b *testing.B) {
 }
 
 func BenchmarkHeap_Remove(b *testing.B) {
+	b.ReportAllocs()
 	h := heap.Min[int]()
 	for i := 0; i < b.N; i++ {
 		h.Add(i)
@@ -42,6 +46,7 @@ func BenchmarkHeap_Remove(b *testing.B) {
 }
 
 func BenchmarkHeap_AddRemove(b *testing.B) {
+	b.ReportAllocs()
 	h := heap.Min[int]()
 	h.Add(0) // Initialize with one element to prevent empty panic
 	b.ResetTimer()
@@ -52,6 +57,7 @@ func BenchmarkHeap_AddRemove(b *testing.B) {
 }
 
 func BenchmarkHeap_IterateAll(b *testing.B) {
+	b.ReportAllocs()
 	h := heap.Min[int]()
 	for i := 0; i < 1000; i++ {
 		h.Add(i)
@@ -68,6 +74,7 @@ type largeStruct struct {
 }
 
 func BenchmarkHeap_StructAdd(b *testing.B) {
+	b.ReportAllocs()
 	cmp := func(t1, t2 largeStruct) int {
 		if t1.a < t2.a {
 			return -1

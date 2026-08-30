@@ -224,15 +224,22 @@ func (tm *TreeMap[K, V]) borrowFromPrev(x *node[K, V], i int) {
 	child.values = slices.Insert(child.values, 0, x.values[i-1])
 
 	if !child.leaf {
-		child.children = slices.Insert(child.children, 0, sibling.children[len(sibling.children)-1])
-		sibling.children = sibling.children[:len(sibling.children)-1]
+		lastChild := len(sibling.children) - 1
+		child.children = slices.Insert(child.children, 0, sibling.children[lastChild])
+		sibling.children[lastChild] = nil
+		sibling.children = sibling.children[:lastChild]
 	}
 
-	x.keys[i-1] = sibling.keys[len(sibling.keys)-1]
-	x.values[i-1] = sibling.values[len(sibling.values)-1]
+	lastIdx := len(sibling.keys) - 1
+	x.keys[i-1] = sibling.keys[lastIdx]
+	x.values[i-1] = sibling.values[lastIdx]
 
-	sibling.keys = sibling.keys[:len(sibling.keys)-1]
-	sibling.values = sibling.values[:len(sibling.values)-1]
+	var zeroK K
+	var zeroV V
+	sibling.keys[lastIdx] = zeroK
+	sibling.values[lastIdx] = zeroV
+	sibling.keys = sibling.keys[:lastIdx]
+	sibling.values = sibling.values[:lastIdx]
 }
 
 func (tm *TreeMap[K, V]) borrowFromNext(x *node[K, V], i int) {

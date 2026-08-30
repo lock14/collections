@@ -145,6 +145,18 @@ func TestHashMap_Operations(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "string",
+			check: func(t *testing.T, hm *HashMap[int, string]) {
+				if got := hm.String(); got != "map[]" {
+					t.Errorf("expected map[], got %s", got)
+				}
+				hm.Put(1, "a")
+				if got := hm.String(); got != "map[1:a]" {
+					t.Errorf("expected map[1:a], got %s", got)
+				}
+			},
+		},
 	}
 	for _, tc := range cases {
 		tc := tc

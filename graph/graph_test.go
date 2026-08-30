@@ -223,22 +223,71 @@ func TestGraph_Equal(t *testing.T) {
 func TestGraph_String(t *testing.T) {
 	t.Parallel()
 
-	g1 := New[int](WithDirected())
-	g1.AddEdge(1, 2)
-	g1.AddVertex(3)
-	str1 := g1.String()
-	if !strings.Contains(str1, "1 -> 2") {
-		t.Errorf("missing edge: %s", str1)
-	}
-	if strings.Contains(str1, "{}") {
-		t.Errorf("unexpected void struct in string: %s", str1)
+	cases := []struct {
+		name     string
+		setup    func() *Graph[int]
+		validate func(t *testing.T, str string)
+	}{
+		{
+			name: "directed_with_edge_and_isolated",
+			setup: func() *Graph[int] {
+				g := New[int](WithDirected())
+				g.AddEdge(1, 2)
+				g.AddVertex(3)
+				return g
+			},
+			validate: func(t *testing.T, str string) {
+				if !strings.HasPrefix(str, "digraph[") || !strings.HasSuffix(str, "]") {
+					t.Errorf("expected digraph[...] format, got: %s", str)
+				}
+				if !strings.Contains(str, "1 -> 2") {
+					t.Errorf("missing edge: %s", str)
+				}
+				if !strings.Contains(str, "3") {
+					t.Errorf("missing isolated vertex: %s", str)
+				}
+			},
+		},
+		{
+			name: "undirected_with_edge",
+			setup: func() *Graph[int] {
+				g := New[int]()
+				g.AddEdge(1, 2)
+				return g
+			},
+			validate: func(t *testing.T, str string) {
+				if !strings.HasPrefix(str, "graph[") || !strings.HasSuffix(str, "]") {
+					t.Errorf("expected graph[...] format, got: %s", str)
+				}
+				if !strings.Contains(str, "1 - 2") && !strings.Contains(str, "2 - 1") {
+					t.Errorf("missing edge: %s", str)
+				}
+			},
+		},
+		{
+			name: "empty_directed_and_undirected",
+			setup: func() *Graph[int] {
+				return New[int]()
+			},
+			validate: func(t *testing.T, str string) {
+				if str != "graph[]" {
+					t.Errorf("expected graph[], got: %s", str)
+				}
+				dg := New[int](WithDirected())
+				if got := dg.String(); got != "digraph[]" {
+					t.Errorf("expected digraph[], got: %s", got)
+				}
+			},
+		},
 	}
 
-	g2 := New[int]()
-	g2.AddEdge(1, 2)
-	str2 := g2.String()
-	if !strings.Contains(str2, "1 - 2") && !strings.Contains(str2, "2 - 1") {
-		t.Errorf("missing edge: %s", str2)
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			g := tc.setup()
+			tc.validate(t, g.String())
+		})
 	}
 }
 

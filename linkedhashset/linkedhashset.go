@@ -9,7 +9,10 @@ import (
 	"strings"
 )
 
-var _ collections.MutableSequencedSet[int] = (*LinkedHashSet[int])(nil)
+var (
+	_ collections.MutableSequencedSet[int] = (*LinkedHashSet[int])(nil)
+	_ fmt.Stringer                         = (*LinkedHashSet[int])(nil)
+)
 
 // LinkedHashSet represents a set of elements of type T that preserves iteration order.
 type LinkedHashSet[T comparable] struct {
@@ -181,7 +184,7 @@ func (s *LinkedHashSet[T]) Backward() iter.Seq[T] {
 	return s.m.BackwardKeys()
 }
 
-// String returns a string representation of the set.
+// String returns a string representation of the set matching Go slice formatting.
 func (s *LinkedHashSet[T]) String() string {
 	var sb strings.Builder
 	sb.WriteString("[")

@@ -505,3 +505,132 @@ func TestLinkedHashMap_Backward(t *testing.T) {
 		break
 	}
 }
+
+func TestLinkedHashMap_ZeroValueIterators(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *LinkedHashMap[int, int])
+	}{
+		{
+			name: "zero_value_all",
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				count := 0
+				for range m.All() {
+					count++
+				}
+				if count != 0 {
+					t.Errorf("expected 0 entries, got %d", count)
+				}
+			},
+		},
+		{
+			name: "zero_value_keys",
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				count := 0
+				for range m.Keys() {
+					count++
+				}
+				if count != 0 {
+					t.Errorf("expected 0 keys, got %d", count)
+				}
+			},
+		},
+		{
+			name: "zero_value_values",
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				count := 0
+				for range m.Values() {
+					count++
+				}
+				if count != 0 {
+					t.Errorf("expected 0 values, got %d", count)
+				}
+			},
+		},
+		{
+			name: "zero_value_backward",
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				count := 0
+				for range m.Backward() {
+					count++
+				}
+				if count != 0 {
+					t.Errorf("expected 0 entries, got %d", count)
+				}
+			},
+		},
+		{
+			name: "zero_value_backward_keys",
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				count := 0
+				for range m.BackwardKeys() {
+					count++
+				}
+				if count != 0 {
+					t.Errorf("expected 0 keys, got %d", count)
+				}
+			},
+		},
+		{
+			name: "zero_value_backward_values",
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				count := 0
+				for range m.BackwardValues() {
+					count++
+				}
+				if count != 0 {
+					t.Errorf("expected 0 values, got %d", count)
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			var m LinkedHashMap[int, int]
+			tc.check(t, &m)
+		})
+	}
+}
+
+func TestLinkedHashMap_String(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name    string
+		entries [][2]int
+		want    string
+	}{
+		{
+			name:    "empty",
+			entries: nil,
+			want:    "map[]",
+		},
+		{
+			name:    "single",
+			entries: [][2]int{{1, 10}},
+			want:    "map[1:10]",
+		},
+		{
+			name:    "multiple_insertion_order",
+			entries: [][2]int{{1, 10}, {2, 20}, {3, 30}},
+			want:    "map[1:10 2:20 3:30]",
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			m := New[int, int]()
+			for _, entry := range tc.entries {
+				m.Put(entry[0], entry[1])
+			}
+			if got := m.String(); got != tc.want {
+				t.Errorf("String() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

@@ -201,7 +201,7 @@ func ExampleArrayDeque_String() {
 	d.Add(3)
 	fmt.Println(d.String())
 	// Output:
-	// [1, 2, 3]
+	// [1 2 3]
 }
 
 func ExampleArrayDeque_All() {

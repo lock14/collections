@@ -3,17 +3,22 @@ package heap
 
 import (
 	"cmp"
+	"fmt"
 	"github.com/lock14/collections"
 	"github.com/lock14/collections/comparator"
 	"iter"
 	"slices"
+	"strings"
 )
 
 const (
 	DefaultCapacity = 10
 )
 
-var _ collections.MutableQueue[int] = (*Heap[int])(nil)
+var (
+	_ collections.MutableQueue[int] = (*Heap[int])(nil)
+	_ fmt.Stringer                  = (*Heap[int])(nil)
+)
 
 // Option is a function that configures a Heap.
 type Option[T any] func(config *config[T])
@@ -45,10 +50,14 @@ type Heap[T any] struct {
 }
 
 // New creates a new Heap with the given options.
+// Panics if no comparator is configured.
 func New[T any](opts ...Option[T]) *Heap[T] {
 	config := defaultConfig[T]()
 	for _, opt := range opts {
 		opt(config)
+	}
+	if config.comparator == nil {
+		panic("comparator must be provided or use NewOrdered, Min, or Max")
 	}
 	return &Heap[T]{
 		elements:   make([]T, 0, config.capacity),
@@ -56,9 +65,14 @@ func New[T any](opts ...Option[T]) *Heap[T] {
 	}
 }
 
+// NewOrdered creates a new min-heap for ordered types using natural ordering.
+func NewOrdered[T cmp.Ordered](opts ...Option[T]) *Heap[T] {
+	return New[T](append([]Option[T]{WithComparator(comparator.NaturalOrder[T]())}, opts...)...)
+}
+
 // Min creates a new Min-Heap using natural ordering.
 func Min[T cmp.Ordered]() *Heap[T] {
-	return New[T](WithComparator(comparator.NaturalOrder[T]()))
+	return NewOrdered[T]()
 }
 
 // Max creates a new Max-Heap using reversed natural ordering.
@@ -116,6 +130,15 @@ func (h *Heap[T]) Clear() {
 
 func (h *Heap[T]) All() iter.Seq[T] {
 	return slices.Values(h.elements)
+}
+
+// String returns a string representation of the heap elements matching Go slice formatting.
+func (h *Heap[T]) String() string {
+	vals := make([]string, 0, h.Size())
+	for item := range h.All() {
+		vals = append(vals, fmt.Sprintf("%v", item))
+	}
+	return "[" + strings.Join(vals, " ") + "]"
 }
 
 // Private Functions

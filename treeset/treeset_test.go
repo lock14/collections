@@ -193,7 +193,7 @@ func TestTreeSet_Operations(t *testing.T) {
 			validate: func(t *testing.T, s *TreeSet[int]) {
 				str := s.String()
 				// Should be ordered
-				if str != "[1, 2]" {
+				if str != "[1 2]" {
 					t.Errorf("unexpected string representation: %s", str)
 				}
 			},

@@ -1,4 +1,4 @@
-package linked_list
+package linkedlist
 
 import (
 	"slices"
@@ -203,8 +203,8 @@ func TestLinkedList_Interfaces(t *testing.T) {
 			check: func(t *testing.T, l *LinkedList[int]) {
 				l.Add(1)
 				l.Add(2)
-				if l.String() != "[1, 2]" {
-					t.Errorf("expected [1, 2], got %s", l.String())
+				if l.String() != "[1 2]" {
+					t.Errorf("expected [1 2], got %s", l.String())
 				}
 			},
 		},
@@ -234,4 +234,86 @@ func TestLinkedList_CoveragePanics(t *testing.T) {
 	assertPanics(func() { ll.PeekFront() })
 	assertPanics(func() { ll.PeekBack() })
 	assertPanics(func() { ll.Get(10) })
+}
+
+func TestLinkedList_ZeroValue(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *LinkedList[int])
+	}{
+		{
+			name: "zero_value_empty_and_size",
+			check: func(t *testing.T, l *LinkedList[int]) {
+				if !l.Empty() {
+					t.Errorf("expected empty on zero value")
+				}
+				if l.Size() != 0 {
+					t.Errorf("expected size 0 on zero value")
+				}
+				if len(slices.Collect(l.All())) != 0 {
+					t.Errorf("expected 0 items from All on zero value")
+				}
+				if len(slices.Collect(l.Backward())) != 0 {
+					t.Errorf("expected 0 items from Backward on zero value")
+				}
+			},
+		},
+		{
+			name: "zero_value_add_front",
+			check: func(t *testing.T, l *LinkedList[int]) {
+				l.AddFront(1)
+				l.AddFront(2)
+				if l.Size() != 2 {
+					t.Errorf("expected size 2, got %d", l.Size())
+				}
+				if l.PeekFront() != 2 || l.PeekBack() != 1 {
+					t.Errorf("expected front=2, back=1, got front=%d, back=%d", l.PeekFront(), l.PeekBack())
+				}
+			},
+		},
+		{
+			name: "zero_value_add_back",
+			check: func(t *testing.T, l *LinkedList[int]) {
+				l.AddBack(1)
+				l.AddBack(2)
+				if l.Size() != 2 {
+					t.Errorf("expected size 2, got %d", l.Size())
+				}
+				if l.PeekFront() != 1 || l.PeekBack() != 2 {
+					t.Errorf("expected front=1, back=2, got front=%d, back=%d", l.PeekFront(), l.PeekBack())
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			var l LinkedList[int]
+			tc.check(t, &l)
+		})
+	}
+}
+
+func TestLinkedList_Backward(t *testing.T) {
+	t.Parallel()
+	l := New[int]()
+	l.AddAll(slices.Values([]int{1, 2, 3, 4, 5}))
+	items := slices.Collect(l.Backward())
+	if !slices.Equal(items, []int{5, 4, 3, 2, 1}) {
+		t.Errorf("expected [5, 4, 3, 2, 1], got %v", items)
+	}
+
+	// Early termination test
+	count := 0
+	for v := range l.Backward() {
+		count++
+		if v == 3 {
+			break
+		}
+	}
+	if count != 3 {
+		t.Errorf("expected 3 iterations on early break, got %d", count)
+	}
 }

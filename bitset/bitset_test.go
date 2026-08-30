@@ -452,7 +452,7 @@ func TestString(t *testing.T) {
 			check: func(t *testing.T, b *BitSet) {
 				b.SetBit(0)
 				b.SetBit(4)
-				want := "[0, 4]"
+				want := "[0 4]"
 				if got := b.String(); got != want {
 					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
 				}
@@ -463,7 +463,7 @@ func TestString(t *testing.T) {
 			check: func(t *testing.T, b *BitSet) {
 				b.SetBit(0)
 				b.SetBit(127) // expands to 2 words
-				want := "[0, 127]"
+				want := "[0 127]"
 				if got := b.String(); got != want {
 					t.Errorf("b.String() mismatch got:\n%s\nwant:\n%s", got, want)
 				}

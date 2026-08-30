@@ -259,3 +259,16 @@ func ExampleLinkedHashMap_BackwardValues() {
 	// B
 	// A
 }
+
+func ExampleLinkedHashMap_String() {
+	m := linkedhashmap.New[int, string]()
+	fmt.Println(m.String())
+
+	m.Put(1, "A")
+	m.Put(2, "B")
+	fmt.Println(m.String())
+
+	// Output:
+	// map[]
+	// map[1:A 2:B]
+}

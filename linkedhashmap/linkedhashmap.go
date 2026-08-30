@@ -2,9 +2,11 @@
 package linkedhashmap
 
 import (
+	"fmt"
 	"github.com/lock14/collections"
 	"iter"
 	"math"
+	"strings"
 )
 
 const (
@@ -12,7 +14,10 @@ const (
 	AccessOrder    = true
 )
 
-var _ collections.MutableSequencedMap[int, int] = (*LinkedHashMap[int, int])(nil)
+var (
+	_ collections.MutableSequencedMap[int, int] = (*LinkedHashMap[int, int])(nil)
+	_ fmt.Stringer                              = (*LinkedHashMap[int, int])(nil)
+)
 
 // KeyOrder represents the iteration order of the linked hash map.
 type KeyOrder bool
@@ -218,14 +223,22 @@ func (hm *LinkedHashMap[K, V]) Clear() {
 
 func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		for cur := hm.list.next; cur != hm.list && yield(cur.key, cur.value); {
-			cur = cur.next
+		if hm.list == nil {
+			return
+		}
+		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+			if !yield(cur.key, cur.value) {
+				return
+			}
 		}
 	}
 }
 
 func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
+		if hm.list == nil {
+			return
+		}
 		for cur := hm.list.next; cur != hm.list; cur = cur.next {
 			if !yield(cur.key) {
 				return
@@ -236,6 +249,9 @@ func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 
 func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
+		if hm.list == nil {
+			return
+		}
 		for cur := hm.list.next; cur != hm.list; cur = cur.next {
 			if !yield(cur.value) {
 				return
@@ -246,14 +262,22 @@ func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 
 func (hm *LinkedHashMap[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		for cur := hm.list.prev; cur != hm.list && yield(cur.key, cur.value); {
-			cur = cur.prev
+		if hm.list == nil {
+			return
+		}
+		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
+			if !yield(cur.key, cur.value) {
+				return
+			}
 		}
 	}
 }
 
 func (hm *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
 	return func(yield func(K) bool) {
+		if hm.list == nil {
+			return
+		}
 		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
 			if !yield(cur.key) {
 				return
@@ -264,12 +288,24 @@ func (hm *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
 
 func (hm *LinkedHashMap[K, V]) BackwardValues() iter.Seq[V] {
 	return func(yield func(V) bool) {
+		if hm.list == nil {
+			return
+		}
 		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
 			if !yield(cur.value) {
 				return
 			}
 		}
 	}
+}
+
+// String returns a string representation of the map matching Go built-in map formatting.
+func (hm *LinkedHashMap[K, V]) String() string {
+	vals := make([]string, 0, hm.Size())
+	for k, v := range hm.All() {
+		vals = append(vals, fmt.Sprintf("%v:%v", k, v))
+	}
+	return "map[" + strings.Join(vals, " ") + "]"
 }
 
 func (hm *LinkedHashMap[K, V]) removeEldest() bool {

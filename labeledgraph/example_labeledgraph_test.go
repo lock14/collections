@@ -354,7 +354,7 @@ func ExampleLabeledGraph_String() {
 	g2.AddEdge(1, 2, "A")
 	fmt.Println(g2.String())
 	// Output:
-	// [1 -> 2: A]
+	// digraph[1 -> 2: A]
 }
 
 type PathNode struct {
