@@ -55,6 +55,28 @@ For all tests in this repository, strictly adhere to the following conventions:
 *   **`AGENTS.md` (Architecture & Implementation Guidelines):** The canonical place to encode architecture, design invariants, implementation decisions, performance constraints, code guidelines, testing/benchmarking rules, and agent workflows.
 *   **Documentation Synchronization:** Whenever any code change modifies, adds, or removes APIs, behaviors, or package structures, all relevant documentation (**Go doc comments**, **`README.md`**, and **`AGENTS.md`**) MUST be updated in the same change to keep documentation strictly in sync with the codebase.
 
+# Package File Structure & Layout Conventions
+
+Every collection package in this repository must maintain a consistent, standardized file structure:
+
+*   **Standard 4-File Package Structure:** Single-collection packages (e.g. `hashset`, `hashmap`, `arraydeque`, `treeset`, `linkedhashmap`, etc.) MUST consist of exactly four files:
+    1.  **`<pkg>.go`**: The primary implementation file containing the type declaration, compile-time interface assertions, configuration options, constructors, and public/private methods.
+    2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
+    3.  **`<pkg>_bench_test.go`**: Performance benchmarks measuring throughput and zero-allocation invariants (`package <pkg>`).
+    4.  **`example_<pkg>_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
+*   **Multi-File / Complex Packages:** When a package implements multiple representations (e.g. `trie` with `string.go` and `slice.go`) or contains a dedicated complex algorithmic engine (e.g. `treemap` with `btree.go`), the entry point, interfaces, and constructors remain in `<pkg>.go`, while variant-specific implementations and tests use clear, consistent naming (e.g. `slice_test.go`). Extraneous or ad-hoc test files (e.g. `coverage_patch_test.go`, `set.go`, `map.go`) are prohibited.
+*   **Internal Section Ordering in `<pkg>.go`:**
+    To maintain visual and structural consistency across the repository, code within `<pkg>.go` should adhere to the following sequence:
+    1.  Package doc comment and `package <pkg>` declaration.
+    2.  `import` block (grouped and sorted).
+    3.  Compile-time interface compliance assertions (`var _ collections.Interface = (*Type)(nil)` and `var _ fmt.Stringer = (*Type)(nil)`).
+    4.  Constants & defaults (e.g. `DefaultCapacity`, `DefaultDegree`, order constants).
+    5.  Configuration types and functional options (`config`, `Option`, `With...`).
+    6.  Struct definitions (`type Type[T any] struct { ... }`).
+    7.  Constructors (`New`, `NewOrdered`, `NewWithCapacity`, etc.).
+    8.  Public methods grouped logically (Mutators, Accessors/Queries, Iterators, Stringer).
+    9.  Private helper functions and traversal logic.
+
 # Code Style and Quality
 
 *   **Formatting:** Always run `gofmt -s -w .` after making code changes.
