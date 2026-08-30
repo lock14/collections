@@ -4,6 +4,7 @@
 *   **Interface Compliance & Compile-Time Assertions:** Where applicable, concrete data structures should implement the generic collection interfaces defined in `collections.go` (`Collection[T]`, `MutableCollection[T]`, `List[T]`, `Queue[T]`, `Stack[T]`, `Deque[T]`, `Set[T]`, `Map[K, V]`, etc.) and `fmt.Stringer`. Every struct must declare compile-time interface assertions using the standard Go idiom `var _ Interface = (*Type)(nil)` (or `var _ fmt.Stringer = Type{}` for value receivers) to guarantee interface compliance at build time.
 *   **Standard Iteration (Go 1.23+ `iter`):**
     *   Collections must expose standard range-over-func iterators using `iter.Seq[T]` (e.g. `All()`) or `iter.Seq2[K, V]` for associative types (e.g. `All()`, `Keys()`, `Values()`).
+    *   Iterator implementations must respect early termination immediately when `!yield(...)` returns `false` without leaking resources or performing unnecessary work.
     *   Iterator implementations should minimize or eliminate allocation overhead when consumed in `for ... range` loops.
 *   **Non-Concurrent by Design:** Implementations are single-threaded by contract (matching Go's standard slice/map philosophy). Do not add internal mutexes, sync primitives, or goroutines to collection structs. Concurrency is strictly the caller's responsibility.
 *   **Zero-Allocation Reads:** Read operations (e.g., `Get`, `Contains`, `Peek`, `PeekFront`, `PeekBack`, `Size`, `Empty`) must avoid heap allocations (guaranteed 0 B/op and 0 allocs/op in benchmarks).
@@ -17,43 +18,6 @@
     *   **Consumable Extraction & Positional Access (`Remove()`, `First()`, `Last()`, `Peek()`, `Pop()`, `RemoveFront()`, `RemoveBack()`, `PollFirst()`, `PollLast()`):** Unconditional element extraction or positional access on an empty collection MUST panic with a clear error (matching built-in slice head/tail indexing `s[0]` / `s[len-1]` and `slices.Min`/`slices.Max` semantics). Every `MutableCollection[T]` (including sets) supports `Remove() T` to enable the consumable worklist/drain pattern (popping elements until `Empty()`).
     *   **Targeted Deletions & Map Lookups (`RemoveElement(T)`, `Map.Remove(K)`, `Map.Get(K)`):** Targeted removal of a specific element from a set (`RemoveElement(T)`) or key from a map (`Map.Remove(K)`) MUST be a silent no-op if the item/key is absent (matching built-in `delete(m, k)`). Key lookup MUST use the standard Go comma-ok idiom `(V, bool)` (never panic for missing keys or empty maps).
     *   **No "Unsupported Operation" Runtime Panics:** Interfaces must strictly adhere to the Interface Segregation Principle. Collections must never declare or embed methods that compile but throw runtime panics due to being unsupported (e.g., `AddFirst`/`PutFirst` on sorted collections).
-
-# Go Version & Toolchain Consistency
-
-*   **Single Source of Truth (`go.mod`):** The Go version specified in `go.mod` is the canonical version for the entire repository.
-*   **CI Workflow Consistency:** GitHub Actions workflows must use `go-version-file: 'go.mod'` with `actions/setup-go@v5` rather than hardcoded version strings. Benchmark regression checks must use a dynamic matrix strategy across changed packages to ensure parallel execution and sub-minute feedback loops.
-
-# Testing Conventions
-
-For all tests in this repository, strictly adhere to the following conventions:
-
-*   **Table-Driven Tests:** Always use table-driven tests for unit testing. This is the idiomatic Go way and makes tests easy to read, extend, and maintain.
-*   **Structure:**
-    *   Define a `cases` slice of structs.
-    *   Each test case struct should have at least a `name string` field.
-    *   Iterate through the cases with a `for _, tc := range cases` loop.
-    *   Inside the loop, rebind `tc := tc` (for closure safety) and use `t.Run(tc.name, func(t *testing.T) { ... })`.
-    *   Use `t.Parallel()` inside sub-tests where appropriate. Ensure each parallel sub-test creates its own independent collection instance.
-*   **Exceptions:** Stress tests or randomized large-scale tests (e.g. testing deep merges, randomized mutation sequences) may use procedural/loop-based structures where a table structure would be impractical. Default to table-driven whenever testing specific inputs and expected outputs.
-
-# Examples (`example_*_test.go`)
-
-*   **Runnable Examples:** Exported collection types and significant methods must have runnable examples in an `example_<pkg>_test.go` file.
-*   **Verified Output:** Always include an `// Output:` comment at the end of example functions so they are validated by `go test ./...` and rendered cleanly on `pkg.go.dev`.
-*   **Package Naming:** Place example tests in the `<pkg>_test` package to demonstrate public API usage from a consumer's perspective.
-
-# Benchmarks (`*_bench_test.go`)
-
-*   **Location & Naming:** Benchmarks belong in `<pkg>_bench_test.go` and must follow `func Benchmark<Type>_<Method>(b *testing.B)`.
-*   **Allocation Tracking:** Always call `b.ReportAllocs()` in benchmark functions.
-*   **Timer Control:** Isolate setup code from measured code using `b.ResetTimer()` and `b.StopTimer()` / `b.StartTimer()` when appropriate.
-*   **Regression Guard:** Ensure read-path benchmarks show 0 B/op and 0 allocs/op.
-
-# Documentation Roles & Boundaries
-
-*   **`README.md` (User-Facing):** Reserved strictly for public/consumer-facing documentation, quickstart examples, feature overviews, high-level capabilities, installation instructions, and package indices. It should **not** delve into internal implementation details, internal algorithmic plumbing, or agent/contributor rules.
-*   **`AGENTS.md` (Architecture & Implementation Guidelines):** The canonical place to encode architecture, design invariants, implementation decisions, performance constraints, code guidelines, testing/benchmarking rules, and agent workflows.
-*   **Documentation Synchronization:** Whenever any code change modifies, adds, or removes APIs, behaviors, or package structures, all relevant documentation (**Go doc comments**, **`README.md`**, and **`AGENTS.md`**) MUST be updated in the same change to keep documentation strictly in sync with the codebase.
 
 # Package File Structure & Layout Conventions
 
@@ -77,11 +41,54 @@ Every collection package in this repository must maintain a consistent, standard
     8.  Public methods grouped logically (Mutators, Accessors/Queries, Iterators, Stringer).
     9.  Private helper functions and traversal logic.
 
-# Code Style and Quality
+# Naming & Code Style Conventions
 
+*   **Receiver Naming:** Use short (1-2 letters), mnemonic receiver names consistently across all methods on a struct. Never use `this`, `self`, or vary receiver names within the same type:
+    *   `s *HashSet[T]` / `s *TreeSet[T]` / `s *LinkedHashSet[T]` / `s *BitSet`
+    *   `m *HashMap[K, V]` / `m *TreeMap[K, V]` / `m *LinkedHashMap[K, V]` / `m *sliceMap[E, V]` / `m *stringMap[V]`
+    *   `d *ArrayDeque[T]`
+    *   `l *LinkedList[T]` / `l *SliceWrapper[T]`
+    *   `h *Heap[T]`
+    *   `g *Graph[V]` / `g *LabeledGraph[V, L]`
+*   **Avoid Identifier Shadowing:** Never use parameter or local variable names that shadow Go built-in identifiers (`max`, `min`, `len`, `cap`, `new`, `clear`, `copy`, `close`, `delete`). Use descriptive identifiers such as `maxElements`, `capacity`, `cmpFunc`, or `limit`.
+*   **Documentation Comments:** All exported packages, types, interfaces, constants, options, and methods must have comprehensive Go doc comments starting with the symbol name and adhering to standard Go / `revive` conventions.
 *   **Formatting:** Always run `gofmt -s -w .` after making code changes.
-*   **Documentation:** All exported packages, types, interfaces, constants, and functions must have comprehensive, up-to-date Go doc comments adhering to standard Go conventions (checked by `revive`).
-*   **Linting:** Verify code with `golangci-lint run ./...` before completing tasks.
+
+# Testing Conventions
+
+For all tests in this repository, strictly adhere to the following conventions:
+
+*   **Table-Driven Tests:** Always use table-driven tests for unit testing.
+*   **Structure:**
+    *   Define a `cases` slice of structs.
+    *   Each test case struct should have at least a `name string` field.
+    *   Iterate through the cases with a `for _, tc := range cases` loop.
+    *   Inside the loop, rebind `tc := tc` (for closure safety) and use `t.Run(tc.name, func(t *testing.T) { ... })`.
+    *   Use `t.Parallel()` inside sub-tests where appropriate. Ensure each parallel sub-test creates its own independent collection instance.
+*   **Exceptions:** Stress tests or randomized large-scale tests (e.g. testing deep merges, randomized mutation sequences) may use procedural/loop-based structures where a table structure would be impractical. Default to table-driven whenever testing specific inputs and expected outputs.
+
+# Benchmarking Conventions
+
+*   **Location & Naming:** Benchmarks belong in `<pkg>_bench_test.go` and must follow `func Benchmark<Type>_<Method>(b *testing.B)`.
+*   **Allocation Tracking:** Always call `b.ReportAllocs()` in benchmark functions.
+*   **Timer Isolation:** Isolate setup code from measured operations using `b.ResetTimer()` and `b.StopTimer()` / `b.StartTimer()` when appropriate.
+*   **Measurement Patterns:**
+    *   **Steady-State Mutators (Add/Remove, Push/Pop):** Prepopulate the collection to a fixed size $N$ outside the loop, `b.ResetTimer()`, and execute balanced add/remove operations inside the `for i := 0; i < b.N; i++` loop to measure steady-state per-operation latency rather than unbounded growth or repeated reallocations.
+    *   **Zero-Allocation Reads (Get, Contains, Peek, Iteration):** Prepopulate the collection outside the loop, `b.ResetTimer()`, and execute read-only operations inside the loop.
+    *   **Bulk / Preallocated Operations:** Test preallocation efficiencies (e.g. `NewWithCapacity`, `Add_Preallocated`) to verify zero amortized allocation overhead.
+*   **Regression Guard:** Ensure read-path benchmarks show 0 B/op and 0 allocs/op.
+
+# Examples (`example_*_test.go`)
+
+*   **Runnable Examples:** Exported collection types and significant methods must have runnable examples in an `example_<pkg>_test.go` file.
+*   **Verified Output:** Always include an `// Output:` comment at the end of example functions so they are validated by `go test ./...` and rendered cleanly on `pkg.go.dev`.
+*   **Package Naming:** Place example tests in the `<pkg>_test` package to demonstrate public API usage from a consumer's perspective.
+
+# Documentation Roles & Boundaries
+
+*   **`README.md` (User-Facing):** Reserved strictly for public/consumer-facing documentation, quickstart examples, feature overviews, high-level capabilities, installation instructions, and package indices. It should **not** delve into internal implementation details, internal algorithmic plumbing, or agent/contributor rules.
+*   **`AGENTS.md` (Architecture & Implementation Guidelines):** The canonical place to encode architecture, design invariants, implementation decisions, performance constraints, code guidelines, testing/benchmarking rules, and agent workflows.
+*   **Documentation Synchronization:** Whenever any code change modifies, adds, or removes APIs, behaviors, or package structures, all relevant documentation (**Go doc comments**, **`README.md`**, and **`AGENTS.md`**) MUST be updated in the same change to keep documentation strictly in sync with the codebase.
 
 # Pull Request & Workflow Conventions
 
@@ -97,4 +104,5 @@ Every collection package in this repository must maintain a consistent, standard
 Before concluding any code modification task, agents MUST run and verify the following commands succeed without errors or warnings:
 1. `gofmt -s -w .`
 2. `go test -race ./...`
-3. `golangci-lint run ./...`
+3. `golangci-lint run ./...` (or `revive ./... && go vet ./...`)
+
