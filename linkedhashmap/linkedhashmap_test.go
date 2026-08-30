@@ -334,7 +334,7 @@ func TestLinkedHashMap_Clear(t *testing.T) {
 	}
 }
 
-func TestLinkedHashMap_CoverageIters(t *testing.T) {
+func TestLinkedHashMap_CoverageIters(_ *testing.T) {
 	hm := New[int, int]()
 	hm.Put(1, 1)
 	hm.Put(2, 2)

@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	_ Map[string, int] = (*stringMap[int])(nil)
-	_ fmt.Stringer     = (*stringMap[int])(nil)
+	_ Map[string, int]                    = (*stringMap[int])(nil)
+	_ collections.MutableMap[string, int] = (*stringMap[int])(nil)
+	_ fmt.Stringer                        = (*stringMap[int])(nil)
 )
 
 type stringNode[V any] struct {
@@ -367,8 +368,9 @@ func (m *stringMap[V]) String() string {
 // -----------------------------------------------------------------------------
 
 var (
-	_ Set[string]  = (*stringSet)(nil)
-	_ fmt.Stringer = (*stringSet)(nil)
+	_ Set[string]                    = (*stringSet)(nil)
+	_ collections.MutableSet[string] = (*stringSet)(nil)
+	_ fmt.Stringer                   = (*stringSet)(nil)
 )
 
 type stringSet struct {

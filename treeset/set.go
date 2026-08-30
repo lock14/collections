@@ -119,30 +119,36 @@ func (s *TreeSet[T]) PollLast() T {
 	return k
 }
 
+// Lower returns the greatest element strictly less than the given element, or false if not found.
 func (s *TreeSet[T]) Lower(item T) (T, bool) {
 	k, _, ok := s.m.Lower(item)
 	return k, ok
 }
 
+// Floor returns the greatest element less than or equal to the given element, or false if not found.
 func (s *TreeSet[T]) Floor(item T) (T, bool) {
 	k, _, ok := s.m.Floor(item)
 	return k, ok
 }
 
+// Ceiling returns the least element greater than or equal to the given element, or false if not found.
 func (s *TreeSet[T]) Ceiling(item T) (T, bool) {
 	k, _, ok := s.m.Ceiling(item)
 	return k, ok
 }
 
+// Higher returns the least element strictly greater than the given element, or false if not found.
 func (s *TreeSet[T]) Higher(item T) (T, bool) {
 	k, _, ok := s.m.Higher(item)
 	return k, ok
 }
 
+// Backward returns an iterator over the elements in reverse (descending) order.
 func (s *TreeSet[T]) Backward() iter.Seq[T] {
 	return s.m.BackwardKeys()
 }
 
+// From returns an iterator over the elements greater than or equal to from in ascending order.
 func (s *TreeSet[T]) From(from T) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for k := range s.m.From(from) {
@@ -153,6 +159,7 @@ func (s *TreeSet[T]) From(from T) iter.Seq[T] {
 	}
 }
 
+// To returns an iterator over the elements strictly less than to in ascending order.
 func (s *TreeSet[T]) To(to T) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for k := range s.m.To(to) {
@@ -163,6 +170,7 @@ func (s *TreeSet[T]) To(to T) iter.Seq[T] {
 	}
 }
 
+// Between returns an iterator over the elements in the half-open interval [from, to) in ascending order.
 func (s *TreeSet[T]) Between(from, to T) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for k := range s.m.Between(from, to) {

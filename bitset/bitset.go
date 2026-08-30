@@ -12,6 +12,7 @@ import (
 )
 
 const (
+	// DefaultCapacity is the default initial bit capacity of a BitSet.
 	DefaultCapacity = 64
 	wordSize        = 64
 	wordFmt         = "%016X"
@@ -78,7 +79,7 @@ func (b *BitSet) ClearBit(bit int) {
 	}
 }
 
-// Set sets the bit at the specified index to true.
+// SetBit sets the bit at the specified index to true.
 func (b *BitSet) SetBit(bit int) {
 	index, shift := convert(bit)
 	b.ensureSize(index)
@@ -93,7 +94,7 @@ func (b *BitSet) SetBit(bit int) {
 	}
 }
 
-// Get returns the value of the bit with the specified index.
+// GetBit returns the value of the bit with the specified index.
 func (b *BitSet) GetBit(bit int) bool {
 	index, shift := convert(bit)
 	if index >= b.maxWordInUse {

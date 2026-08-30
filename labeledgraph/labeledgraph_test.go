@@ -594,7 +594,7 @@ func TestLabeledGraph_String(t *testing.T) {
 	}
 }
 
-func TestLabeledGraph_Coverage(t *testing.T) {
+func TestLabeledGraph_Coverage(_ *testing.T) {
 	g := New[int, int]()
 	g.AddEdge(1, 2, 3)
 	for range g.Successors(1) {

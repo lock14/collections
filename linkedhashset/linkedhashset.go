@@ -33,8 +33,8 @@ func WithInsertionOrder() Option {
 }
 
 // WithMaxElements configures the maximum number of elements the LinkedHashSet can hold before evicting.
-func WithMaxElements(max int) Option {
-	return linkedhashmap.WithMaxElements(max)
+func WithMaxElements(maxElements int) Option {
+	return linkedhashmap.WithMaxElements(maxElements)
 }
 
 // WithCapacity configures the initial capacity of the underlying set.

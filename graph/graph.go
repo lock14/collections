@@ -16,14 +16,14 @@ type config struct {
 // Opt represents a configuration option for constructing a Graph.
 type Opt func(g *config)
 
-// Directed is an option that configures New to return a directed graph.
+// WithDirected configures New to return a directed graph.
 func WithDirected() Opt {
 	return func(g *config) {
 		g.delegateOps = append(g.delegateOps, labeledgraph.WithDirected())
 	}
 }
 
-// Capacity is an option that configures New to pre-allocate the graph with the given capacity.
+// WithCapacity configures New to pre-allocate the graph with the given capacity.
 func WithCapacity(n int) Opt {
 	return func(g *config) {
 		g.delegateOps = append(g.delegateOps, labeledgraph.WithCapacity(n))

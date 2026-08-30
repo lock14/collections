@@ -52,44 +52,54 @@ func Wrap[K comparable, V any](m map[K]V) *HashMap[K, V] {
 	}
 }
 
+// Get returns the value associated with the specified key, and a boolean indicating if it was found.
 func (hm *HashMap[K, V]) Get(key K) (V, bool) {
 	v, ok := hm.m[key]
 	return v, ok
 }
 
+// Put associates the specified value with the specified key in the map.
 func (hm *HashMap[K, V]) Put(key K, value V) {
 	hm.m[key] = value
 }
 
+// Remove removes the mapping for the specified key from the map if present.
 func (hm *HashMap[K, V]) Remove(key K) {
 	delete(hm.m, key)
 }
 
+// Size returns the number of key-value pairs in the map.
 func (hm *HashMap[K, V]) Size() int {
 	return len(hm.m)
 }
 
+// Empty returns true if the map contains no key-value pairs.
 func (hm *HashMap[K, V]) Empty() bool {
 	return len(hm.m) == 0
 }
 
+// Clear removes all key-value pairs from the map.
 func (hm *HashMap[K, V]) Clear() {
 	hm.m = make(map[K]V)
 }
 
+// ContainsKey returns true if the map contains a mapping for the specified key.
 func (hm *HashMap[K, V]) ContainsKey(key K) bool {
 	_, ok := hm.m[key]
 	return ok
 }
 
+// All returns an iterator over all key-value pairs in the map.
 func (hm *HashMap[K, V]) All() iter.Seq2[K, V] {
 	return maps.All(hm.m)
 }
 
+// Keys returns an iterator over all keys in the map.
 func (hm *HashMap[K, V]) Keys() iter.Seq[K] {
 	return maps.Keys(hm.m)
 }
 
+// Values returns an iterator over all values in the map.
 func (hm *HashMap[K, V]) Values() iter.Seq[V] {
 	return maps.Values(hm.m)
 }
