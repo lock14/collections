@@ -47,7 +47,7 @@ Single-collection packages (e.g. `hashset`, `hashmap`, `arraydeque`, `treeset`, 
 
 ### Prerequisites
 
-*   Go 1.27 or higher
+*   Go 1.23 or higher
 *   Git
 
 ### Clone & Test
