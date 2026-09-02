@@ -16,6 +16,7 @@
 .gitignore export-ignore
 .gitattributes export-ignore
 .golangci.yml export-ignore
+revive.toml export-ignore
 codecov.yml export-ignore
 CONTRIBUTING.md export-ignore
 SECURITY.md export-ignore
