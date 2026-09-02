@@ -1,0 +1,84 @@
+# collections
+
+> Generic, high-performance data structures and interfaces for Go 1.27+.
+
+## Overview
+
+`github.com/lock14/collections` provides idiomatic, generic data structures designed for type safety, zero-allocation reads, predictable memory growth, and seamless standard Go iteration (`iter.Seq` and `iter.Seq2`). The library avoids `interface{}` boxing, reflection, and runtime assertions.
+
+## Quick Start
+
+```bash
+go get github.com/lock14/collections
+```
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/lock14/collections/treeset"
+)
+
+func main() {
+	set := treeset.NewOrdered[int]()
+	set.Add(5)
+	set.Add(1)
+	set.Add(10)
+
+	for val := range set.All() {
+		fmt.Println(val)
+	}
+}
+```
+
+## Core Interfaces (`collections.go`)
+
+- `Iterable[T]`: Types providing `All() iter.Seq[T]` iteration.
+- `Collection[T]`: Base interface with `Size() int`, `Empty() bool`, and `All() iter.Seq[T]`.
+- `MutableCollection[T]`: Supports `Add(T)`, `Remove() T`, `AddAll(iter.Seq[T])`, and `Clear()`.
+- `List[T]` / `MutableList[T]`: Indexable sequences with `Get(idx int)` and `Set(idx int, t T)`.
+- `Queue[T]` / `MutableQueue[T]`: FIFO queues with `Peek() T`.
+- `Stack[T]` / `MutableStack[T]`: LIFO stacks with `Push(T)`, `Pop() T`, and `Peek() T`.
+- `Deque[T]` / `MutableDeque[T]`: Double-ended queues with `AddFront`, `AddBack`, `RemoveFront`, `RemoveBack`, `PeekFront`, `PeekBack`.
+- `Set[T]` / `MutableSet[T]`: Unique element collections with `Contains(T)`, `RemoveElement(T)`.
+- `SortedSet[T]`: Ordered sets with `First()`, `Last()`, `Floor(T)`, `Ceiling(T)`, `Lower(T)`, `Higher(T)`, and range queries (`SubSet`, `HeadSet`, `TailSet`).
+- `Map[K, V]` / `MutableMap[K, V]`: Associative key-value mappings with `Get(K) (V, bool)`, `Put(K, V)`, `Remove(K)`, `Keys()`, `Values()`.
+- `SortedMap[K, V]`: Ordered key-value maps with navigational queries (`FirstKey`, `LastKey`, `FloorKey`, etc.) and range views.
+- `Graph[V]` / `LabeledGraph[V, L]`: Directed and undirected graph structures.
+- `Trie[K, V]` / `MutableTrie[K, V]`: Prefix trees supporting string and generic slice keys with prefix queries (`KeysWithPrefix`, `LongestPrefixOf`).
+
+## Available Packages
+
+- `arraydeque`: Double-ended queue backed by a dynamic circular buffer (`New`, `NewWithCapacity`).
+- `arraylist`: Dynamically resizing generic array list (`New`, `NewWithCapacity`).
+- `bitset`: High-performance 64-bit word-aligned dense integer bitset (`New`, `NewWithCapacity`).
+- `comparator`: Type-safe comparison primitives (`NaturalOrder`, `Reverse`, `Compare`).
+- `graph`: Directed and undirected graph implementations.
+- `hashmap`: Open-addressing / bucket-based generic hash map (`New`, `NewWithCapacity`).
+- `hashset`: Hash-table backed generic set (`New`, `NewWithCapacity`).
+- `heap`: Binary min/max priority heap (`New`, `NewOrdered`, `NewWithCapacity`).
+- `labeledgraph`: Directed and undirected graphs with edge labels.
+- `linkedhashmap`: Hash map maintaining insertion or access order (`New`, `NewWithCapacity`).
+- `linkedhashset`: Hash set maintaining insertion or access order (`New`, `NewWithCapacity`).
+- `linkedlist`: Generic doubly-linked list (`New`).
+- `treemap`: Sorted key-value map backed by a B-Tree (`New`, `NewOrdered`).
+- `treeset`: Sorted set backed by a B-Tree (`New`, `NewOrdered`).
+- `trie`: String- and generic slice-keyed prefix trees (`NewStringTrie`, `NewSliceTrie`).
+
+## Key Design Invariants
+
+- **Non-Concurrent:** Collections are not thread-safe by default, matching Go's built-in `slice` and `map` semantics.
+- **Zero-Allocation Reads:** `Get`, `Contains`, `Peek`, `Size`, and `Empty` do not allocate on the heap.
+- **Panic Semantics:**
+  - Slice indexing out-of-bounds panics (matching Go built-in slice index panic).
+  - Empty collection positional access/extraction panics (matching Go `s[0]` / `slices.Min` panic).
+  - Key lookup uses comma-ok `(V, bool)`; targeted deletion `Map.Remove(K)` / `Set.RemoveElement(T)` is a silent no-op if key is absent.
+- **Standard Stringer:** `Collection[T]` outputs `[e1 e2]`; `Map[K, V]` outputs `map[k1:v1 k2:v2]`.
+
+## References
+
+- Repository: https://github.com/lock14/collections
+- Go Reference: https://pkg.go.dev/github.com/lock14/collections
+- Issues: https://github.com/lock14/collections/issues

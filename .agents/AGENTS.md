@@ -103,6 +103,9 @@ For all tests in this repository, strictly adhere to the following conventions:
 
 Before concluding any code modification task, agents MUST run and verify the following commands succeed without errors or warnings:
 1. `gofmt -s -w .`
-2. `go test -race ./...`
-3. `golangci-lint run ./...` (or `revive ./... && go vet ./...`)
+2. `go mod tidy && git diff --exit-code go.mod go.sum`
+3. `go test -race ./...`
+4. `golangci-lint run ./...` (or `revive ./... && go vet ./...`)
+5. `govulncheck ./...`
+
 

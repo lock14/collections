@@ -16,15 +16,17 @@ issues:
 linters:
   disable-all: true
   enable:
+    - errcheck
+    - gocyclo
     - govet
     - ineffassign
     - misspell
-    - gocyclo
+    - nolintlint
     - revive
     - staticcheck
+    - unconvert
     - unused
-    - errcheck
-    - nolintlint
+    - whitespace
 
 linters-settings:
   gocyclo:
@@ -33,6 +35,9 @@ linters-settings:
     rules:
       - name: exported
       - name: package-comments
+      - name: blank-imports
+      - name: dot-imports
+      - name: var-naming
   nolintlint:
     require-explanation: true
     require-specific: true
