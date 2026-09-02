@@ -8,7 +8,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/lock14/collections.svg)](https://pkg.go.dev/github.com/lock14/collections)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-Generic data structures for Go 1.27+. Focuses on type safety, minimal allocations, and predictable performance.
+Generic data structures for Go 1.23+. Focuses on type safety, minimal allocations, and predictable performance.
 
 ## Usage
 
