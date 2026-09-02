@@ -1,0 +1,78 @@
+name: 🐛 Bug Report
+description: Report a bug, panic, incorrect behavior, or unexpected allocation
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please provide as much detail as possible to help us diagnose and fix the problem.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+      placeholder: Describe what happened...
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal Reproducible Example
+      description: |
+        Please provide a short, self-contained Go code snippet that reproduces the issue.
+      placeholder: |
+        ```go
+        package main
+
+        import (
+            "fmt"
+            "github.com/lock14/collections/treeset"
+        )
+
+        func main() {
+            // Your code here
+        }
+        ```
+      render: go
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen?
+      placeholder: Explain what behavior was expected...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behavior & Output
+      description: What actually happened? Include error messages or stack traces if applicable.
+      placeholder: |
+        panic: runtime error...
+    validations:
+      required: true
+
+  - type: input
+    id: go-version
+    attributes:
+      label: Go Version
+      description: Output of `go version`
+      placeholder: e.g. go version go1.27.0 windows/amd64
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Operating System & Architecture
+      description: OS and Architecture (e.g. macOS arm64, Linux amd64, Windows amd64)
+      placeholder: e.g. Linux amd64
+    validations:
+      required: true

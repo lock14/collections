@@ -1,0 +1,51 @@
+name: 💡 Feature Request
+description: Propose a new data structure, collection method, or architectural enhancement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Please describe the use case and API proposal in detail.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Use Case
+      description: Is your feature request related to a specific problem or missing collection type?
+      placeholder: I need a data structure that...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution / API Design
+      description: Describe the proposed API, types, constructors, and method signatures.
+      placeholder: |
+        ```go
+        type MyNewDataStructure[T any] struct { ... }
+        func New[T any]() *MyNewDataStructure[T]
+        ```
+      render: go
+    validations:
+      required: true
+
+  - type: textarea
+    id: performance
+    attributes:
+      label: Performance & Complexity Characteristics
+      description: Describe expected time and space complexity, allocation profile, and growth strategy.
+      placeholder: |
+        - Read operations (Get, Contains, Peek): O(1) time, 0 allocations
+        - Insertions / Deletions: Amortized O(1)
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or workarounds you have considered.
+    validations:
+      required: false

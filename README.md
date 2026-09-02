@@ -1,11 +1,12 @@
 # collections
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/lock14/collections)](https://go.dev/)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/lock14/collections/go.yml?branch=main)](https://github.com/lock14/collections/actions)
-[![golangci-lint](https://img.shields.io/badge/golangci--lint-enabled-brightgreen)](https://golangci-lint.run/)
+[![CI](https://img.shields.io/github/actions/workflow/status/lock14/collections/ci.yml?branch=main&label=CI)](https://github.com/lock14/collections/actions/workflows/ci.yml)
 [![Benchmarks](https://img.shields.io/github/actions/workflow/status/lock14/collections/benchmark.yml?branch=main&label=Benchmarks)](https://github.com/lock14/collections/actions/workflows/benchmark.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/lock14/collections/security.yml?branch=main&label=Security)](https://github.com/lock14/collections/actions/workflows/security.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/lock14/collections)](https://codecov.io/gh/lock14/collections)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lock14/collections.svg)](https://pkg.go.dev/github.com/lock14/collections)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Generic data structures for Go 1.27+. Focuses on type safety, minimal allocations, and predictable performance.
 
@@ -20,17 +21,17 @@ package main
 
 import (
 	"fmt"
-	
+
 	"github.com/lock14/collections/treeset"
 )
 
 func main() {
 	set := treeset.NewOrdered[int]()
-	
+
 	set.Add(5)
 	set.Add(1)
 	set.Add(10)
-	
+
 	for val := range set.All() {
 		fmt.Println(val)
 	}
@@ -77,9 +78,12 @@ Implementations in this library are **not thread-safe** by design, matching Go s
 
 ## Contributing
 
-Submit PRs with passing tests and benchmarks. Table-driven testing is required. Performance regressions will not be merged.
+We welcome contributions! Please review our [Contributing Guidelines](CONTRIBUTING.md) for architectural invariants, testing standards, and pull request verification instructions.
+
+## Security
+
+Please report security issues responsibly according to our [Security Policy](SECURITY.md).
 
 ## License
 
 Apache 2.0. See [LICENSE](LICENSE).
-
