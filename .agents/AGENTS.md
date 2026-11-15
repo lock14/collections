@@ -27,7 +27,7 @@ Every collection package in this repository must maintain a consistent, standard
     1.  **`<pkg>.go`**: The primary implementation file containing the type declaration, compile-time interface assertions, configuration options, constructors, and public/private methods.
     2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
     3.  **`<pkg>_bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
-    4.  **`example_<pkg>_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
+    4.  **`example_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
 *   **Multi-File / Complex Packages:** When a package implements multiple representations (e.g. `trie` with `string.go` and `slice.go`) or contains a dedicated complex algorithmic engine (e.g. `treemap` with `btree.go`), the entry point, interfaces, and constructors remain in `<pkg>.go`, while variant-specific implementations and tests use clear, consistent naming (e.g. `slice_test.go`). Extraneous or ad-hoc test files (e.g. `coverage_patch_test.go`, `set.go`, `map.go`) are prohibited.
 *   **Internal Section Ordering in `<pkg>.go`:**
     To maintain visual and structural consistency across the repository, code within `<pkg>.go` should adhere to the following sequence:
@@ -78,9 +78,9 @@ For all tests in this repository, strictly adhere to the following conventions:
     *   **Bulk / Preallocated Operations:** Test preallocation efficiencies (e.g. `WithCapacity`, `Add_Preallocated`) to verify zero amortized allocation overhead.
 *   **Regression Guard:** Ensure read-path benchmarks show 0 B/op and 0 allocs/op.
 
-# Examples (`example_*_test.go`)
+# Examples (`example_test.go`)
 
-*   **Runnable Examples:** Exported collection types and significant methods must have runnable examples in an `example_<pkg>_test.go` file.
+*   **Runnable Examples:** Exported collection types and significant methods must have runnable examples in an `example_test.go` file.
 *   **Verified Output:** Always include an `// Output:` comment at the end of example functions so they are validated by `go test ./...` and rendered cleanly on `pkg.go.dev`.
 *   **Package Naming:** Place example tests in the `<pkg>_test` package to demonstrate public API usage from a consumer's perspective.
 

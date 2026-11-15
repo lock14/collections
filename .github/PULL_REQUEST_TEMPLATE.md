@@ -19,7 +19,7 @@ Please provide a summary of the changes introduced in this pull request, includi
 - [ ] **Zero-Allocation Reads:** Read operations (`Get`, `Contains`, `Peek`, `Size`, `Empty`) produce 0 B/op and 0 allocs/op in benchmarks.
 - [ ] **Stringer:** Implements `fmt.Stringer` matching Go slice `[e1 e2]` or map `map[k:v]` format.
 - [ ] **Panic Semantics:** Slice-like indexing panics on out-of-bounds; positional extractions panic on empty; targeted map/set removals are silent no-ops.
-- [ ] **Standard Package Layout:** Follows the 4-file package structure (`<pkg>.go`, `<pkg>_test.go`, `<pkg>_bench_test.go`, `example_<pkg>_test.go`).
+- [ ] **Standard Package Layout:** Follows the 4-file package structure (`<pkg>.go`, `<pkg>_test.go`, `<pkg>_bench_test.go`, `example_test.go`).
 
 ## Verification & Testing
 
@@ -28,5 +28,5 @@ Please provide a summary of the changes introduced in this pull request, includi
 - [ ] Ran `golangci-lint run ./...` (or `revive ./... && go vet ./...`) with zero warnings.
 - [ ] Added table-driven unit tests in `<pkg>_test.go`.
 - [ ] Added/updated benchmarks in `<pkg>_bench_test.go` and verified no regressions with `benchdiff` / `benchstat`.
-- [ ] Added/updated runnable examples with `// Output:` in `example_<pkg>_test.go`.
+- [ ] Added/updated runnable examples with `// Output:` in `example_test.go`.
 - [ ] Documentation (Go doc comments, `README.md`, `AGENTS.md`) is updated and synchronized.

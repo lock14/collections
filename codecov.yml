@@ -18,6 +18,6 @@ coverage:
 
 ignore:
   - "**/*_bench_test.go"
-  - "**/example_*_test.go"
+  - "**/example_test.go"
   - ".github/**"
   - "*.md"

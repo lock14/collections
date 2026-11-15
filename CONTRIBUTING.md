@@ -39,7 +39,7 @@ Single-collection packages (e.g. `hashset`, `hashmap`, `arraydeque`, `treeset`, 
 1.  **`<pkg>.go`**: Primary implementation file containing type declarations, compile-time assertions, configuration options, constructors, and public/private methods.
 2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
 3.  **`<pkg>_bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
-4.  **`example_<pkg>_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
+4.  **`example_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
 
 ---
 
