@@ -2,7 +2,6 @@ package hashmap_test
 
 import (
 	"fmt"
-	"slices"
 
 	"github.com/lock14/collections/hashmap"
 )
@@ -16,27 +15,20 @@ func ExampleHashMap() {
 	m.Put("Charlie", 35)
 
 	age, ok := m.Get("Bob")
-	fmt.Printf("Bob is %d years old (found: %v)\n", age, ok)
+	fmt.Printf("Bob: %d (found: %t)\n", age, ok)
 
 	// Update an existing key
 	m.Put("Alice", 26)
 
-	// Since HashMap is unordered, collect and sort keys for deterministic output
-	keys := slices.Collect(m.Keys())
-	slices.Sort(keys)
-
-	fmt.Println("All Entries:")
-	for _, k := range keys {
-		v, _ := m.Get(k)
-		fmt.Printf("- %s: %d\n", k, v)
+	for k, v := range m.All() {
+		fmt.Printf("Entry %s: %d\n", k, v)
 	}
 
-	// Output:
-	// Bob is 30 years old (found: true)
-	// All Entries:
-	// - Alice: 26
-	// - Bob: 30
-	// - Charlie: 35
+	// Unordered output:
+	// Bob: 30 (found: true)
+	// Entry Alice: 26
+	// Entry Bob: 30
+	// Entry Charlie: 35
 }
 
 func ExampleNew() {
@@ -160,17 +152,11 @@ func ExampleHashMap_All() {
 	m.Put("Alice", 25)
 	m.Put("Bob", 30)
 
-	var entries []string
 	for k, v := range m.All() {
-		entries = append(entries, fmt.Sprintf("%s: %d", k, v))
-	}
-	slices.Sort(entries)
-
-	for _, entry := range entries {
-		fmt.Println(entry)
+		fmt.Printf("%s: %d\n", k, v)
 	}
 
-	// Output:
+	// Unordered output:
 	// Alice: 25
 	// Bob: 30
 }
@@ -180,14 +166,11 @@ func ExampleHashMap_Keys() {
 	m.Put("Alice", 25)
 	m.Put("Bob", 30)
 
-	keys := slices.Collect(m.Keys())
-	slices.Sort(keys)
-
-	for _, k := range keys {
+	for k := range m.Keys() {
 		fmt.Println(k)
 	}
 
-	// Output:
+	// Unordered output:
 	// Alice
 	// Bob
 }
@@ -197,14 +180,11 @@ func ExampleHashMap_Values() {
 	m.Put("Alice", 25)
 	m.Put("Bob", 30)
 
-	values := slices.Collect(m.Values())
-	slices.Sort(values)
-
-	for _, v := range values {
+	for v := range m.Values() {
 		fmt.Println(v)
 	}
 
-	// Output:
+	// Unordered output:
 	// 25
 	// 30
 }

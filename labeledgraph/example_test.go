@@ -26,19 +26,14 @@ func ExampleLabeledGraph() {
 	g.AddEdge("Bob", "Charlie", "Likes")
 	g.AddEdge("Alice", "Charlie", "Dislikes")
 
-	fmt.Println("Alice's outgoing relationships:")
-	succs := slices.Collect(g.Successors("Alice"))
-	slices.Sort(succs)
-
-	for _, target := range succs {
+	for target := range g.Successors("Alice") {
 		relationship, _ := g.Label("Alice", target)
-		fmt.Printf("- Alice %s %s\n", relationship, target)
+		fmt.Printf("Alice %s %s\n", relationship, target)
 	}
 
-	// Output:
-	// Alice's outgoing relationships:
-	// - Alice Knows Bob
-	// - Alice Dislikes Charlie
+	// Unordered output:
+	// Alice Knows Bob
+	// Alice Dislikes Charlie
 }
 
 func ExampleLabeledGraph_ContainsVertex() {
@@ -185,11 +180,13 @@ func ExampleLabeledGraph_Vertices() {
 	g.AddVertex(2)
 	g.AddVertex(3)
 
-	verts := slices.Collect(g.Vertices())
-	slices.Sort(verts)
-	fmt.Println(verts)
-	// Output:
-	// [1 2 3]
+	for v := range g.Vertices() {
+		fmt.Println(v)
+	}
+	// Unordered output:
+	// 1
+	// 2
+	// 3
 }
 
 func ExampleLabeledGraph_Neighbors() {
@@ -197,11 +194,12 @@ func ExampleLabeledGraph_Neighbors() {
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(1, 3, "B")
 
-	neighbors := slices.Collect(g.Neighbors(1))
-	slices.Sort(neighbors)
-	fmt.Println(neighbors)
-	// Output:
-	// [2 3]
+	for v := range g.Neighbors(1) {
+		fmt.Println(v)
+	}
+	// Unordered output:
+	// 2
+	// 3
 }
 
 func ExampleLabeledGraph_Successors() {
@@ -210,11 +208,12 @@ func ExampleLabeledGraph_Successors() {
 	g.AddEdge(1, 3, "B")
 	g.AddEdge(3, 1, "C") // In-edge shouldn't be counted in successors
 
-	succs := slices.Collect(g.Successors(1))
-	slices.Sort(succs)
-	fmt.Println(succs)
-	// Output:
-	// [2 3]
+	for v := range g.Successors(1) {
+		fmt.Println(v)
+	}
+	// Unordered output:
+	// 2
+	// 3
 }
 
 func ExampleLabeledGraph_Predecessors() {
@@ -223,11 +222,12 @@ func ExampleLabeledGraph_Predecessors() {
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C") // Out-edge shouldn't be counted in predecessors
 
-	preds := slices.Collect(g.Predecessors(2))
-	slices.Sort(preds)
-	fmt.Println(preds)
-	// Output:
-	// [1 3]
+	for u := range g.Predecessors(2) {
+		fmt.Println(u)
+	}
+	// Unordered output:
+	// 1
+	// 3
 }
 
 func ExampleLabeledGraph_Edges() {
@@ -235,17 +235,11 @@ func ExampleLabeledGraph_Edges() {
 	g.AddEdge(1, 2, "A")
 	g.AddEdge(2, 3, "B")
 
-	// Collect into string format for stable sorting/output
-	var edges []string
 	for u, v := range g.Edges() {
 		l, _ := g.Label(u, v)
-		edges = append(edges, fmt.Sprintf("%d->%d: %s", u, v, l))
+		fmt.Printf("%d->%d: %s\n", u, v, l)
 	}
-	slices.Sort(edges)
-	for _, e := range edges {
-		fmt.Println(e)
-	}
-	// Output:
+	// Unordered output:
 	// 1->2: A
 	// 2->3: B
 }
@@ -256,16 +250,11 @@ func ExampleLabeledGraph_IncidentEdges() {
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C")
 
-	var edges []string
 	for u, v := range g.IncidentEdges(2) {
 		l, _ := g.Label(u, v)
-		edges = append(edges, fmt.Sprintf("%d->%d: %s", u, v, l))
+		fmt.Printf("%d->%d: %s\n", u, v, l)
 	}
-	slices.Sort(edges)
-	for _, e := range edges {
-		fmt.Println(e)
-	}
-	// Output:
+	// Unordered output:
 	// 1->2: A
 	// 2->4: C
 	// 3->2: B
@@ -277,16 +266,11 @@ func ExampleLabeledGraph_InIncidentEdges() {
 	g.AddEdge(3, 2, "B")
 	g.AddEdge(2, 4, "C")
 
-	var edges []string
 	for u, v := range g.InIncidentEdges(2) {
 		l, _ := g.Label(u, v)
-		edges = append(edges, fmt.Sprintf("%d->%d: %s", u, v, l))
+		fmt.Printf("%d->%d: %s\n", u, v, l)
 	}
-	slices.Sort(edges)
-	for _, e := range edges {
-		fmt.Println(e)
-	}
-	// Output:
+	// Unordered output:
 	// 1->2: A
 	// 3->2: B
 }
@@ -298,16 +282,11 @@ func ExampleLabeledGraph_OutIncidentEdges() {
 	g.AddEdge(2, 4, "C")
 	g.AddEdge(2, 5, "D")
 
-	var edges []string
 	for u, v := range g.OutIncidentEdges(2) {
 		l, _ := g.Label(u, v)
-		edges = append(edges, fmt.Sprintf("%d->%d: %s", u, v, l))
+		fmt.Printf("%d->%d: %s\n", u, v, l)
 	}
-	slices.Sort(edges)
-	for _, e := range edges {
-		fmt.Println(e)
-	}
-	// Output:
+	// Unordered output:
 	// 2->4: C
 	// 2->5: D
 }
@@ -359,16 +338,11 @@ func ExampleLabeledGraph_Equal() {
 }
 
 func ExampleLabeledGraph_String() {
-	g2 := labeledgraph.New[int, string](labeledgraph.WithDirected())
-	g2.AddEdge(1, 2, "A")
-	fmt.Println(g2.String())
+	g := labeledgraph.New[int, string](labeledgraph.WithDirected())
+	g.AddEdge(1, 2, "A")
+	fmt.Println(g.String())
 	// Output:
 	// digraph[1 -> 2: A]
-}
-
-type pathNode struct {
-	vertex string
-	dist   int
 }
 
 func ExampleLabeledGraph_shortestPath() {
@@ -383,6 +357,11 @@ func ExampleLabeledGraph_shortestPath() {
 	g.AddEdge("C", "E", 3)
 	g.AddEdge("E", "D", 4)
 	g.AddEdge("D", "F", 11)
+
+	type pathNode struct {
+		vertex string
+		dist   int
+	}
 
 	// We want to find the shortest path from "A" to all other nodes.
 	start := "A"
@@ -427,13 +406,12 @@ func ExampleLabeledGraph_shortestPath() {
 		fmt.Printf("Distance from %s to %s: %d\n", start, v, distances[v])
 	}
 
-	// Print shortest path to F
-	path := []string{"F"}
-	curr := "F"
-	for curr != start {
-		curr = previous[curr]
-		path = append([]string{curr}, path...)
+	// Reconstruct shortest path to F
+	var path []string
+	for curr := "F"; curr != ""; curr = previous[curr] {
+		path = append(path, curr)
 	}
+	slices.Reverse(path)
 	fmt.Printf("Shortest path to F: %v\n", path)
 
 	// Output:

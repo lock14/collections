@@ -9,7 +9,7 @@ import (
 
 func ExampleSliceWrapper() {
 	// ArrayList is a dynamically resizing array, providing O(1) random access.
-	list := arraylist.Wrap(make([]string, 0))
+	list := arraylist.New[string]()
 
 	list.Add("Apple")
 	list.Add("Banana")
@@ -44,8 +44,16 @@ func ExampleNew() {
 	// [1 2]
 }
 
+func ExampleWrap() {
+	list := arraylist.Wrap([]int{1, 2, 3})
+	list.Add(4)
+	fmt.Println(list.String())
+	// Output:
+	// [1 2 3 4]
+}
+
 func ExampleSliceWrapper_Add() {
-	list := arraylist.Wrap([]int{})
+	list := arraylist.New[int]()
 	list.Add(1)
 	list.Add(2)
 	fmt.Println(list.String())
@@ -64,7 +72,7 @@ func ExampleSliceWrapper_Remove() {
 }
 
 func ExampleSliceWrapper_Push() {
-	stack := arraylist.Wrap([]int{})
+	stack := arraylist.New[int]()
 	stack.Push(10)
 	stack.Push(20)
 	fmt.Println(stack.String())
@@ -121,7 +129,7 @@ func ExampleSliceWrapper_Size() {
 }
 
 func ExampleSliceWrapper_Empty() {
-	list := arraylist.Wrap([]int{})
+	list := arraylist.New[int]()
 	fmt.Println(list.Empty())
 	list.Add(1)
 	fmt.Println(list.Empty())

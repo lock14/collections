@@ -87,6 +87,12 @@ All unit tests must be table-driven:
     benchdiff -base-ref origin/main -- -run '^$' -bench . -benchmem -count=6 ./...
     ```
 
+### Runnable Examples
+
+*   Example functions belong in `example_test.go` (`package <pkg>_test`) and should showcase clean, idiomatic consumer usage of the library (e.g. direct `for ... range` iteration over `iter.Seq` / `iter.Seq2` iterators, standard constructors).
+*   End deterministic examples with `// Output:` and unordered collection examples (`hashmap`, `hashset`, `graph`, `labeledgraph`) with Go's built-in `// Unordered output:` rather than cluttering examples with slice-collection and sorting workarounds.
+*   Keep helper structs local to the `Example*` function body so `pkg.go.dev` renders self-contained snippets.
+
 ---
 
 ## 4. Pre-Completion Verification Checklist

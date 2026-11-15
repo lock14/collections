@@ -28,5 +28,5 @@ Please provide a summary of the changes introduced in this pull request, includi
 - [ ] Ran `golangci-lint run ./...` (or `revive ./... && go vet ./...`) with zero warnings.
 - [ ] Added table-driven unit tests in `<pkg>_test.go`.
 - [ ] Added/updated benchmarks in `bench_test.go` and verified no regressions with `benchdiff` / `benchstat`.
-- [ ] Added/updated runnable examples with `// Output:` in `example_test.go`.
+- [ ] Added/updated runnable examples with `// Output:` (or `// Unordered output:`) in `example_test.go`.
 - [ ] Documentation (Go doc comments, `README.md`, `AGENTS.md`) is updated and synchronized.

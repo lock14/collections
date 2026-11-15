@@ -27,7 +27,7 @@ Every collection package in this repository must maintain a consistent, standard
     1.  **`<pkg>.go`**: The primary implementation file containing the type declaration, compile-time interface assertions, configuration options, constructors, and public/private methods.
     2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
     3.  **`bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
-    4.  **`example_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
+    4.  **`example_test.go`**: Consumer-facing runnable examples with `// Output:` or `// Unordered output:` comments (`package <pkg>_test`).
 *   **Multi-File / Complex Packages:** When a package implements multiple representations (e.g. `trie` with `string.go` and `slice.go`) or contains a dedicated complex algorithmic engine (e.g. `treemap` with `btree.go`), the entry point, interfaces, and constructors remain in `<pkg>.go`, while variant-specific implementations and tests use symmetric 1-to-1 naming (e.g. `string_test.go` and `slice_test.go`). Extraneous or ad-hoc test files (e.g. `coverage_patch_test.go`, `set.go`, `map.go`) are prohibited.
 *   **Internal Section Ordering in `<pkg>.go`:**
     To maintain visual and structural consistency across the repository, code within `<pkg>.go` should adhere to the following sequence:
@@ -81,7 +81,9 @@ For all tests in this repository, strictly adhere to the following conventions:
 # Examples (`example_test.go`)
 
 *   **Runnable Examples:** Exported collection types and significant methods must have runnable examples in an `example_test.go` file.
-*   **Verified Output:** Always include an `// Output:` comment at the end of example functions so they are validated by `go test ./...` and rendered cleanly on `pkg.go.dev`.
+*   **Clean, Idiomatic Consumer Usage:** Examples exist strictly to teach callers clean, idiomatic usage of the library (e.g. standard constructors such as `New` rather than `Wrap(make([]T, 0))`, and direct `for ... range` loops over `iter.Seq` / `iter.Seq2` iterators). Never clutter examples with language or test-harness workarounds—such as materializing unordered iterators into temporary slices (`slices.Collect` + `slices.Sort` / `slices.SortFunc`) just to force deterministic stdout.
+*   **Verified Output (`// Output:` vs `// Unordered output:`):** Always include an output comment at the end of example functions so they are validated by `go test ./...` and rendered cleanly on `pkg.go.dev`. Use `// Output:` when output ordering is deterministic, and use Go's built-in `// Unordered output:` when iterating over unordered collections (e.g. `hashmap`, `hashset`, `graph`, `labeledgraph`, `trie` slice variants). When using `// Unordered output:`, ensure each printed line is self-contained (since `go test` compares lines as an unordered multiset).
+*   **Self-Contained Snippets:** Declare any helper structs or closures inside the `Example*` function body rather than at package scope in multi-example files so `pkg.go.dev` renders the complete snippet inline.
 *   **Package Naming:** Place example tests in the `<pkg>_test` package to demonstrate public API usage from a consumer's perspective.
 
 # Documentation Roles & Boundaries
