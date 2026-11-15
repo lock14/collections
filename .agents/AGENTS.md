@@ -26,9 +26,9 @@ Every collection package in this repository must maintain a consistent, standard
 *   **Standard 4-File Package Structure:** Single-collection packages (e.g. `hashset`, `hashmap`, `arraydeque`, `treeset`, `linkedhashmap`, etc.) MUST consist of exactly four files:
     1.  **`<pkg>.go`**: The primary implementation file containing the type declaration, compile-time interface assertions, configuration options, constructors, and public/private methods.
     2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
-    3.  **`<pkg>_bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
+    3.  **`bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
     4.  **`example_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
-*   **Multi-File / Complex Packages:** When a package implements multiple representations (e.g. `trie` with `string.go` and `slice.go`) or contains a dedicated complex algorithmic engine (e.g. `treemap` with `btree.go`), the entry point, interfaces, and constructors remain in `<pkg>.go`, while variant-specific implementations and tests use clear, consistent naming (e.g. `slice_test.go`). Extraneous or ad-hoc test files (e.g. `coverage_patch_test.go`, `set.go`, `map.go`) are prohibited.
+*   **Multi-File / Complex Packages:** When a package implements multiple representations (e.g. `trie` with `string.go` and `slice.go`) or contains a dedicated complex algorithmic engine (e.g. `treemap` with `btree.go`), the entry point, interfaces, and constructors remain in `<pkg>.go`, while variant-specific implementations and tests use symmetric 1-to-1 naming (e.g. `string_test.go` and `slice_test.go`). Extraneous or ad-hoc test files (e.g. `coverage_patch_test.go`, `set.go`, `map.go`) are prohibited.
 *   **Internal Section Ordering in `<pkg>.go`:**
     To maintain visual and structural consistency across the repository, code within `<pkg>.go` should adhere to the following sequence:
     1.  Package doc comment and `package <pkg>` declaration.
@@ -67,9 +67,9 @@ For all tests in this repository, strictly adhere to the following conventions:
     *   Use `t.Parallel()` inside sub-tests where appropriate. Ensure each parallel sub-test creates its own independent collection instance.
 *   **Exceptions:** Stress tests or randomized large-scale tests (e.g. testing deep merges, randomized mutation sequences) may use procedural/loop-based structures where a table structure would be impractical. Default to table-driven whenever testing specific inputs and expected outputs.
 
-# Benchmarking Conventions
+# Benchmarking Conventions (`bench_test.go`)
 
-*   **Location & Naming:** Benchmarks belong in `<pkg>_bench_test.go` (`package <pkg>_test`) and must follow `func Benchmark<Type>_<Method>(b *testing.B)`.
+*   **Location & Naming:** Benchmarks belong in `bench_test.go` (`package <pkg>_test`) and must follow `func Benchmark<Type>_<Method>(b *testing.B)`.
 *   **Allocation Tracking:** Always call `b.ReportAllocs()` in benchmark functions.
 *   **Timer Isolation:** Isolate setup code from measured operations using `b.ResetTimer()` and `b.StopTimer()` / `b.StartTimer()` when appropriate.
 *   **Measurement Patterns:**

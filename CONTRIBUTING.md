@@ -38,7 +38,7 @@ Single-collection packages (e.g. `hashset`, `hashmap`, `arraydeque`, `treeset`, 
 
 1.  **`<pkg>.go`**: Primary implementation file containing type declarations, compile-time assertions, configuration options, constructors, and public/private methods.
 2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
-3.  **`<pkg>_bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
+3.  **`bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
 4.  **`example_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
 
 ---
@@ -77,7 +77,7 @@ All unit tests must be table-driven:
 
 ### Benchmarking & Performance Regression Verification
 
-*   Benchmark functions belong in `<pkg>_bench_test.go` (`package <pkg>_test`) named `func Benchmark<Type>_<Method>(b *testing.B)`.
+*   Benchmark functions belong in `bench_test.go` (`package <pkg>_test`) named `func Benchmark<Type>_<Method>(b *testing.B)`.
 *   Always call `b.ReportAllocs()`.
 *   Isolate setup with `b.ResetTimer()`.
 *   Read paths must show 0 B/op and 0 allocs/op.
