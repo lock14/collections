@@ -18,24 +18,18 @@ func ExampleHashSet() {
 	set.Add("Apple") // Ignored, already exists
 
 	fmt.Println("Contains Apple:", set.Contains("Apple"))
-	fmt.Println("Size of set:", set.Size())
+	fmt.Println("Size:", set.Size())
 
-	// Since HashSet is unordered, collect and sort elements for deterministic output
-	elements := slices.Collect(set.All())
-	slices.Sort(elements)
-
-	fmt.Println("Elements:")
-	for _, e := range elements {
-		fmt.Println("-", e)
+	for e := range set.All() {
+		fmt.Println("Element:", e)
 	}
 
-	// Output:
+	// Unordered output:
 	// Contains Apple: true
-	// Size of set: 3
-	// Elements:
-	// - Apple
-	// - Banana
-	// - Cherry
+	// Size: 3
+	// Element: Apple
+	// Element: Banana
+	// Element: Cherry
 }
 
 func ExampleNew() {
@@ -179,13 +173,10 @@ func ExampleHashSet_All() {
 	set.Add("Apple")
 	set.Add("Banana")
 
-	elements := slices.Collect(set.All())
-	slices.Sort(elements)
-
-	for _, e := range elements {
+	for e := range set.All() {
 		fmt.Println(e)
 	}
-	// Output:
+	// Unordered output:
 	// Apple
 	// Banana
 }

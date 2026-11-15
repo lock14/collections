@@ -2,7 +2,6 @@ package trie_test
 
 import (
 	"fmt"
-	"slices"
 
 	"github.com/lock14/collections/trie"
 )
@@ -121,15 +120,14 @@ func ExampleMap_PrefixesOf() {
 	m.Put("ab", 2)
 	m.Put("abc", 3)
 
-	var keys []string
-	for k := range m.PrefixesOf("abcd") {
-		keys = append(keys, k)
+	for k, v := range m.PrefixesOf("abcd") {
+		fmt.Printf("%s: %d\n", k, v)
 	}
-	slices.Sort(keys)
-	fmt.Println(keys)
 
 	// Output:
-	// [a ab abc]
+	// a: 1
+	// ab: 2
+	// abc: 3
 }
 
 func ExampleMap_RemovePrefix() {

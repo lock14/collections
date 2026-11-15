@@ -54,7 +54,6 @@ func ExampleHeap_priorityQueue() {
 
 	// Custom comparator: We want higher priorities first (Max-Heap by Priority)
 	pq := heap.New[Task](heap.WithComparator(func(a, b Task) int {
-		// To simulate a Max-Heap, we reverse the comparison: b.Priority - a.Priority
 		return cmp.Compare(b.Priority, a.Priority)
 	}))
 

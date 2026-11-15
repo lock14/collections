@@ -2,7 +2,6 @@ package graph_test
 
 import (
 	"fmt"
-	"slices"
 
 	"github.com/lock14/collections/graph"
 )
@@ -24,27 +23,18 @@ func ExampleGraph_directed() {
 	g.AddEdge("B", "D")
 	g.AddEdge("C", "D")
 
-	fmt.Println("Successors of A:")
-	succs := slices.Collect(g.Successors("A"))
-	slices.Sort(succs)
-	for _, v := range succs {
-		fmt.Println("-", v)
+	for v := range g.Successors("A") {
+		fmt.Printf("A -> %s\n", v)
+	}
+	for u := range g.Predecessors("D") {
+		fmt.Printf("%s -> D\n", u)
 	}
 
-	fmt.Println("Predecessors of D:")
-	preds := slices.Collect(g.Predecessors("D"))
-	slices.Sort(preds)
-	for _, v := range preds {
-		fmt.Println("-", v)
-	}
-
-	// Output:
-	// Successors of A:
-	// - B
-	// - C
-	// Predecessors of D:
-	// - B
-	// - C
+	// Unordered output:
+	// A -> B
+	// A -> C
+	// B -> D
+	// C -> D
 }
 
 func ExampleGraph_undirected() {
@@ -55,17 +45,13 @@ func ExampleGraph_undirected() {
 	g.AddEdge("A", "C")
 
 	// In an undirected graph, Successors, Predecessors, and Neighbors are identical
-	fmt.Println("Neighbors of A:")
-	neighbors := slices.Collect(g.Neighbors("A"))
-	slices.Sort(neighbors)
-	for _, v := range neighbors {
-		fmt.Println("-", v)
+	for v := range g.Neighbors("A") {
+		fmt.Println(v)
 	}
 
-	// Output:
-	// Neighbors of A:
-	// - B
-	// - C
+	// Unordered output:
+	// B
+	// C
 }
 
 func ExampleGraph_ContainsVertex() {
@@ -221,12 +207,14 @@ func ExampleGraph_Vertices() {
 	g.AddVertex(2)
 	g.AddVertex(3)
 
-	vertices := slices.Collect(g.Vertices())
-	slices.Sort(vertices)
-	fmt.Println(vertices)
+	for v := range g.Vertices() {
+		fmt.Println(v)
+	}
 
-	// Output:
-	// [1 2 3]
+	// Unordered output:
+	// 1
+	// 2
+	// 3
 }
 
 func ExampleGraph_Neighbors() {
@@ -234,12 +222,13 @@ func ExampleGraph_Neighbors() {
 	g.AddEdge(1, 2)
 	g.AddEdge(1, 3)
 
-	neighbors := slices.Collect(g.Neighbors(1))
-	slices.Sort(neighbors)
-	fmt.Println(neighbors)
+	for v := range g.Neighbors(1) {
+		fmt.Println(v)
+	}
 
-	// Output:
-	// [2 3]
+	// Unordered output:
+	// 2
+	// 3
 }
 
 func ExampleGraph_Successors() {
@@ -247,12 +236,13 @@ func ExampleGraph_Successors() {
 	g.AddEdge(1, 2)
 	g.AddEdge(1, 3)
 
-	succs := slices.Collect(g.Successors(1))
-	slices.Sort(succs)
-	fmt.Println(succs)
+	for v := range g.Successors(1) {
+		fmt.Println(v)
+	}
 
-	// Output:
-	// [2 3]
+	// Unordered output:
+	// 2
+	// 3
 }
 
 func ExampleGraph_Predecessors() {
@@ -260,12 +250,13 @@ func ExampleGraph_Predecessors() {
 	g.AddEdge(1, 3)
 	g.AddEdge(2, 3)
 
-	preds := slices.Collect(g.Predecessors(3))
-	slices.Sort(preds)
-	fmt.Println(preds)
+	for u := range g.Predecessors(3) {
+		fmt.Println(u)
+	}
 
-	// Output:
-	// [1 2]
+	// Unordered output:
+	// 1
+	// 2
 }
 
 func ExampleGraph_Edges() {
@@ -273,87 +264,59 @@ func ExampleGraph_Edges() {
 	g.AddEdge(1, 2)
 	g.AddEdge(2, 3)
 
-	var edges [][2]int
 	for u, v := range g.Edges() {
-		edges = append(edges, [2]int{u, v})
+		fmt.Printf("%d -> %d\n", u, v)
 	}
-	slices.SortFunc(edges, func(a, b [2]int) int {
-		if a[0] != b[0] {
-			return a[0] - b[0]
-		}
-		return a[1] - b[1]
-	})
-	fmt.Println(edges)
 
-	// Output:
-	// [[1 2] [2 3]]
+	// Unordered output:
+	// 1 -> 2
+	// 2 -> 3
 }
 
 func ExampleGraph_IncidentEdges() {
-	g := graph.New[int]()
+	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
-	g.AddEdge(1, 3)
+	g.AddEdge(3, 2)
+	g.AddEdge(2, 4)
 
-	var edges [][2]int
-	for u, v := range g.IncidentEdges(1) {
-		// To make the output deterministic, sort the edge's endpoints
-		if u > v {
-			u, v = v, u
-		}
-		edges = append(edges, [2]int{u, v})
+	for u, v := range g.IncidentEdges(2) {
+		fmt.Printf("%d -> %d\n", u, v)
 	}
-	slices.SortFunc(edges, func(a, b [2]int) int {
-		if a[0] != b[0] {
-			return a[0] - b[0]
-		}
-		return a[1] - b[1]
-	})
-	fmt.Println(edges)
 
-	// Output:
-	// [[1 2] [1 3]]
+	// Unordered output:
+	// 1 -> 2
+	// 2 -> 4
+	// 3 -> 2
 }
 
 func ExampleGraph_InIncidentEdges() {
 	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 3)
 	g.AddEdge(2, 3)
+	g.AddEdge(3, 4)
 
-	var edges [][2]int
 	for u, v := range g.InIncidentEdges(3) {
-		edges = append(edges, [2]int{u, v})
+		fmt.Printf("%d -> %d\n", u, v)
 	}
-	slices.SortFunc(edges, func(a, b [2]int) int {
-		if a[0] != b[0] {
-			return a[0] - b[0]
-		}
-		return a[1] - b[1]
-	})
-	fmt.Println(edges)
 
-	// Output:
-	// [[1 3] [2 3]]
+	// Unordered output:
+	// 1 -> 3
+	// 2 -> 3
 }
 
 func ExampleGraph_OutIncidentEdges() {
 	g := graph.New[int](graph.WithDirected())
 	g.AddEdge(1, 2)
-	g.AddEdge(1, 3)
+	g.AddEdge(2, 3)
+	g.AddEdge(2, 4)
 
-	var edges [][2]int
-	for u, v := range g.OutIncidentEdges(1) {
-		edges = append(edges, [2]int{u, v})
+	for u, v := range g.OutIncidentEdges(2) {
+		fmt.Printf("%d -> %d\n", u, v)
 	}
-	slices.SortFunc(edges, func(a, b [2]int) int {
-		if a[0] != b[0] {
-			return a[0] - b[0]
-		}
-		return a[1] - b[1]
-	})
-	fmt.Println(edges)
 
-	// Output:
-	// [[1 2] [1 3]]
+	// Unordered output:
+	// 2 -> 3
+	// 2 -> 4
 }
 
 func ExampleGraph_Clear() {
