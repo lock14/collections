@@ -121,4 +121,4 @@ go test -race ./...
 1.  **Branch Naming:** Use clear branch names such as `feat/new-collection`, `fix/bounds-check`, `perf/hash-distribution`.
 2.  **Commit Messages:** Write concise, descriptive commit messages following the Conventional Commits specification (e.g. `feat: add LinkedHashSet`, `fix: correct deque wrap-around index`).
 3.  **PR Description:** Fill out the [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md) completely, detailing changes, architectural adherence, and benchmark comparisons.
-4.  **Documentation Sync:** When adding or modifying APIs, update the corresponding Go doc comments, `README.md`, `CONTRIBUTING.md`, `llms.txt`, and `.agents/AGENTS.md` in the same pull request.
+4.  **Documentation Sync:** When adding or modifying APIs, update the corresponding Go doc comments, `README.md`, `CONTRIBUTING.md`, `llms.txt`, and `AGENTS.md` in the same pull request.
