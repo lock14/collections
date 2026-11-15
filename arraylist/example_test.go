@@ -2,8 +2,9 @@ package arraylist_test
 
 import (
 	"fmt"
-	"github.com/lock14/collections/arraylist"
 	"slices"
+
+	"github.com/lock14/collections/arraylist"
 )
 
 func ExampleSliceWrapper() {

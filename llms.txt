@@ -4,7 +4,7 @@
 
 ## Overview
 
-`github.com/lock14/collections` provides idiomatic, generic data structures designed for type safety, zero-allocation reads, predictable memory growth, and seamless standard Go iteration (`iter.Seq` and `iter.Seq2`). The library avoids `interface{}` boxing, reflection, and runtime assertions.
+`github.com/lock14/collections` provides idiomatic, generic data structures designed for type safety, zero-allocation reads, predictable memory growth, and seamless standard Go iteration (`iter.Seq` and `iter.Seq2`). The library has zero external runtime dependencies and avoids `interface{}` boxing, reflection, and runtime type assertions.
 
 ## Quick Start
 
@@ -36,46 +36,49 @@ func main() {
 ## Core Interfaces (`collections.go`)
 
 - `Iterable[T]`: Types providing `All() iter.Seq[T]` iteration.
-- `Collection[T]`: Base interface with `Size() int`, `Empty() bool`, and `All() iter.Seq[T]`.
-- `MutableCollection[T]`: Supports `Add(T)`, `Remove() T`, `AddAll(iter.Seq[T])`, and `Clear()`.
-- `List[T]` / `MutableList[T]`: Indexable sequences with `Get(idx int)` and `Set(idx int, t T)`.
-- `Queue[T]` / `MutableQueue[T]`: FIFO queues with `Peek() T`.
-- `Stack[T]` / `MutableStack[T]`: LIFO stacks with `Push(T)`, `Pop() T`, and `Peek() T`.
-- `Deque[T]` / `MutableDeque[T]`: Double-ended queues with `AddFront`, `AddBack`, `RemoveFront`, `RemoveBack`, `PeekFront`, `PeekBack`.
-- `Set[T]` / `MutableSet[T]`: Unique element collections with `Contains(T)`, `RemoveElement(T)`.
-- `SortedSet[T]`: Ordered sets with `First()`, `Last()`, `Floor(T)`, `Ceiling(T)`, `Lower(T)`, `Higher(T)`, and range queries (`SubSet`, `HeadSet`, `TailSet`).
-- `Map[K, V]` / `MutableMap[K, V]`: Associative key-value mappings with `Get(K) (V, bool)`, `Put(K, V)`, `Remove(K)`, `Keys()`, `Values()`.
-- `SortedMap[K, V]`: Ordered key-value maps with navigational queries (`FirstKey`, `LastKey`, `FloorKey`, etc.) and range views.
-- `Graph[V]` / `LabeledGraph[V, L]`: Directed and undirected graph structures.
-- `Trie[K, V]` / `MutableTrie[K, V]`: Prefix trees supporting string and generic slice keys with prefix queries (`KeysWithPrefix`, `LongestPrefixOf`).
+- `Collection[T]`: Base interface embedding `Iterable[T]` with `Size() int` and `Empty() bool`.
+- `MutableCollection[T]`: Embeds `Collection[T]` with `Add(T)`, `Remove() T`, `AddAll(iter.Seq[T])`, and `Clear()`.
+- `List[T]` / `MutableList[T]`: Indexed sequences with `Get(idx int) T` and `Set(idx int, t T)`.
+- `Queue[T]` / `MutableQueue[T]`: FIFO queues with `Peek() T` (enqueue via `Add`, dequeue via `Remove`).
+- `Stack[T]` / `MutableStack[T]`: LIFO stacks with `Peek() T`, `Push(T)`, and `Pop() T`.
+- `Deque[T]` / `MutableDeque[T]`: Double-ended queues combining `Stack[T]` and `Queue[T]` with `PeekFront() T`, `PeekBack() T`, `AddFront(T)`, `RemoveFront() T`, `AddBack(T)`, and `RemoveBack() T`.
+- `Set[T]` / `MutableSet[T]`: Unique-element collections with `Contains(T) bool`, `ContainsAll(Collection[T]) bool`, `RemoveElement(T)`, `RemoveAll(Collection[T])`, and `RetainAll(Collection[T])`.
+- `SequencedSet[T]` / `MutableSequencedSet[T]`: Encounter-ordered sets with `First() T`, `Last() T`, `Backward() iter.Seq[T]`, `PollFirst() T`, `PollLast() T`, `AddFirst(T)`, and `AddLast(T)`.
+- `SortedSet[T]` / `MutableSortedSet[T]`: Ascending-ordered sets embedding `SequencedSet[T]` with half-open `[from, to)` range iterators `From(T) iter.Seq[T]`, `To(T) iter.Seq[T]`, `Between(from, to T) iter.Seq[T]`, `PollFirst() T`, and `PollLast() T`.
+- `NavigableSet[T]` / `MutableNavigableSet[T]`: Sorted sets with closest-match queries `Lower(T) (T, bool)`, `Floor(T) (T, bool)`, `Ceiling(T) (T, bool)`, and `Higher(T) (T, bool)`.
+- `Map[K, V]` / `MutableMap[K, V]`: Associative key-value mappings with `Get(K) (V, bool)`, `ContainsKey(K) bool`, `Size() int`, `Empty() bool`, `All() iter.Seq2[K, V]`, `Keys() iter.Seq[K]`, `Values() iter.Seq[V]`, `Put(K, V)`, `Remove(K)`, and `Clear()`.
+- `SequencedMap[K, V]` / `MutableSequencedMap[K, V]`: Encounter-ordered maps with `First() (K, V)`, `Last() (K, V)`, `Backward() iter.Seq2[K, V]`, `BackwardKeys() iter.Seq[K]`, `BackwardValues() iter.Seq[V]`, `PollFirst() (K, V)`, `PollLast() (K, V)`, `PutFirst(K, V)`, and `PutLast(K, V)`.
+- `SortedMap[K, V]` / `MutableSortedMap[K, V]`: Key-ordered maps embedding `SequencedMap[K, V]` with half-open `[from, to)` range iterators `From(K) iter.Seq2[K, V]`, `To(K) iter.Seq2[K, V]`, `Between(from, to K) iter.Seq2[K, V]`, `PollFirst() (K, V)`, and `PollLast() (K, V)`.
+- `NavigableMap[K, V]` / `MutableNavigableMap[K, V]`: Sorted maps with closest-key queries `Lower(K) (K, V, bool)`, `Floor(K) (K, V, bool)`, `Ceiling(K) (K, V, bool)`, and `Higher(K) (K, V, bool)`.
 
 ## Available Packages
 
-- `arraydeque`: Double-ended queue backed by a dynamic circular buffer (`New`, `NewWithCapacity`).
-- `arraylist`: Dynamically resizing generic array list (`New`, `NewWithCapacity`).
-- `bitset`: High-performance 64-bit word-aligned dense integer bitset (`New`, `NewWithCapacity`).
-- `comparator`: Type-safe comparison primitives (`NaturalOrder`, `Reverse`, `Compare`).
-- `graph`: Directed and undirected graph implementations.
-- `hashmap`: Open-addressing / bucket-based generic hash map (`New`, `NewWithCapacity`).
-- `hashset`: Hash-table backed generic set (`New`, `NewWithCapacity`).
-- `heap`: Binary min/max priority heap (`New`, `NewOrdered`, `NewWithCapacity`).
-- `labeledgraph`: Directed and undirected graphs with edge labels.
-- `linkedhashmap`: Hash map maintaining insertion or access order (`New`, `NewWithCapacity`).
-- `linkedhashset`: Hash set maintaining insertion or access order (`New`, `NewWithCapacity`).
-- `linkedlist`: Generic doubly-linked list (`New`).
-- `treemap`: Sorted key-value map backed by a B-Tree (`New`, `NewOrdered`).
-- `treeset`: Sorted set backed by a B-Tree (`New`, `NewOrdered`).
-- `trie`: String- and generic slice-keyed prefix trees (`NewStringTrie`, `NewSliceTrie`).
+- `arraydeque`: Double-ended queue `ArrayDeque[T]` backed by a dynamic circular buffer (`New`, `Of`, `Option`, `WithCapacity`).
+- `arraylist`: Dynamically resizing `SliceWrapper[T]` (`New`, `Wrap`, `Of`, `Option`, `WithCapacity`).
+- `bitset`: 64-bit word-aligned non-negative integer `BitSet` implementing `MutableNavigableSet[int]` (`New`, `FromBits`, `Option`, `WithCapacity`).
+- `comparator`: Type-safe `Comparator[T]` functions (`NaturalOrder`, `Reverse`).
+- `graph`: Unlabeled directed and undirected `Graph[V]` (`New`, `Option`, `WithDirected`, `WithCapacity`).
+- `hashmap`: Hash-table backed `HashMap[K, V]` (`New`, `Wrap`, `Option`, `WithCapacity`).
+- `hashset`: Hash-table backed `HashSet[T]` (`New`, `Of`, `Option`, `WithCapacity`).
+- `heap`: Binary priority `Heap[T]` (`New`, `Min`, `Max`, `FromSlice`, `WrapSlice`, `Option`, `WithComparator`, `WithCapacity`).
+- `labeledgraph`: Edge-labeled directed and undirected `LabeledGraph[V, L]` (`New`, `Option`, `WithDirected`, `WithCapacity`).
+- `linkedhashmap`: Doubly-linked `LinkedHashMap[K, V]` supporting insertion/access order and bounded LRU eviction (`New`, `Option`, `WithCapacity`, `WithInsertionOrder`, `WithAccessOrder`, `WithMaxElements`).
+- `linkedhashset`: Doubly-linked `LinkedHashSet[T]` supporting insertion/access order and bounded LRU eviction (`New`, `Of`, `Option`, `WithCapacity`, `WithInsertionOrder`, `WithAccessOrder`, `WithMaxElements`).
+- `linkedlist`: Doubly-linked `LinkedList[T]` implementing `MutableList[T]` and `MutableDeque[T]` (`New`, `Of`).
+- `treemap`: B-Tree backed `TreeMap[K, V]` implementing `MutableNavigableMap[K, V]` (`New`, `NewOrdered`, `Option`, `WithDegree`).
+- `treeset`: B-Tree backed `TreeSet[T]` implementing `MutableNavigableSet[T]` (`New`, `NewOrdered`, `Of`, `Option`, `WithDegree`).
+- `trie`: Prefix-tree `Map[K, V]` and `Set[K]` implementations for `string` and `[]E` keys (`NewMap`, `NewSet`, `NewSliceMap`, `NewSliceSet`).
 
 ## Key Design Invariants
 
-- **Non-Concurrent:** Collections are not thread-safe by default, matching Go's built-in `slice` and `map` semantics.
-- **Zero-Allocation Reads:** `Get`, `Contains`, `Peek`, `Size`, and `Empty` do not allocate on the heap.
+- **Non-Concurrent:** Collections are single-threaded by contract, matching Go's built-in `slice` and `map` semantics.
+- **Zero-Allocation Reads:** `Get`, `Contains`, `Peek`, `PeekFront`, `PeekBack`, `Size`, and `Empty` do not allocate on the heap.
 - **Panic Semantics:**
-  - Slice indexing out-of-bounds panics (matching Go built-in slice index panic).
-  - Empty collection positional access/extraction panics (matching Go `s[0]` / `slices.Min` panic).
-  - Key lookup uses comma-ok `(V, bool)`; targeted deletion `Map.Remove(K)` / `Set.RemoveElement(T)` is a silent no-op if key is absent.
-- **Standard Stringer:** `Collection[T]` outputs `[e1 e2]`; `Map[K, V]` outputs `map[k1:v1 k2:v2]`.
+  - Slice indexing out-of-bounds (`idx < 0 || idx >= Size()`) panics.
+  - Positional access or extraction on an empty collection (`Remove`, `First`, `Last`, `Peek`, `Pop`, `RemoveFront`, `RemoveBack`, `PollFirst`, `PollLast`) panics.
+  - Invalid constructor options (negative `WithCapacity`, non-positive `WithMaxElements`) panic in `New`.
+  - Key lookup uses comma-ok `(V, bool)`; targeted deletion `Map.Remove(K)` / `Set.RemoveElement(T)` is a silent no-op if absent.
+- **Standard Stringer:** `Collection[T]` outputs `[e1 e2]`; `Map[K, V]` outputs `map[k1:v1 k2:v2]`; `Graph[V]` / `LabeledGraph[V, L]` outputs `graph[...]` or `digraph[...]`.
 
 ## References
 

@@ -1,200 +1,216 @@
 package treeset
 
 import (
+	"iter"
 	"slices"
 	"testing"
 
-	"github.com/lock14/collections/arraylist"
+	"github.com/lock14/collections/comparator"
 )
 
-func TestTreeSet_Operations(t *testing.T) {
+type testSliceCollection[T any] []T
+
+func (c testSliceCollection[T]) All() iter.Seq[T] {
+	return slices.Values(c)
+}
+
+func (c testSliceCollection[T]) Size() int {
+	return len(c)
+}
+
+func (c testSliceCollection[T]) Empty() bool {
+	return len(c) == 0
+}
+
+func TestTreeSet_Constructors(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
-		name     string
-		ops      func(s *TreeSet[int])
-		validate func(t *testing.T, s *TreeSet[int])
+		name      string
+		wantPanic bool
+		check     func(*testing.T)
 	}{
 		{
-			name: "basic add and contains",
-			ops: func(s *TreeSet[int]) {
+			name:      "missing_comparator_panics",
+			wantPanic: true,
+			check: func(_ *testing.T) {
+				New[int]()
+			},
+		},
+		{
+			name:      "invalid_degree_panics",
+			wantPanic: true,
+			check: func(_ *testing.T) {
+				NewOrdered[int](WithDegree[int](1))
+			},
+		},
+		{
+			name: "custom_degree_and_comparator",
+			check: func(t *testing.T) {
+				s := New[int](
+					WithDegree[int](4),
+					WithComparator(comparator.Reverse(comparator.NaturalOrder[int]())),
+				)
 				s.Add(1)
+				s.Add(3)
+				s.Add(2)
+				if got := slices.Collect(s.All()); !slices.Equal(got, []int{3, 2, 1}) {
+					t.Errorf("expected [3 2 1], got %v", got)
+				}
+			},
+		},
+		{
+			name: "new_ordered_option_precedence_and_slice_non_aliasing",
+			check: func(t *testing.T) {
+				opts := make([]Option[int], 1, 4)
+				opts[0] = WithComparator(comparator.Reverse(comparator.NaturalOrder[int]()))
+				sentinelCalled := false
+				fullSlice := opts[:2]
+				fullSlice[1] = func(*config[int]) { sentinelCalled = true }
+
+				s := NewOrdered[int](opts...)
+				if sentinelCalled {
+					t.Fatalf("NewOrdered overwrote or read spare capacity of caller slice")
+				}
+				s.Add(10)
+				s.Add(20)
+				if s.First() != 20 {
+					t.Errorf("expected custom ReverseOrder comparator to win in NewOrdered, got First()=%d", s.First())
+				}
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			defer func() {
+				r := recover()
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic but got none")
+				}
+				if !tc.wantPanic && r != nil {
+					t.Errorf("expected no panic but got: %v", r)
+				}
+			}()
+			tc.check(t)
+		})
+	}
+}
+
+func TestTreeSet_OperationsAndBulk(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T, *TreeSet[int])
+	}{
+		{
+			name: "add_duplicate_contains_remove_element_and_clear",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				s.Add(1)
+				s.Add(2)
 				s.Add(2)
 				s.Add(3)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if s.Size() != 3 {
-					t.Errorf("expected size 3, got %d", s.Size())
+				if s.Size() != 3 || !s.Contains(2) || s.Contains(4) {
+					t.Errorf("unexpected set state: %s", s.String())
 				}
-				if !s.Contains(2) {
-					t.Errorf("expected to contain 2")
+				s.RemoveElement(2)
+				s.RemoveElement(99)
+				if s.Contains(2) || s.Size() != 2 {
+					t.Errorf("RemoveElement failed: %s", s.String())
 				}
-				if s.Contains(4) {
-					t.Errorf("expected not to contain 4")
-				}
-			},
-		},
-		{
-			name: "add duplicate elements",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
-				s.Add(1)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if s.Size() != 1 {
-					t.Errorf("expected size 1, got %d", s.Size())
-				}
-			},
-		},
-		{
-			name: "remove element",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
-				s.Add(2)
-				s.RemoveElement(1)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if s.Contains(1) {
-					t.Errorf("expected not to contain 1")
-				}
-				if s.Size() != 1 {
-					t.Errorf("expected size 1, got %d", s.Size())
-				}
-			},
-		},
-		{
-			name: "remove single element",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
-				val := s.Remove()
-				if val != 1 {
-					t.Errorf("expected to remove 1, got %d", val)
-				}
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if !s.Empty() {
-					t.Errorf("expected set to be empty")
-				}
-			},
-		},
-		{
-			name: "clear set",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
-				s.Add(2)
 				s.Clear()
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
 				if !s.Empty() || s.Size() != 0 {
-					t.Errorf("expected set to be empty")
+					t.Errorf("Clear failed")
 				}
 			},
 		},
 		{
-			name: "contains all",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
+			name: "remove_returns_smallest_and_panics_when_empty",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				s.AddAll(slices.Values([]int{30, 10, 20}))
+				if got := s.Remove(); got != 10 || s.Size() != 2 {
+					t.Errorf("Remove() = %d, want 10", got)
+				}
+				s.Clear()
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic on empty Remove()")
+					}
+				}()
+				s.Remove()
+			},
+		},
+		{
+			name: "contains_all_including_self_alias",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				s.AddAll(slices.Values([]int{1, 2, 3}))
+				if !s.ContainsAll(s) {
+					t.Errorf("expected ContainsAll(self) to return true")
+				}
+				if !s.ContainsAll(testSliceCollection[int]{1, 2}) {
+					t.Errorf("expected subset ContainsAll to return true")
+				}
+				if s.ContainsAll(testSliceCollection[int]{1, 4}) {
+					t.Errorf("expected non-subset ContainsAll to return false")
+				}
+			},
+		},
+		{
+			name: "remove_all_empty_normal_and_self_alias",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				s.RemoveAll(testSliceCollection[int]{1, 2})
+				if !s.Empty() {
+					t.Errorf("expected empty set to remain empty")
+				}
+
+				s.AddAll(slices.Values([]int{1, 2, 3}))
+				s.RemoveAll(testSliceCollection[int]{2, 3})
+				if s.Size() != 1 || !s.Contains(1) {
+					t.Errorf("expected [1], got %s", s.String())
+				}
+
 				s.Add(2)
+				s.RemoveAll(s)
+				if !s.Empty() {
+					t.Errorf("expected empty set after RemoveAll(self)")
+				}
+			},
+		},
+		{
+			name: "retain_all_empty_normal_and_self_alias",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				s.RetainAll(testSliceCollection[int]{1, 2})
+				if !s.Empty() {
+					t.Errorf("expected empty set to remain empty")
+				}
+
+				s.AddAll(slices.Values([]int{1, 2, 3}))
+				s.RetainAll(s)
+				if s.Size() != 3 {
+					t.Errorf("expected RetainAll(self) to preserve size 3, got %d", s.Size())
+				}
+
+				s.RetainAll(testSliceCollection[int]{2, 2, 3, 4})
+				if !slices.Equal(slices.Collect(s.All()), []int{2, 3}) {
+					t.Errorf("expected [2 3], got %s", s.String())
+				}
+			},
+		},
+		{
+			name: "string_empty_single_and_multiple",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				if got := s.String(); got != "[]" {
+					t.Errorf("expected [], got %s", got)
+				}
+				s.Add(2)
+				if got := s.String(); got != "[2]" {
+					t.Errorf("expected [2], got %s", got)
+				}
+				s.Add(1)
 				s.Add(3)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				other := arraylist.Wrap([]int{})
-				other.Add(1)
-				other.Add(2)
-				if !s.ContainsAll(other) {
-					t.Errorf("expected to contain all elements")
-				}
-				other.Add(4)
-				if s.ContainsAll(other) {
-					t.Errorf("expected not to contain 4")
-				}
-			},
-		},
-		{
-			name: "add all",
-			ops: func(s *TreeSet[int]) {
-				other := arraylist.Wrap([]int{})
-				other.Add(1)
-				other.Add(2)
-				s.AddAll(other.All())
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if s.Size() != 2 {
-					t.Errorf("expected size 2, got %d", s.Size())
-				}
-				if !s.Contains(1) || !s.Contains(2) {
-					t.Errorf("expected to contain 1 and 2")
-				}
-			},
-		},
-		{
-			name: "remove all",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
-				s.Add(2)
-				s.Add(3)
-				other := arraylist.Wrap([]int{})
-				other.Add(2)
-				other.Add(3)
-				s.RemoveAll(other)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if s.Size() != 1 {
-					t.Errorf("expected size 1, got %d", s.Size())
-				}
-				if !s.Contains(1) {
-					t.Errorf("expected to contain 1")
-				}
-			},
-		},
-		{
-			name: "retain all",
-			ops: func(s *TreeSet[int]) {
-				s.Add(1)
-				s.Add(2)
-				s.Add(3)
-				other := arraylist.Wrap([]int{})
-				other.Add(2)
-				other.Add(3)
-				other.Add(4)
-				s.RetainAll(other)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				if s.Size() != 2 {
-					t.Errorf("expected size 2, got %d", s.Size())
-				}
-				if !s.Contains(2) || !s.Contains(3) {
-					t.Errorf("expected to retain 2 and 3")
-				}
-			},
-		},
-		{
-			name: "all iterator",
-			ops: func(s *TreeSet[int]) {
-				s.Add(3)
-				s.Add(1)
-				s.Add(2)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				var elements []int
-				for e := range s.All() {
-					elements = append(elements, e)
-				}
-				expected := []int{1, 2, 3}
-				if !slices.Equal(expected, elements) {
-					t.Errorf("expected %v, got %v", expected, elements)
-				}
-			},
-		},
-		{
-			name: "string representation",
-			ops: func(s *TreeSet[int]) {
-				s.Add(2)
-				s.Add(1)
-			},
-			validate: func(t *testing.T, s *TreeSet[int]) {
-				str := s.String()
-				// Should be ordered
-				if str != "[1 2]" {
-					t.Errorf("unexpected string representation: %s", str)
+				if got := s.String(); got != "[1 2 3]" {
+					t.Errorf("expected [1 2 3], got %s", got)
 				}
 			},
 		},
@@ -205,60 +221,140 @@ func TestTreeSet_Operations(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			s := NewOrdered[int]()
-			tc.ops(s)
-			tc.validate(t, s)
+			tc.check(t, s)
 		})
 	}
 }
 
-func TestTreeSet_Constructors(t *testing.T) {
+func TestTreeSet_SequencedNavigableAndIterators(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
-		name        string
-		constructor func()
-		expectPanic bool
+		name      string
+		wantPanic bool
+		check     func(*testing.T, *TreeSet[int])
 	}{
 		{
-			name: "remove from empty panics",
-			constructor: func() {
-				s := NewOrdered[int]()
-				s.Remove()
+			name:      "first_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *TreeSet[int]) {
+				s.First()
 			},
-			expectPanic: true,
 		},
 		{
-			name: "missing comparator panics",
-			constructor: func() {
-				New[int]()
+			name:      "last_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *TreeSet[int]) {
+				s.Last()
 			},
-			expectPanic: true,
 		},
 		{
-			name: "custom degree and comparator",
-			constructor: func() {
-				s := New[int](
-					WithDegree[int](4),
-					WithComparator[int](func(a, b int) int {
-						return a - b
-					}),
-				)
-				s.Add(1)
-				s.Add(2)
-				if s.Size() != 2 || !s.Contains(1) {
-					panic("unexpected set state")
+			name:      "poll_first_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *TreeSet[int]) {
+				s.PollFirst()
+			},
+		},
+		{
+			name:      "poll_last_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *TreeSet[int]) {
+				s.PollLast()
+			},
+		},
+		{
+			name: "first_last_poll_first_poll_last",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				s.AddAll(slices.Values([]int{10, 20, 30}))
+				if v := s.First(); v != 10 {
+					t.Errorf("First() = %d, want 10", v)
+				}
+				if v := s.Last(); v != 30 {
+					t.Errorf("Last() = %d, want 30", v)
+				}
+				if v := s.PollFirst(); v != 10 || s.Contains(10) {
+					t.Errorf("PollFirst() = %d", v)
+				}
+				if v := s.PollLast(); v != 30 || s.Contains(30) {
+					t.Errorf("PollLast() = %d", v)
 				}
 			},
-			expectPanic: false,
 		},
 		{
-			name: "NewOrdered with degree",
-			constructor: func() {
-				s := NewOrdered[int](WithDegree[int](3))
-				s.Add(10)
-				if !s.Contains(10) {
-					panic("unexpected set state")
+			name: "navigable_lower_floor_ceiling_higher",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				if _, ok := s.Lower(10); ok {
+					t.Errorf("expected false on empty Lower")
+				}
+				s.AddAll(slices.Values([]int{10, 20, 30, 40, 50}))
+
+				if k, ok := s.Lower(30); !ok || k != 20 {
+					t.Errorf("Lower(30) = (%d, %v)", k, ok)
+				}
+				if _, ok := s.Lower(10); ok {
+					t.Errorf("Lower(10) expected false")
+				}
+				if k, ok := s.Floor(30); !ok || k != 30 {
+					t.Errorf("Floor(30) = (%d, %v)", k, ok)
+				}
+				if k, ok := s.Floor(25); !ok || k != 20 {
+					t.Errorf("Floor(25) = (%d, %v)", k, ok)
+				}
+				if _, ok := s.Floor(5); ok {
+					t.Errorf("Floor(5) expected false")
+				}
+				if k, ok := s.Ceiling(30); !ok || k != 30 {
+					t.Errorf("Ceiling(30) = (%d, %v)", k, ok)
+				}
+				if k, ok := s.Ceiling(35); !ok || k != 40 {
+					t.Errorf("Ceiling(35) = (%d, %v)", k, ok)
+				}
+				if _, ok := s.Ceiling(60); ok {
+					t.Errorf("Ceiling(60) expected false")
+				}
+				if k, ok := s.Higher(30); !ok || k != 40 {
+					t.Errorf("Higher(30) = (%d, %v)", k, ok)
+				}
+				if _, ok := s.Higher(50); ok {
+					t.Errorf("Higher(50) expected false")
 				}
 			},
-			expectPanic: false,
+		},
+		{
+			name: "all_backward_from_to_between_and_early_breaks",
+			check: func(t *testing.T, s *TreeSet[int]) {
+				for i := 1; i <= 10; i++ {
+					s.Add(i)
+				}
+				if got := slices.Collect(s.Backward()); !slices.Equal(got, []int{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}) {
+					t.Errorf("Backward() = %v", got)
+				}
+				if got := slices.Collect(s.From(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
+					t.Errorf("From(5) = %v", got)
+				}
+				if got := slices.Collect(s.To(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
+					t.Errorf("To(5) = %v", got)
+				}
+				if got := slices.Collect(s.Between(4, 8)); !slices.Equal(got, []int{4, 5, 6, 7}) {
+					t.Errorf("Between(4, 8) = %v", got)
+				}
+
+				for _, seq := range []iter.Seq[int]{
+					s.All(),
+					s.Backward(),
+					s.From(2),
+					s.To(9),
+					s.Between(2, 9),
+				} {
+					count := 0
+					for range seq {
+						count++
+						break
+					}
+					if count != 1 {
+						t.Errorf("expected early break count 1, got %d", count)
+					}
+				}
+			},
 		},
 	}
 
@@ -268,161 +364,15 @@ func TestTreeSet_Constructors(t *testing.T) {
 			t.Parallel()
 			defer func() {
 				r := recover()
-				if tc.expectPanic && r == nil {
-					t.Errorf("expected panic but got none")
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic, got none")
 				}
-				if !tc.expectPanic && r != nil {
-					t.Errorf("expected no panic but got: %v", r)
+				if !tc.wantPanic && r != nil {
+					t.Errorf("unexpected panic: %v", r)
 				}
 			}()
-			tc.constructor()
+			s := NewOrdered[int](WithDegree[int](2))
+			tc.check(t, s)
 		})
-	}
-}
-
-func assertKV(t *testing.T, k int, ok bool, expectedK int, expectedOk bool, name string) {
-	t.Helper()
-	if ok != expectedOk {
-		t.Errorf("%s: expected ok=%v, got %v", name, expectedOk, ok)
-	} else if ok && k != expectedK {
-		t.Errorf("%s: expected %v, got %v", name, expectedK, k)
-	}
-}
-
-func TestTreeSet_Navigable(t *testing.T) {
-	t.Parallel()
-	s := NewOrdered[int]()
-
-	_, ok := s.Lower(10)
-	if ok {
-		t.Errorf("expected empty set to return false for Lower")
-	}
-
-	s.Add(10)
-	s.Add(20)
-	s.Add(30)
-	s.Add(40)
-	s.Add(50)
-
-	k, ok := s.Lower(30)
-	assertKV(t, k, ok, 20, true, "Lower(30)")
-	k, ok = s.Lower(10)
-	assertKV(t, k, ok, 0, false, "Lower(10)")
-
-	k, ok = s.Floor(30)
-	assertKV(t, k, ok, 30, true, "Floor(30)")
-	k, ok = s.Floor(25)
-	assertKV(t, k, ok, 20, true, "Floor(25)")
-	k, ok = s.Floor(5)
-	assertKV(t, k, ok, 0, false, "Floor(5)")
-
-	k, ok = s.Ceiling(30)
-	assertKV(t, k, ok, 30, true, "Ceiling(30)")
-	k, ok = s.Ceiling(35)
-	assertKV(t, k, ok, 40, true, "Ceiling(35)")
-	k, ok = s.Ceiling(60)
-	assertKV(t, k, ok, 0, false, "Ceiling(60)")
-
-	k, ok = s.Higher(30)
-	assertKV(t, k, ok, 40, true, "Higher(30)")
-	k, ok = s.Higher(50)
-	assertKV(t, k, ok, 0, false, "Higher(50)")
-}
-
-func TestTreeSet_Sequenced(t *testing.T) {
-	t.Parallel()
-
-	// Test panics
-	assertPanic := func(name string, f func()) {
-		t.Helper()
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("%s did not panic", name)
-			}
-		}()
-		f()
-	}
-
-	s := NewOrdered[int]()
-	assertPanic("First", func() { s.First() })
-	assertPanic("Last", func() { s.Last() })
-	assertPanic("PollFirst", func() { s.PollFirst() })
-	assertPanic("PollLast", func() { s.PollLast() })
-
-	s.Add(10)
-	s.Add(20)
-	s.Add(30)
-
-	v := s.First()
-	if v != 10 {
-		t.Errorf("First: expected 10, got %v", v)
-	}
-
-	v = s.Last()
-	if v != 30 {
-		t.Errorf("Last: expected 30, got %v", v)
-	}
-
-	v = s.PollFirst()
-	if v != 10 {
-		t.Errorf("PollFirst: expected 10, got %v", v)
-	}
-	if s.Contains(10) {
-		t.Errorf("PollFirst didn't remove")
-	}
-
-	v = s.PollLast()
-	if v != 30 {
-		t.Errorf("PollLast: expected 30, got %v", v)
-	}
-	if s.Contains(30) {
-		t.Errorf("PollLast didn't remove")
-	}
-
-}
-
-func TestTreeSet_Backward(t *testing.T) {
-	t.Parallel()
-	s := NewOrdered[int]()
-	for i := 1; i <= 5; i++ {
-		s.Add(i * 10)
-	}
-
-	var keys []int
-	for k := range s.Backward() {
-		keys = append(keys, k)
-	}
-	if !slices.Equal(keys, []int{50, 40, 30, 20, 10}) {
-		t.Errorf("Backward: %v", keys)
-	}
-
-	// coverage for Backward early exit
-	for k := range s.Backward() {
-		_ = k
-		break
-	}
-}
-
-func TestTreeSet_Iterators_Bounds(t *testing.T) {
-	t.Parallel()
-	s := NewOrdered[int]()
-	for i := 1; i <= 10; i++ {
-		s.Add(i)
-	}
-
-	if got := slices.Collect(s.From(5)); !slices.Equal(got, []int{5, 6, 7, 8, 9, 10}) {
-		t.Errorf("From(5): %v", got)
-	}
-	if got := slices.Collect(s.To(5)); !slices.Equal(got, []int{1, 2, 3, 4}) {
-		t.Errorf("To(5): %v", got)
-	}
-	if got := slices.Collect(s.Between(4, 8)); !slices.Equal(got, []int{4, 5, 6, 7}) {
-		t.Errorf("Between(4, 8): %v", got)
-	}
-
-	// Early exit coverage
-	for k := range s.Between(1, 10) {
-		_ = k
-		break
 	}
 }

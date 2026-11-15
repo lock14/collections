@@ -12,9 +12,9 @@ func NaturalOrder[T cmp.Ordered]() Comparator[T] {
 	return cmp.Compare[T]
 }
 
-// Reverse returns a comparator that reverses the ordering of the given comparator.
-func Reverse[T any](comparator Comparator[T]) Comparator[T] {
+// Reverse returns a comparator that imposes the reverse ordering of cmpFunc.
+func Reverse[T any](cmpFunc Comparator[T]) Comparator[T] {
 	return func(t1, t2 T) int {
-		return -comparator(t1, t2)
+		return cmpFunc(t2, t1)
 	}
 }

@@ -2,8 +2,9 @@ package linkedlist_test
 
 import (
 	"fmt"
-	"github.com/lock14/collections/linkedlist"
 	"slices"
+
+	"github.com/lock14/collections/linkedlist"
 )
 
 func ExampleLinkedList() {

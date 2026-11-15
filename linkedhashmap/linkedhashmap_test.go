@@ -8,20 +8,20 @@ import (
 func TestNew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name  string
-		opts  []Opt
-		check func(*testing.T, *LinkedHashMap[int, int])
+		name      string
+		opts      []Option
+		wantPanic bool
+		check     func(*testing.T, *LinkedHashMap[int, int])
 	}{
 		{
 			name: "default",
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				if m.Size() != 0 {
-					t.Errorf("expected size 0")
+				if m.Size() != 0 || !m.Empty() {
+					t.Errorf("expected empty map, got size %d", m.Size())
 				}
-				if m.accessOrder {
+				if m.accessOrder != InsertionOrder {
 					t.Errorf("expected insertion order by default")
 				}
-				// Should be able to add multiple elements
 				m.Put(1, 10)
 				m.Put(2, 20)
 				if m.Size() != 2 {
@@ -31,25 +31,25 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name: "access_order",
-			opts: []Opt{WithAccessOrder()},
+			opts: []Option{WithAccessOrder()},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				if !m.accessOrder {
+				if m.accessOrder != AccessOrder {
 					t.Errorf("expected access order")
 				}
 			},
 		},
 		{
-			name: "insertion_order",
-			opts: []Opt{WithInsertionOrder()},
+			name: "insertion_order_override",
+			opts: []Option{WithAccessOrder(), WithInsertionOrder()},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				if m.accessOrder {
+				if m.accessOrder != InsertionOrder {
 					t.Errorf("expected insertion order")
 				}
 			},
 		},
 		{
 			name: "max_elements",
-			opts: []Opt{WithMaxElements(2)},
+			opts: []Option{WithMaxElements(2)},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				if m.maxElements != 2 {
 					t.Errorf("expected maxElements 2, got %d", m.maxElements)
@@ -57,142 +57,143 @@ func TestNew(t *testing.T) {
 			},
 		},
 		{
-			name: "capacity",
-			opts: []Opt{WithCapacity(100)},
+			name: "capacity_zero_and_positive",
+			opts: []Option{WithCapacity(0), WithCapacity(100)},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				// No exposed capacity check, but verifies option doesn't panic
 				m.Put(1, 10)
 				if m.Size() != 1 {
-					t.Errorf("expected size 1")
+					t.Errorf("expected size 1, got %d", m.Size())
 				}
 			},
+		},
+		{
+			name:      "negative_capacity_panics",
+			opts:      []Option{WithCapacity(-1)},
+			wantPanic: true,
+		},
+		{
+			name:      "zero_max_elements_panics",
+			opts:      []Option{WithMaxElements(0)},
+			wantPanic: true,
+		},
+		{
+			name:      "negative_max_elements_panics",
+			opts:      []Option{WithMaxElements(-5)},
+			wantPanic: true,
 		},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			defer func() {
+				r := recover()
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic, got none")
+				}
+				if !tc.wantPanic && r != nil {
+					t.Errorf("unexpected panic: %v", r)
+				}
+			}()
 			m := New[int, int](tc.opts...)
-			tc.check(t, m)
+			if tc.check != nil {
+				tc.check(t, m)
+			}
 		})
 	}
 }
 
-func TestLinkedHashMap_Get(t *testing.T) {
+func TestLinkedHashMap_GetAndPut(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
-		opts  []Opt
+		opts  []Option
 		check func(*testing.T, *LinkedHashMap[int, int])
 	}{
 		{
 			name: "get_missing",
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				_, ok := m.Get(1)
-				if ok {
-					t.Errorf("expected missing key")
+				if val, ok := m.Get(1); ok || val != 0 {
+					t.Errorf("expected (0, false), got (%d, %v)", val, ok)
 				}
 			},
 		},
 		{
-			name: "get_insertion_order",
+			name: "get_insertion_order_preserves_order",
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
 				m.Put(2, 20)
-				val, ok := m.Get(1)
-				if !ok || val != 10 {
-					t.Errorf("expected 10")
+				if val, ok := m.Get(1); !ok || val != 10 {
+					t.Errorf("expected (10, true), got (%d, %v)", val, ok)
 				}
-
-				keys := slices.Collect(m.Keys())
-				if !slices.Equal(keys, []int{1, 2}) {
-					t.Errorf("expected [1, 2], got %v", keys)
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{1, 2}) {
+					t.Errorf("expected [1 2], got %v", got)
 				}
 			},
 		},
 		{
-			name: "get_access_order",
-			opts: []Opt{WithAccessOrder()},
+			name: "get_access_order_moves_to_back",
+			opts: []Option{WithAccessOrder()},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
 				m.Put(2, 20)
-				val, ok := m.Get(1)
-				if !ok || val != 10 {
-					t.Errorf("expected 10")
+				if val, ok := m.Get(1); !ok || val != 10 {
+					t.Errorf("expected (10, true), got (%d, %v)", val, ok)
 				}
-
-				// 1 should now be the most recently accessed (at the tail)
-				keys := slices.Collect(m.Keys())
-				if !slices.Equal(keys, []int{2, 1}) {
-					t.Errorf("expected [2, 1], got %v", keys)
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{2, 1}) {
+					t.Errorf("expected [2 1], got %v", got)
 				}
 			},
 		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			m := New[int, int](tc.opts...)
-			tc.check(t, m)
-		})
-	}
-}
-
-func TestLinkedHashMap_Put(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name  string
-		opts  []Opt
-		check func(*testing.T, *LinkedHashMap[int, int])
-	}{
 		{
 			name: "put_update_insertion_order",
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
 				m.Put(2, 20)
-				m.Put(1, 100) // update
-
+				m.Put(1, 100)
 				if val, _ := m.Get(1); val != 100 {
-					t.Errorf("expected update to 100")
+					t.Errorf("expected 100, got %d", val)
 				}
-
-				keys := slices.Collect(m.Keys())
-				if !slices.Equal(keys, []int{1, 2}) {
-					t.Errorf("expected [1, 2]")
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{1, 2}) {
+					t.Errorf("expected [1 2], got %v", got)
 				}
 			},
 		},
 		{
 			name: "put_update_access_order",
-			opts: []Opt{WithAccessOrder()},
+			opts: []Option{WithAccessOrder()},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
 				m.Put(2, 20)
-				m.Put(1, 100) // update
-
-				// 1 should move to the tail
-				keys := slices.Collect(m.Keys())
-				if !slices.Equal(keys, []int{2, 1}) {
-					t.Errorf("expected [2, 1]")
+				m.Put(1, 100)
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{2, 1}) {
+					t.Errorf("expected [2 1], got %v", got)
 				}
 			},
 		},
 		{
-			name: "put_evicts_eldest",
-			opts: []Opt{WithMaxElements(2)},
+			name: "put_evicts_eldest_max_2",
+			opts: []Option{WithMaxElements(2)},
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
 				m.Put(2, 20)
 				m.Put(3, 30)
-
-				if m.Size() != 2 {
-					t.Errorf("expected size 2, got %d", m.Size())
+				if m.Size() != 2 || m.ContainsKey(1) {
+					t.Errorf("expected key 1 evicted and size 2, got %s", m.String())
 				}
-
-				keys := slices.Collect(m.Keys())
-				if !slices.Equal(keys, []int{2, 3}) {
-					t.Errorf("expected [2, 3], got %v", keys)
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{2, 3}) {
+					t.Errorf("expected [2 3], got %v", got)
+				}
+			},
+		},
+		{
+			name: "put_evicts_eldest_max_1",
+			opts: []Option{WithMaxElements(1)},
+			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
+				m.Put(1, 10)
+				m.Put(2, 20)
+				if m.Size() != 1 || m.ContainsKey(1) || !m.ContainsKey(2) {
+					t.Errorf("expected only key 2 to remain, got %s", m.String())
 				}
 			},
 		},
@@ -207,40 +208,35 @@ func TestLinkedHashMap_Put(t *testing.T) {
 	}
 }
 
-func TestLinkedHashMap_Remove(t *testing.T) {
+func TestLinkedHashMap_RemoveAndClear(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
-		opts  []Opt
 		check func(*testing.T, *LinkedHashMap[int, int])
 	}{
 		{
-			name: "remove_existing",
+			name: "remove_existing_and_missing",
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
 				m.Put(2, 20)
 				m.Remove(1)
-
-				if m.Size() != 1 {
-					t.Errorf("expected size 1")
-				}
-				if m.ContainsKey(1) {
-					t.Errorf("expected 1 to be removed")
-				}
-
-				keys := slices.Collect(m.Keys())
-				if !slices.Equal(keys, []int{2}) {
-					t.Errorf("expected [2], got %v", keys)
+				m.Remove(99)
+				if m.Size() != 1 || m.ContainsKey(1) || !m.ContainsKey(2) {
+					t.Errorf("unexpected state after Remove: %s", m.String())
 				}
 			},
 		},
 		{
-			name: "remove_missing",
+			name: "clear",
 			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
 				m.Put(1, 10)
-				m.Remove(2) // should not panic
-				if m.Size() != 1 {
-					t.Errorf("expected size 1")
+				m.Put(2, 20)
+				m.Clear()
+				if !m.Empty() || m.Size() != 0 {
+					t.Errorf("expected empty map after Clear")
+				}
+				if slices.Collect(m.Keys()) != nil {
+					t.Errorf("expected nil collected keys on cleared map")
 				}
 			},
 		},
@@ -249,7 +245,137 @@ func TestLinkedHashMap_Remove(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			m := New[int, int](tc.opts...)
+			m := New[int, int]()
+			tc.check(t, m)
+		})
+	}
+}
+
+func TestLinkedHashMap_Sequenced(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name      string
+		opts      []Option
+		wantPanic bool
+		check     func(*testing.T, *LinkedHashMap[int, string])
+	}{
+		{
+			name:      "first_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, m *LinkedHashMap[int, string]) {
+				m.First()
+			},
+		},
+		{
+			name:      "last_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, m *LinkedHashMap[int, string]) {
+				m.Last()
+			},
+		},
+		{
+			name:      "poll_first_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, m *LinkedHashMap[int, string]) {
+				m.PollFirst()
+			},
+		},
+		{
+			name:      "poll_last_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, m *LinkedHashMap[int, string]) {
+				m.PollLast()
+			},
+		},
+		{
+			name: "first_and_last_non_empty",
+			check: func(t *testing.T, m *LinkedHashMap[int, string]) {
+				m.Put(10, "a")
+				m.Put(20, "b")
+				m.Put(30, "c")
+				if k, v := m.First(); k != 10 || v != "a" {
+					t.Errorf("First() = (%d, %q), want (10, 'a')", k, v)
+				}
+				if k, v := m.Last(); k != 30 || v != "c" {
+					t.Errorf("Last() = (%d, %q), want (30, 'c')", k, v)
+				}
+			},
+		},
+		{
+			name: "poll_first_and_poll_last",
+			check: func(t *testing.T, m *LinkedHashMap[int, string]) {
+				m.Put(10, "a")
+				m.Put(20, "b")
+				m.Put(30, "c")
+				if k, v := m.PollFirst(); k != 10 || v != "a" || m.ContainsKey(10) {
+					t.Errorf("PollFirst failed: (%d, %q)", k, v)
+				}
+				if k, v := m.PollLast(); k != 30 || v != "c" || m.ContainsKey(30) {
+					t.Errorf("PollLast failed: (%d, %q)", k, v)
+				}
+				if m.Size() != 1 {
+					t.Errorf("expected remaining size 1, got %d", m.Size())
+				}
+			},
+		},
+		{
+			name: "put_first_and_put_last_insert_and_reposition",
+			check: func(t *testing.T, m *LinkedHashMap[int, string]) {
+				m.PutFirst(2, "B")
+				m.PutFirst(1, "A")
+				m.PutLast(3, "C")
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{1, 2, 3}) {
+					t.Errorf("expected [1 2 3], got %v", got)
+				}
+
+				m.PutFirst(3, "C-updated")
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{3, 1, 2}) {
+					t.Errorf("expected [3 1 2], got %v", got)
+				}
+				if v, _ := m.Get(3); v != "C-updated" {
+					t.Errorf("expected C-updated, got %q", v)
+				}
+
+				m.PutLast(1, "A-updated")
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{3, 2, 1}) {
+					t.Errorf("expected [3 2 1], got %v", got)
+				}
+				if v, _ := m.Get(1); v != "A-updated" {
+					t.Errorf("expected A-updated, got %q", v)
+				}
+			},
+		},
+		{
+			name: "put_first_and_put_last_eviction",
+			opts: []Option{WithMaxElements(2)},
+			check: func(t *testing.T, m *LinkedHashMap[int, string]) {
+				m.PutFirst(1, "A")
+				m.PutFirst(2, "B")
+				m.PutFirst(3, "C") // Evicts tail (1)
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{3, 2}) {
+					t.Errorf("expected [3 2], got %v", got)
+				}
+				m.PutLast(4, "D") // Evicts head (3)
+				if got := slices.Collect(m.Keys()); !slices.Equal(got, []int{2, 4}) {
+					t.Errorf("expected [2 4], got %v", got)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			defer func() {
+				r := recover()
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic, got none")
+				}
+				if !tc.wantPanic && r != nil {
+					t.Errorf("unexpected panic: %v", r)
+				}
+			}()
+			m := New[int, string](tc.opts...)
 			tc.check(t, m)
 		})
 	}
@@ -259,339 +385,126 @@ func TestLinkedHashMap_Iterators(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
-		opts  []Opt
-		check func(*testing.T, *LinkedHashMap[int, int])
+		check func(*testing.T)
 	}{
 		{
-			name: "all_keys_values",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				m.Put(1, 10)
-				m.Put(2, 20)
-				m.Put(3, 30)
+			name: "forward_iterators_full_and_early_break",
+			check: func(t *testing.T) {
+				m := New[int, string]()
+				m.Put(1, "A")
+				m.Put(2, "B")
+				m.Put(3, "C")
 
 				var keys []int
-				var vals []int
+				var vals []string
 				for k, v := range m.All() {
 					keys = append(keys, k)
 					vals = append(vals, v)
 				}
-				if !slices.Equal(keys, []int{1, 2, 3}) {
-					t.Errorf("unexpected keys")
+				if !slices.Equal(keys, []int{1, 2, 3}) || !slices.Equal(vals, []string{"A", "B", "C"}) {
+					t.Errorf("unexpected All(): keys=%v vals=%v", keys, vals)
 				}
-				if !slices.Equal(vals, []int{10, 20, 30}) {
-					t.Errorf("unexpected values")
-				}
-
 				if !slices.Equal(slices.Collect(m.Keys()), []int{1, 2, 3}) {
 					t.Errorf("unexpected Keys()")
 				}
-				if !slices.Equal(slices.Collect(m.Values()), []int{10, 20, 30}) {
+				if !slices.Equal(slices.Collect(m.Values()), []string{"A", "B", "C"}) {
 					t.Errorf("unexpected Values()")
 				}
-			},
-		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			m := New[int, int](tc.opts...)
-			tc.check(t, m)
-		})
-	}
-}
 
-func TestLinkedHashMap_Clear(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name  string
-		opts  []Opt
-		check func(*testing.T, *LinkedHashMap[int, int])
-	}{
-		{
-			name: "clear",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				m.Put(1, 10)
-				m.Put(2, 20)
-				m.Clear()
-
-				if !m.Empty() {
-					t.Errorf("expected empty map")
-				}
-				if slices.Collect(m.Keys()) != nil {
-					t.Errorf("expected no keys")
-				}
-			},
-		},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			m := New[int, int](tc.opts...)
-			tc.check(t, m)
-		})
-	}
-}
-
-func TestLinkedHashMap_CoverageIters(_ *testing.T) {
-	hm := New[int, int]()
-	hm.Put(1, 1)
-	hm.Put(2, 2)
-	for k := range hm.Keys() {
-		_ = k
-		break
-	}
-	for v := range hm.Values() {
-		_ = v
-		break
-	}
-}
-
-func TestLinkedHashMap_Sequenced(t *testing.T) {
-	t.Parallel()
-
-	t.Run("first_last", func(t *testing.T) {
-		m := New[int, string]()
-
-		assertPanic := func(name string, f func()) {
-			t.Helper()
-			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("%s did not panic", name)
-				}
-			}()
-			f()
-		}
-
-		assertPanic("First", func() { m.First() })
-		assertPanic("Last", func() { m.Last() })
-		assertPanic("PollFirst", func() { m.PollFirst() })
-		assertPanic("PollLast", func() { m.PollLast() })
-
-		hm := New[int, int]()
-
-		hm.Put(10, 10)
-		hm.Put(20, 20)
-		hm.Put(30, 30)
-
-		k, v := hm.First()
-		if k != 10 || v != 10 {
-			t.Errorf("First: expected (10, 10), got (%v, %v)", k, v)
-		}
-
-		k, v = hm.Last()
-		if k != 30 || v != 30 {
-			t.Errorf("Last: expected (30, 30), got (%v, %v)", k, v)
-		}
-	})
-
-	t.Run("poll_first_last", func(t *testing.T) {
-		hm := New[int, int]()
-
-		hm.Put(10, 10)
-		hm.Put(20, 20)
-		hm.Put(30, 30)
-
-		k, v := hm.PollFirst()
-		if k != 10 || v != 10 {
-			t.Errorf("PollFirst: expected (10, 10), got (%v, %v)", k, v)
-		}
-		if hm.ContainsKey(10) {
-			t.Errorf("PollFirst didn't remove")
-		}
-
-		k, v = hm.PollLast()
-		if k != 30 || v != 30 {
-			t.Errorf("PollLast: expected (30, 30), got (%v, %v)", k, v)
-		}
-		if hm.ContainsKey(30) {
-			t.Errorf("PollLast didn't remove")
-		}
-	})
-
-	t.Run("put_first_last", func(t *testing.T) {
-		m := New[int, string]()
-		m.PutFirst(2, "B")
-		m.PutFirst(1, "A")
-		m.PutLast(3, "C")
-
-		got := slices.Collect(m.Keys())
-		expected := []int{1, 2, 3}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-
-		// Update existing with PutFirst
-		m.PutFirst(3, "C-updated")
-		got = slices.Collect(m.Keys())
-		expected = []int{3, 1, 2}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-		v, _ := m.Get(3)
-		if v != "C-updated" {
-			t.Errorf("expected value updated")
-		}
-
-		// Update existing with PutLast
-		m.PutLast(1, "A-updated")
-		got = slices.Collect(m.Keys())
-		expected = []int{3, 2, 1}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-		v, _ = m.Get(1)
-		if v != "A-updated" {
-			t.Errorf("expected value updated")
-		}
-	})
-
-	t.Run("put_first_eviction", func(t *testing.T) {
-		m := New[int, string](WithMaxElements(2))
-		m.PutFirst(1, "A")
-		m.PutFirst(2, "B")
-		m.PutFirst(3, "C") // Should evict tail (1, "A")
-
-		got := slices.Collect(m.Keys())
-		expected := []int{3, 2}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-	})
-}
-
-func TestLinkedHashMap_Backward(t *testing.T) {
-	t.Parallel()
-	m := New[int, string]()
-	m.Put(1, "A")
-	m.Put(2, "B")
-	m.Put(3, "C")
-
-	var keys []int
-	var values []string
-	for k, v := range m.Backward() {
-		keys = append(keys, k)
-		values = append(values, v)
-	}
-	if !slices.Equal(keys, []int{3, 2, 1}) {
-		t.Errorf("expected Backward keys [3, 2, 1], got %v", keys)
-	}
-	if !slices.Equal(values, []string{"C", "B", "A"}) {
-		t.Errorf("expected Backward values [C, B, A], got %v", values)
-	}
-
-	keys2 := slices.Collect(m.BackwardKeys())
-	if !slices.Equal(keys2, []int{3, 2, 1}) {
-		t.Errorf("expected BackwardKeys [3, 2, 1], got %v", keys2)
-	}
-
-	values2 := slices.Collect(m.BackwardValues())
-	if !slices.Equal(values2, []string{"C", "B", "A"}) {
-		t.Errorf("expected BackwardValues [C, B, A], got %v", values2)
-	}
-
-	// cover early exits
-	for k := range m.BackwardKeys() {
-		_ = k
-		break
-	}
-	for v := range m.BackwardValues() {
-		_ = v
-		break
-	}
-	for k, v := range m.Backward() {
-		_, _ = k, v
-		break
-	}
-}
-
-func TestLinkedHashMap_ZeroValueIterators(t *testing.T) {
-	t.Parallel()
-	cases := []struct {
-		name  string
-		check func(*testing.T, *LinkedHashMap[int, int])
-	}{
-		{
-			name: "zero_value_all",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				count := 0
+				c1 := 0
 				for range m.All() {
-					count++
+					c1++
+					break
 				}
-				if count != 0 {
-					t.Errorf("expected 0 entries, got %d", count)
-				}
-			},
-		},
-		{
-			name: "zero_value_keys",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				count := 0
+				c2 := 0
 				for range m.Keys() {
-					count++
+					c2++
+					break
 				}
-				if count != 0 {
-					t.Errorf("expected 0 keys, got %d", count)
-				}
-			},
-		},
-		{
-			name: "zero_value_values",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				count := 0
+				c3 := 0
 				for range m.Values() {
-					count++
+					c3++
+					break
 				}
-				if count != 0 {
-					t.Errorf("expected 0 values, got %d", count)
+				if c1 != 1 || c2 != 1 || c3 != 1 {
+					t.Errorf("expected early break counts of 1, got %d/%d/%d", c1, c2, c3)
 				}
 			},
 		},
 		{
-			name: "zero_value_backward",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				count := 0
+			name: "backward_iterators_full_and_early_break",
+			check: func(t *testing.T) {
+				m := New[int, string]()
+				m.Put(1, "A")
+				m.Put(2, "B")
+				m.Put(3, "C")
+
+				var keys []int
+				var vals []string
+				for k, v := range m.Backward() {
+					keys = append(keys, k)
+					vals = append(vals, v)
+				}
+				if !slices.Equal(keys, []int{3, 2, 1}) || !slices.Equal(vals, []string{"C", "B", "A"}) {
+					t.Errorf("unexpected Backward(): keys=%v vals=%v", keys, vals)
+				}
+				if !slices.Equal(slices.Collect(m.BackwardKeys()), []int{3, 2, 1}) {
+					t.Errorf("unexpected BackwardKeys()")
+				}
+				if !slices.Equal(slices.Collect(m.BackwardValues()), []string{"C", "B", "A"}) {
+					t.Errorf("unexpected BackwardValues()")
+				}
+
+				c1 := 0
 				for range m.Backward() {
-					count++
+					c1++
+					break
 				}
-				if count != 0 {
-					t.Errorf("expected 0 entries, got %d", count)
-				}
-			},
-		},
-		{
-			name: "zero_value_backward_keys",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				count := 0
+				c2 := 0
 				for range m.BackwardKeys() {
-					count++
+					c2++
+					break
 				}
-				if count != 0 {
-					t.Errorf("expected 0 keys, got %d", count)
+				c3 := 0
+				for range m.BackwardValues() {
+					c3++
+					break
+				}
+				if c1 != 1 || c2 != 1 || c3 != 1 {
+					t.Errorf("expected backward early break counts of 1, got %d/%d/%d", c1, c2, c3)
 				}
 			},
 		},
 		{
-			name: "zero_value_backward_values",
-			check: func(t *testing.T, m *LinkedHashMap[int, int]) {
-				count := 0
-				for range m.BackwardValues() {
-					count++
+			name: "zero_value_iterators",
+			check: func(t *testing.T) {
+				var m LinkedHashMap[int, int]
+				for range m.All() {
+					t.Fatal("expected empty All() on zero value")
 				}
-				if count != 0 {
-					t.Errorf("expected 0 values, got %d", count)
+				for range m.Keys() {
+					t.Fatal("expected empty Keys() on zero value")
+				}
+				for range m.Values() {
+					t.Fatal("expected empty Values() on zero value")
+				}
+				for range m.Backward() {
+					t.Fatal("expected empty Backward() on zero value")
+				}
+				for range m.BackwardKeys() {
+					t.Fatal("expected empty BackwardKeys() on zero value")
+				}
+				for range m.BackwardValues() {
+					t.Fatal("expected empty BackwardValues() on zero value")
 				}
 			},
 		},
 	}
-
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			var m LinkedHashMap[int, int]
-			tc.check(t, &m)
+			tc.check(t)
 		})
 	}
 }

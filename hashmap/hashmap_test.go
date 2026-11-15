@@ -2,32 +2,109 @@ package hashmap
 
 import (
 	"slices"
-	"sort"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name  string
-		opts  []Option
-		check func(*testing.T, *HashMap[int, string])
+		name      string
+		opts      []Option
+		wantPanic bool
+		check     func(*testing.T, *HashMap[int, string])
 	}{
 		{
 			name: "default",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				if hm.Size() != 0 || !hm.Empty() {
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				if m.Size() != 0 || !m.Empty() {
+					t.Errorf("expected empty map, got size %d", m.Size())
+				}
+			},
+		},
+		{
+			name: "zero_capacity",
+			opts: []Option{WithCapacity(0)},
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				if !m.Empty() {
 					t.Errorf("expected empty map")
 				}
 			},
 		},
 		{
-			name: "capacity",
+			name: "positive_capacity",
 			opts: []Option{WithCapacity(100)},
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				hm.Put(1, "a")
-				if hm.Size() != 1 {
-					t.Errorf("expected size 1")
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				m.Put(1, "a")
+				if m.Size() != 1 {
+					t.Errorf("expected size 1, got %d", m.Size())
+				}
+			},
+		},
+		{
+			name:      "negative_capacity_panics",
+			opts:      []Option{WithCapacity(-1)},
+			wantPanic: true,
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			defer func() {
+				r := recover()
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic, got none")
+				}
+				if !tc.wantPanic && r != nil {
+					t.Errorf("unexpected panic: %v", r)
+				}
+			}()
+			m := New[int, string](tc.opts...)
+			if tc.check != nil {
+				tc.check(t, m)
+			}
+		})
+	}
+}
+
+func TestWrap(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name  string
+		check func(*testing.T)
+	}{
+		{
+			name: "non_nil_shares_underlying_map",
+			check: func(t *testing.T) {
+				raw := map[int]string{1: "a", 2: "b"}
+				m := Wrap(raw)
+				if m.Size() != 2 {
+					t.Fatalf("expected size 2, got %d", m.Size())
+				}
+				if v, ok := m.Get(1); !ok || v != "a" {
+					t.Errorf("expected (a, true), got (%q, %v)", v, ok)
+				}
+				m.Put(3, "c")
+				if raw[3] != "c" {
+					t.Errorf("expected raw map mutation for key 3, got %q", raw[3])
+				}
+				raw[4] = "d"
+				if v, ok := m.Get(4); !ok || v != "d" {
+					t.Errorf("expected wrapped map to observe raw key 4, got (%q, %v)", v, ok)
+				}
+			},
+		},
+		{
+			name: "nil_map_allocates_writable_map",
+			check: func(t *testing.T) {
+				var raw map[int]string
+				m := Wrap(raw)
+				if !m.Empty() || m.Size() != 0 {
+					t.Fatalf("expected empty wrapped map, got size %d", m.Size())
+				}
+				m.Put(1, "a")
+				if v, ok := m.Get(1); !ok || v != "a" {
+					t.Errorf("expected (a, true) after Put on Wrap(nil), got (%q, %v)", v, ok)
 				}
 			},
 		},
@@ -36,21 +113,8 @@ func TestNew(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			hm := New[int, string](tc.opts...)
-			tc.check(t, hm)
+			tc.check(t)
 		})
-	}
-}
-
-func TestWrap(t *testing.T) {
-	t.Parallel()
-	m := map[int]string{1: "a", 2: "b"}
-	hm := Wrap(m)
-	if hm.Size() != 2 {
-		t.Errorf("expected size 2")
-	}
-	if v, _ := hm.Get(1); v != "a" {
-		t.Errorf("expected 'a'")
 	}
 }
 
@@ -61,99 +125,136 @@ func TestHashMap_Operations(t *testing.T) {
 		check func(*testing.T, *HashMap[int, string])
 	}{
 		{
-			name: "put_get_contains",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				hm.Put(1, "a")
-				hm.Put(2, "b")
-				hm.Put(1, "c") // overwrite
+			name: "put_get_contains_overwrite",
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				if v, ok := m.Get(99); ok || v != "" {
+					t.Errorf("expected empty lookup ('', false), got (%q, %v)", v, ok)
+				}
+				m.Put(1, "a")
+				m.Put(2, "b")
+				m.Put(1, "c")
 
-				if hm.Size() != 2 {
-					t.Errorf("expected size 2")
+				if m.Size() != 2 || m.Empty() {
+					t.Errorf("expected non-empty size 2, got size %d", m.Size())
 				}
-				if v, ok := hm.Get(1); !ok || v != "c" {
-					t.Errorf("expected 'c', got %v", v)
+				if v, ok := m.Get(1); !ok || v != "c" {
+					t.Errorf("expected ('c', true), got (%q, %v)", v, ok)
 				}
-				if hm.ContainsKey(3) {
-					t.Errorf("did not expect 3")
+				if m.ContainsKey(3) {
+					t.Errorf("did not expect key 3")
 				}
-				if !hm.ContainsKey(2) {
-					t.Errorf("expected 2")
+				if !m.ContainsKey(2) {
+					t.Errorf("expected key 2")
 				}
 			},
 		},
 		{
-			name: "remove",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				hm.Put(1, "a")
-				hm.Remove(1)
-				hm.Remove(2) // non-existent
+			name: "remove_present_and_absent",
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				m.Put(1, "a")
+				m.Remove(1)
+				m.Remove(2)
 
-				if !hm.Empty() {
-					t.Errorf("expected empty")
+				if !m.Empty() || m.Size() != 0 {
+					t.Errorf("expected empty map after remove, got size %d", m.Size())
 				}
 			},
 		},
 		{
 			name: "clear",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				hm.Put(1, "a")
-				hm.Clear()
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				m.Put(1, "a")
+				m.Put(2, "b")
+				m.Clear()
 
-				if hm.Size() != 0 {
-					t.Errorf("expected empty")
+				if m.Size() != 0 || !m.Empty() {
+					t.Errorf("expected empty map after Clear, got size %d", m.Size())
 				}
 			},
 		},
 		{
-			name: "iterators",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				hm.Put(1, "a")
-				hm.Put(2, "b")
+			name: "keys_and_values_iterators_with_early_break",
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				m.Put(1, "a")
+				m.Put(2, "b")
+				m.Put(3, "c")
 
-				keys := slices.Collect(hm.Keys())
-				sort.Ints(keys)
-				if !slices.Equal(keys, []int{1, 2}) {
-					t.Errorf("keys wrong")
+				keys := slices.Collect(m.Keys())
+				slices.Sort(keys)
+				if !slices.Equal(keys, []int{1, 2, 3}) {
+					t.Errorf("unexpected keys: %v", keys)
 				}
 
-				vals := slices.Collect(hm.Values())
-				sort.Strings(vals)
-				if !slices.Equal(vals, []string{"a", "b"}) {
-					t.Errorf("values wrong")
+				vals := slices.Collect(m.Values())
+				slices.Sort(vals)
+				if !slices.Equal(vals, []string{"a", "b", "c"}) {
+					t.Errorf("unexpected values: %v", vals)
+				}
+
+				keyCount := 0
+				for range m.Keys() {
+					keyCount++
+					break
+				}
+				if keyCount != 1 {
+					t.Errorf("expected early break keyCount 1, got %d", keyCount)
+				}
+
+				valCount := 0
+				for range m.Values() {
+					valCount++
+					break
+				}
+				if valCount != 1 {
+					t.Errorf("expected early break valCount 1, got %d", valCount)
 				}
 			},
 		},
 		{
-			name: "all_iterator",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				hm.Put(1, "a")
-				hm.Put(2, "b")
+			name: "all_iterator_and_early_break",
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				m.Put(1, "a")
+				m.Put(2, "b")
 
 				var keys []int
 				var vals []string
-				for k, v := range hm.All() {
+				for k, v := range m.All() {
 					keys = append(keys, k)
 					vals = append(vals, v)
 				}
-				sort.Ints(keys)
-				sort.Strings(vals)
+				slices.Sort(keys)
+				slices.Sort(vals)
 				if !slices.Equal(keys, []int{1, 2}) {
-					t.Errorf("keys wrong")
+					t.Errorf("unexpected keys: %v", keys)
 				}
 				if !slices.Equal(vals, []string{"a", "b"}) {
-					t.Errorf("values wrong")
+					t.Errorf("unexpected values: %v", vals)
+				}
+
+				count := 0
+				for range m.All() {
+					count++
+					break
+				}
+				if count != 1 {
+					t.Errorf("expected early break count 1, got %d", count)
 				}
 			},
 		},
 		{
-			name: "string",
-			check: func(t *testing.T, hm *HashMap[int, string]) {
-				if got := hm.String(); got != "map[]" {
+			name: "string_empty_single_and_multiple",
+			check: func(t *testing.T, m *HashMap[int, string]) {
+				if got := m.String(); got != "map[]" {
 					t.Errorf("expected map[], got %s", got)
 				}
-				hm.Put(1, "a")
-				if got := hm.String(); got != "map[1:a]" {
+				m.Put(1, "a")
+				if got := m.String(); got != "map[1:a]" {
 					t.Errorf("expected map[1:a], got %s", got)
+				}
+				m.Put(2, "b")
+				got := m.String()
+				if got != "map[1:a 2:b]" && got != "map[2:b 1:a]" {
+					t.Errorf("expected map[1:a 2:b] or map[2:b 1:a], got %s", got)
 				}
 			},
 		},
@@ -162,8 +263,8 @@ func TestHashMap_Operations(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			hm := New[int, string]()
-			tc.check(t, hm)
+			m := New[int, string]()
+			tc.check(t, m)
 		})
 	}
 }

@@ -3,16 +3,17 @@ package comparator_test
 import (
 	"cmp"
 	"fmt"
-	"github.com/lock14/collections/comparator"
 	"slices"
+
+	"github.com/lock14/collections/comparator"
 )
 
 func ExampleReverse() {
 	// Let's say we have some numbers we want to sort
 	numbers := []int{5, 2, 9, 1, 7}
 
-	// comparator.Reverse takes any existing comparator and negates its output.
-	// We can use it to reverse the NaturalOrder to sort in descending order.
+	// comparator.Reverse takes any existing comparator and reverses its ordering.
+	// We can use it to reverse NaturalOrder to sort in descending order.
 	descendingCmp := comparator.Reverse(comparator.NaturalOrder[int]())
 
 	slices.SortFunc(numbers, descendingCmp)
@@ -55,10 +56,10 @@ func ExampleNaturalOrder() {
 
 	fmt.Println("Ascending:", numbers)
 
-	strings := []string{"banana", "apple", "cherry"}
-	slices.SortFunc(strings, comparator.NaturalOrder[string]())
+	words := []string{"banana", "apple", "cherry"}
+	slices.SortFunc(words, comparator.NaturalOrder[string]())
 
-	fmt.Println("Strings Ascending:", strings)
+	fmt.Println("Strings Ascending:", words)
 
 	// Output:
 	// Ascending: [1 2 5 7 9]

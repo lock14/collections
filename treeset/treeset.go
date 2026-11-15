@@ -1,4 +1,4 @@
-// Package treeset provides a B-Tree backed set implementation.
+// Package treeset provides a sorted, navigable B-Tree set implementation.
 package treeset
 
 import (
@@ -17,47 +17,50 @@ var (
 	_ fmt.Stringer                         = (*TreeSet[int])(nil)
 )
 
-// config holds the values for configuring a TreeSet.
+// config holds configuration values for constructing a TreeSet.
 type config[T any] struct {
 	degree     *int
 	comparator comparator.Comparator[T]
 }
 
-// Option configures a TreeSet config.
+// Option configures a TreeSet.
 type Option[T any] func(*config[T])
 
-// WithDegree configures the degree of the underlying B-Tree.
+// WithDegree configures the minimum degree (t) of the underlying B-Tree.
+// Panics in New if degree is less than 2.
 func WithDegree[T any](degree int) Option[T] {
 	return func(c *config[T]) {
 		c.degree = &degree
 	}
 }
 
-// WithComparator configures the comparator for the TreeSet.
-func WithComparator[T any](comp comparator.Comparator[T]) Option[T] {
+// WithComparator configures the comparator used by the TreeSet.
+// Panics in New if cmpFunc is nil.
+func WithComparator[T any](cmpFunc comparator.Comparator[T]) Option[T] {
 	return func(c *config[T]) {
-		c.comparator = comp
+		c.comparator = cmpFunc
 	}
 }
 
-// TreeSet represents a set of elements backed by a B-Tree.
+// TreeSet represents a sorted set of unique elements backed by a B-Tree.
 type TreeSet[T any] struct {
 	m *treemap.TreeMap[T, struct{}]
 }
 
-// New creates an empty TreeSet.
+// New creates an empty TreeSet configured with the given options.
+// Panics if degree is less than 2 or if no non-nil comparator is provided.
 func New[T any](opts ...Option[T]) *TreeSet[T] {
-	config := &config[T]{}
+	cfg := &config[T]{}
 	for _, option := range opts {
-		option(config)
+		option(cfg)
 	}
 
 	var mapOpts []treemap.Option[T]
-	if config.degree != nil {
-		mapOpts = append(mapOpts, treemap.WithDegree[T](*config.degree))
+	if cfg.degree != nil {
+		mapOpts = append(mapOpts, treemap.WithDegree[T](*cfg.degree))
 	}
-	if config.comparator != nil {
-		mapOpts = append(mapOpts, treemap.WithComparator[T](config.comparator))
+	if cfg.comparator != nil {
+		mapOpts = append(mapOpts, treemap.WithComparator[T](cfg.comparator))
 	}
 
 	return &TreeSet[T]{
@@ -65,44 +68,18 @@ func New[T any](opts ...Option[T]) *TreeSet[T] {
 	}
 }
 
-// NewOrdered creates an empty TreeSet for types that implement cmp.Ordered.
+// NewOrdered creates an empty TreeSet for cmp.Ordered elements using natural ascending order.
+// Any options provided in opts are applied after the default natural-order comparator.
 func NewOrdered[T cmp.Ordered](opts ...Option[T]) *TreeSet[T] {
-	opts = append([]Option[T]{WithComparator(comparator.NaturalOrder[T]())}, opts...)
-	return New(opts...)
+	allOpts := make([]Option[T], 0, len(opts)+1)
+	allOpts = append(allOpts, WithComparator(comparator.NaturalOrder[T]()))
+	allOpts = append(allOpts, opts...)
+	return New[T](allOpts...)
 }
 
 // Add inserts the specified element into the set.
 func (s *TreeSet[T]) Add(item T) {
 	s.m.Put(item, struct{}{})
-}
-
-// Remove removes and returns a single element from the set.
-func (s *TreeSet[T]) Remove() T {
-	for item := range s.m.Keys() {
-		s.m.Remove(item)
-		return item
-	}
-	panic("cannot remove from an empty set")
-}
-
-// RemoveElement removes the specified element from the set.
-func (s *TreeSet[T]) RemoveElement(item T) {
-	s.m.Remove(item)
-}
-
-// Contains returns true if this set contains the specified element.
-func (s *TreeSet[T]) Contains(item T) bool {
-	return s.m.ContainsKey(item)
-}
-
-// ContainsAll returns true if this set contains all elements of the specified collection.
-func (s *TreeSet[T]) ContainsAll(other collections.Collection[T]) bool {
-	for item := range other.All() {
-		if !s.Contains(item) {
-			return false
-		}
-	}
-	return true
 }
 
 // AddAll inserts all elements from the given sequence into the set.
@@ -112,8 +89,40 @@ func (s *TreeSet[T]) AddAll(sequence iter.Seq[T]) {
 	}
 }
 
+// Remove removes and returns the smallest element in the set.
+// Panics if the set is empty.
+func (s *TreeSet[T]) Remove() T {
+	return s.PollFirst()
+}
+
+// PollFirst removes and returns the smallest element in the set.
+// Panics if the set is empty.
+func (s *TreeSet[T]) PollFirst() T {
+	k, _ := s.m.PollFirst()
+	return k
+}
+
+// PollLast removes and returns the largest element in the set.
+// Panics if the set is empty.
+func (s *TreeSet[T]) PollLast() T {
+	k, _ := s.m.PollLast()
+	return k
+}
+
+// RemoveElement removes the specified element from the set if present.
+func (s *TreeSet[T]) RemoveElement(item T) {
+	s.m.Remove(item)
+}
+
 // RemoveAll removes all elements of the specified collection from this set.
 func (s *TreeSet[T]) RemoveAll(other collections.Collection[T]) {
+	if s.Empty() {
+		return
+	}
+	if otherSet, ok := other.(*TreeSet[T]); ok && otherSet == s {
+		s.Clear()
+		return
+	}
 	for t := range other.All() {
 		s.RemoveElement(t)
 	}
@@ -121,6 +130,12 @@ func (s *TreeSet[T]) RemoveAll(other collections.Collection[T]) {
 
 // RetainAll retains only the elements in this set that are contained in the specified collection.
 func (s *TreeSet[T]) RetainAll(other collections.Collection[T]) {
+	if s.Empty() {
+		return
+	}
+	if otherSet, ok := other.(*TreeSet[T]); ok && otherSet == s {
+		return
+	}
 	intersection := make([]T, 0, min(s.Size(), other.Size()))
 	for t := range other.All() {
 		if s.Contains(t) {
@@ -138,6 +153,24 @@ func (s *TreeSet[T]) Clear() {
 	s.m.Clear()
 }
 
+// Contains returns true if this set contains the specified element.
+func (s *TreeSet[T]) Contains(item T) bool {
+	return s.m.ContainsKey(item)
+}
+
+// ContainsAll returns true if this set contains all elements of the specified collection.
+func (s *TreeSet[T]) ContainsAll(other collections.Collection[T]) bool {
+	if otherSet, ok := other.(*TreeSet[T]); ok && otherSet == s {
+		return true
+	}
+	for item := range other.All() {
+		if !s.Contains(item) {
+			return false
+		}
+	}
+	return true
+}
+
 // Size returns the number of elements in the set.
 func (s *TreeSet[T]) Size() int {
 	return s.m.Size()
@@ -148,60 +181,50 @@ func (s *TreeSet[T]) Empty() bool {
 	return s.m.Empty()
 }
 
-// All returns an Iterator over all the elements of this set.
-func (s *TreeSet[T]) All() iter.Seq[T] {
-	return s.m.Keys()
-}
-
-// First returns the first element in the set.
+// First returns the smallest element in the set without removing it.
+// Panics if the set is empty.
 func (s *TreeSet[T]) First() T {
 	k, _ := s.m.First()
 	return k
 }
 
-// Last returns the last element in the set.
+// Last returns the largest element in the set without removing it.
+// Panics if the set is empty.
 func (s *TreeSet[T]) Last() T {
 	k, _ := s.m.Last()
 	return k
 }
 
-// PollFirst removes and returns the first element in the set.
-func (s *TreeSet[T]) PollFirst() T {
-	k, _ := s.m.PollFirst()
-	return k
-}
-
-// PollLast removes and returns the last element in the set.
-func (s *TreeSet[T]) PollLast() T {
-	k, _ := s.m.PollLast()
-	return k
-}
-
-// Lower returns the greatest element strictly less than the given element, or false if not found.
+// Lower returns the greatest element strictly less than item, or false if not found.
 func (s *TreeSet[T]) Lower(item T) (T, bool) {
 	k, _, ok := s.m.Lower(item)
 	return k, ok
 }
 
-// Floor returns the greatest element less than or equal to the given element, or false if not found.
+// Floor returns the greatest element less than or equal to item, or false if not found.
 func (s *TreeSet[T]) Floor(item T) (T, bool) {
 	k, _, ok := s.m.Floor(item)
 	return k, ok
 }
 
-// Ceiling returns the least element greater than or equal to the given element, or false if not found.
+// Ceiling returns the least element greater than or equal to item, or false if not found.
 func (s *TreeSet[T]) Ceiling(item T) (T, bool) {
 	k, _, ok := s.m.Ceiling(item)
 	return k, ok
 }
 
-// Higher returns the least element strictly greater than the given element, or false if not found.
+// Higher returns the least element strictly greater than item, or false if not found.
 func (s *TreeSet[T]) Higher(item T) (T, bool) {
 	k, _, ok := s.m.Higher(item)
 	return k, ok
 }
 
-// Backward returns an iterator over the elements in reverse (descending) order.
+// All returns an iterator over all elements of this set in ascending order.
+func (s *TreeSet[T]) All() iter.Seq[T] {
+	return s.m.Keys()
+}
+
+// Backward returns an iterator over the elements in descending order.
 func (s *TreeSet[T]) Backward() iter.Seq[T] {
 	return s.m.BackwardKeys()
 }
@@ -241,9 +264,19 @@ func (s *TreeSet[T]) Between(from, to T) iter.Seq[T] {
 
 // String returns a string representation of the set matching Go slice formatting.
 func (s *TreeSet[T]) String() string {
-	vals := make([]string, 0, s.Size())
-	for item := range s.All() {
-		vals = append(vals, fmt.Sprintf("%v", item))
+	if s.Empty() {
+		return "[]"
 	}
-	return "[" + strings.Join(vals, " ") + "]"
+	var sb strings.Builder
+	sb.WriteByte('[')
+	first := true
+	for item := range s.All() {
+		if !first {
+			sb.WriteByte(' ')
+		}
+		first = false
+		_, _ = fmt.Fprintf(&sb, "%v", item)
+	}
+	sb.WriteByte(']')
+	return sb.String()
 }

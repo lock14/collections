@@ -2,12 +2,14 @@ package treemap_test
 
 import (
 	"fmt"
+
+	"github.com/lock14/collections/comparator"
 	"github.com/lock14/collections/treemap"
 )
 
 func ExampleTreeMap() {
 	// TreeMap is a map backed by a B-Tree, maintaining entries sorted by key.
-	// It implements the NavigableMap interface.
+	// It implements the MutableNavigableMap interface.
 	m := treemap.NewOrdered[int, string]()
 
 	m.Put(10, "A")
@@ -38,6 +40,28 @@ func ExampleTreeMap() {
 	// - 50: E
 	// Floor(25): 20 -> B
 	// Ceiling(25): 30 -> C
+}
+
+func ExampleNew() {
+	m := treemap.New[int, string](
+		treemap.WithDegree[int](16),
+		treemap.WithComparator(comparator.Reverse(comparator.NaturalOrder[int]())),
+	)
+	m.Put(1, "one")
+	m.Put(2, "two")
+	m.Put(3, "three")
+	fmt.Println(m.String())
+	// Output:
+	// map[3:three 2:two 1:one]
+}
+
+func ExampleNewOrdered() {
+	m := treemap.NewOrdered[string, int](treemap.WithDegree[string](8))
+	m.Put("b", 2)
+	m.Put("a", 1)
+	fmt.Println(m.String())
+	// Output:
+	// map[a:1 b:2]
 }
 
 func ExampleTreeMap_Get() {
@@ -210,7 +234,8 @@ func ExampleTreeMap_PollFirst() {
 
 	k, v := m.PollFirst()
 	fmt.Printf("Polled %d: %s\n", k, v)
-	fmt.Printf("New First: %d\n", func() int { k, _ := m.First(); return k }())
+	nextK, _ := m.First()
+	fmt.Printf("New First: %d\n", nextK)
 
 	// Output:
 	// Polled 1: A
@@ -225,7 +250,8 @@ func ExampleTreeMap_PollLast() {
 
 	k, v := m.PollLast()
 	fmt.Printf("Polled %d: %s\n", k, v)
-	fmt.Printf("New Last: %d\n", func() int { k, _ := m.Last(); return k }())
+	nextK, _ := m.Last()
+	fmt.Printf("New Last: %d\n", nextK)
 
 	// Output:
 	// Polled 3: C

@@ -100,6 +100,11 @@ jobs:
           go install github.com/mgechev/revive@latest
           revive -config revive.toml -formatter friendly ./...
 
+      - name: Install and run staticcheck
+        run: |
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...
+
   govulncheck:
     name: Vulnerability Scan
     runs-on: ubuntu-latest

@@ -2,8 +2,9 @@ package hashset_test
 
 import (
 	"fmt"
-	"github.com/lock14/collections/hashset"
 	"slices"
+
+	"github.com/lock14/collections/hashset"
 )
 
 func ExampleHashSet() {
@@ -19,7 +20,7 @@ func ExampleHashSet() {
 	fmt.Println("Contains Apple:", set.Contains("Apple"))
 	fmt.Println("Size of set:", set.Size())
 
-	// Since HashSet is unordered, we collect and sort to ensure deterministic output
+	// Since HashSet is unordered, collect and sort elements for deterministic output
 	elements := slices.Collect(set.All())
 	slices.Sort(elements)
 
@@ -35,6 +36,14 @@ func ExampleHashSet() {
 	// - Apple
 	// - Banana
 	// - Cherry
+}
+
+func ExampleNew() {
+	set := hashset.New[int](hashset.WithCapacity(16))
+	set.Add(42)
+	fmt.Println(set.Contains(42), set.Size())
+	// Output:
+	// true 1
 }
 
 func ExampleHashSet_Add() {

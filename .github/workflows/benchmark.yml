@@ -95,7 +95,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v7
         with:
-          go-version-file: 'go.mod'
+          go-version: 'stable'
 
       - name: Install benchstat and benchdiff
         run: |
@@ -113,9 +113,19 @@ jobs:
           echo "Running benchdiff against $BASE on: ${{ matrix.pkg }}"
 
           # -count=6 allows benchstat to compute valid 95% confidence intervals
-          set -o pipefail
-          OUTPUT=$(benchdiff -base-ref $BASE -- -run '^$' -bench . -benchmem -count=6 -benchtime=500ms -timeout=15m ${{ matrix.pkg }})
+          ERR_FILE=$(mktemp)
+          set +e
+          OUTPUT=$(benchdiff -base-ref "$BASE" -- -run '^$' -bench . -benchmem -count=6 -benchtime=500ms -timeout=15m "${{ matrix.pkg }}" 2>"$ERR_FILE")
           EXIT_CODE=$?
+          set -e
+
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            cat "$ERR_FILE" >&2
+            if [ -z "$OUTPUT" ]; then
+              OUTPUT=$(cat "$ERR_FILE")
+            fi
+          fi
+          rm -f "$ERR_FILE"
 
           echo "$OUTPUT"
 

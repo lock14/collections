@@ -3,11 +3,20 @@ package labeledgraph_test
 import (
 	"cmp"
 	"fmt"
+	"slices"
+
 	"github.com/lock14/collections/hashset"
 	"github.com/lock14/collections/heap"
 	"github.com/lock14/collections/labeledgraph"
-	"slices"
 )
+
+func ExampleNew() {
+	g := labeledgraph.New[string, int](labeledgraph.WithDirected(), labeledgraph.WithCapacity(16))
+	g.AddEdge("A", "B", 5)
+	fmt.Println(g.Directed(), g.Order(), g.Size())
+	// Output:
+	// true 2 1
+}
 
 func ExampleLabeledGraph() {
 	// Create a directed graph with string vertices and string edge labels (relationships)
@@ -357,7 +366,7 @@ func ExampleLabeledGraph_String() {
 	// digraph[1 -> 2: A]
 }
 
-type PathNode struct {
+type pathNode struct {
 	vertex string
 	dist   int
 }
@@ -379,7 +388,7 @@ func ExampleLabeledGraph_shortestPath() {
 	start := "A"
 
 	// Priority queue to select the node with the minimum distance
-	pq := heap.New[PathNode](heap.WithComparator(func(a, b PathNode) int {
+	pq := heap.New[pathNode](heap.WithComparator(func(a, b pathNode) int {
 		return cmp.Compare(a.dist, b.dist)
 	}))
 
@@ -390,7 +399,7 @@ func ExampleLabeledGraph_shortestPath() {
 	previous := make(map[string]string)
 
 	distances[start] = 0
-	pq.Add(PathNode{vertex: start, dist: 0})
+	pq.Add(pathNode{vertex: start, dist: 0})
 
 	for !pq.Empty() {
 		current := pq.Remove()
@@ -408,7 +417,7 @@ func ExampleLabeledGraph_shortestPath() {
 			if d, visited := distances[neighbor]; !visited || newDist < d {
 				distances[neighbor] = newDist
 				previous[neighbor] = current.vertex
-				pq.Add(PathNode{vertex: neighbor, dist: newDist})
+				pq.Add(pathNode{vertex: neighbor, dist: newDist})
 			}
 		}
 	}
@@ -457,18 +466,18 @@ func ExampleLabeledGraph_minimumSpanningTree() {
 	g.AddEdge("G", "H", 1)
 	g.AddEdge("H", "I", 7)
 
-	type Edge struct {
+	type edge struct {
 		u, v   string
 		weight int
 	}
 
 	// Priority queue to select the minimum weight edge
-	pq := heap.New[Edge](heap.WithComparator(func(a, b Edge) int {
+	pq := heap.New[edge](heap.WithComparator(func(a, b edge) int {
 		return cmp.Compare(a.weight, b.weight)
 	}))
 
 	visited := hashset.New[string]()
-	mstEdges := make([]Edge, 0)
+	mstEdges := make([]edge, 0)
 	totalCost := 0
 
 	// Start from arbitrary vertex "A"
@@ -478,7 +487,7 @@ func ExampleLabeledGraph_minimumSpanningTree() {
 	// Add all edges from the start vertex to the queue
 	for neighbor := range g.Neighbors(start) {
 		weight, _ := g.Label(start, neighbor)
-		pq.Add(Edge{u: start, v: neighbor, weight: weight})
+		pq.Add(edge{u: start, v: neighbor, weight: weight})
 	}
 
 	for !pq.Empty() {
@@ -498,7 +507,7 @@ func ExampleLabeledGraph_minimumSpanningTree() {
 		for neighbor := range g.Neighbors(e.v) {
 			if !visited.Contains(neighbor) {
 				weight, _ := g.Label(e.v, neighbor)
-				pq.Add(Edge{u: e.v, v: neighbor, weight: weight})
+				pq.Add(edge{u: e.v, v: neighbor, weight: weight})
 			}
 		}
 	}

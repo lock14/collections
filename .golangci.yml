@@ -6,10 +6,7 @@ issues:
   max-issues-per-linter: 0
   max-same-issues: 50
   exclude-rules:
-    - path: labeledgraph/labeledgraph\.go
-      linters:
-        - unused
-    - path: _bench_test\.go
+    - path: (^|/|\\)bench_test\.go$
       linters:
         - unused
 
