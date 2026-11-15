@@ -1,17 +1,22 @@
 package heap_test
 
 import (
+	"testing"
+
 	"github.com/lock14/collections/comparator"
 	"github.com/lock14/collections/heap"
-	"testing"
 )
+
+const benchSize = 1000
+
+var sinkInt int
 
 func BenchmarkHeap_Add(b *testing.B) {
 	b.ReportAllocs()
 	h := heap.Min[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		h.Add(i) // Adding sequential elements is best case for min heap (O(1) amortized)
+		h.Add(i)
 	}
 }
 
@@ -29,65 +34,51 @@ func BenchmarkHeap_AddReverse(b *testing.B) {
 	h := heap.Min[int]()
 	b.ResetTimer()
 	for i := b.N; i > 0; i-- {
-		h.Add(i) // Adding in reverse order forces more siftUps (O(log n))
+		h.Add(i)
 	}
 }
 
-func BenchmarkHeap_Remove(b *testing.B) {
+func BenchmarkHeap_SteadyStateAddRemove(b *testing.B) {
 	b.ReportAllocs()
-	h := heap.Min[int]()
-	for i := 0; i < b.N; i++ {
-		h.Add(i)
+	h := heap.Min[int](heap.WithCapacity[int](benchSize * 2))
+	for i := 0; i < benchSize; i++ {
+		h.Add(i * 2)
 	}
+	var r int
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		h.Remove()
+		h.Add(benchSize + (i % benchSize))
+		r = h.Remove()
 	}
+	sinkInt = r
 }
 
-func BenchmarkHeap_AddRemove(b *testing.B) {
+func BenchmarkHeap_Peek(b *testing.B) {
 	b.ReportAllocs()
-	h := heap.Min[int]()
-	h.Add(0) // Initialize with one element to prevent empty panic
+	h := heap.Min[int](heap.WithCapacity[int](benchSize))
+	for i := 0; i < benchSize; i++ {
+		h.Add(i)
+	}
+	var r int
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		h.Add(i)
-		h.Remove()
+		r = h.Peek()
 	}
+	sinkInt = r
 }
 
-func BenchmarkHeap_IterateAll(b *testing.B) {
+func BenchmarkHeap_All(b *testing.B) {
 	b.ReportAllocs()
-	h := heap.Min[int]()
-	for i := 0; i < 1000; i++ {
+	h := heap.Min[int](heap.WithCapacity[int](benchSize))
+	for i := 0; i < benchSize; i++ {
 		h.Add(i)
 	}
+	var sum int
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for range h.All() {
+		for v := range h.All() {
+			sum += v
 		}
 	}
-}
-
-type largeStruct struct {
-	a, b, c, d, e, f, g, h int64
-}
-
-func BenchmarkHeap_StructAdd(b *testing.B) {
-	b.ReportAllocs()
-	cmp := func(t1, t2 largeStruct) int {
-		if t1.a < t2.a {
-			return -1
-		} else if t1.a > t2.a {
-			return 1
-		}
-		return 0
-	}
-	h := heap.New[largeStruct](heap.WithComparator(cmp))
-	item := largeStruct{}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		item.a = int64(i)
-		h.Add(item)
-	}
+	sinkInt = sum
 }

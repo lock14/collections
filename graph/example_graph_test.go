@@ -2,9 +2,18 @@ package graph_test
 
 import (
 	"fmt"
-	"github.com/lock14/collections/graph"
 	"slices"
+
+	"github.com/lock14/collections/graph"
 )
+
+func ExampleNew() {
+	g := graph.New[string](graph.WithDirected(), graph.WithCapacity(16))
+	g.AddEdge("A", "B")
+	fmt.Println(g.Directed(), g.Order(), g.Size())
+	// Output:
+	// true 2 1
+}
 
 func ExampleGraph_directed() {
 	// Create a directed graph

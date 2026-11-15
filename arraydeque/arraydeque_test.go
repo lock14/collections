@@ -1,17 +1,19 @@
 package arraydeque
 
 import (
-	"github.com/lock14/collections"
 	"slices"
 	"testing"
+
+	"github.com/lock14/collections"
 )
 
 func TestNew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name  string
-		opts  []Option
-		check func(*testing.T, *ArrayDeque[int])
+		name      string
+		opts      []Option
+		wantPanic bool
+		check     func(*testing.T, *ArrayDeque[int])
 	}{
 		{
 			name: "default",
@@ -31,7 +33,7 @@ func TestNew(t *testing.T) {
 			name: "zero_capacity",
 			opts: []Option{WithCapacity(0)},
 			check: func(t *testing.T, d *ArrayDeque[int]) {
-				d.Add(1) // Should not panic
+				d.Add(1)
 				if size := d.Size(); size != 1 {
 					t.Errorf("expected size 1, got: %d", size)
 				}
@@ -46,12 +48,54 @@ func TestNew(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:      "negative_capacity_panics",
+			opts:      []Option{WithCapacity(-1)},
+			wantPanic: true,
+		},
+		{
+			name: "zero_value_struct",
+			check: func(t *testing.T, _ *ArrayDeque[int]) {
+				var z ArrayDeque[int]
+				if !z.Empty() || z.Size() != 0 || z.String() != "[]" {
+					t.Errorf("unexpected zero-value state")
+				}
+				z.AddFront(2)
+				z.AddBack(3)
+				z.AddFront(1)
+				if got := slices.Collect(z.All()); !slices.Equal(got, []int{1, 2, 3}) {
+					t.Errorf("got %v, want [1 2 3]", got)
+				}
+			},
+		},
+		{
+			name: "large_growth_thresholds",
+			opts: []Option{WithCapacity(4)},
+			check: func(t *testing.T, d *ArrayDeque[int]) {
+				// Exceed doublingThreshold (512) and fiftyPercentThreshold (2048)
+				for i := 0; i < 3000; i++ {
+					d.AddBack(i)
+				}
+				if d.Size() != 3000 || d.PeekFront() != 0 || d.PeekBack() != 2999 {
+					t.Errorf("unexpected state after large growth: size=%d", d.Size())
+				}
+			},
+		},
 	}
 
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			if tc.wantPanic {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic")
+					}
+				}()
+				_ = New[int](tc.opts...)
+				return
+			}
 			d := New[int](tc.opts...)
 			tc.check(t, d)
 		})
@@ -782,17 +826,28 @@ func TestArrayDeque_Backward(t *testing.T) {
 		},
 		{
 			name: "backward_wrapped",
-			check: func(t *testing.T, d *ArrayDeque[int]) {
-				// Capacity is small, wrap around
-				d.AddAll(slices.Values([]int{1, 2, 3, 4})) // Cap becomes 4
-				d.RemoveFront()                            // size 3, front 1
-				d.RemoveFront()                            // size 2, front 2
-				d.AddBack(5)                               // size 3, back 1 (wrapped)
-				d.AddBack(6)                               // size 4, back 2 (wrapped)
-				// d is [3, 4, 5, 6]
+			check: func(t *testing.T, _ *ArrayDeque[int]) {
+				d := New[int](WithCapacity(4))
+				d.AddAll(slices.Values([]int{1, 2, 3, 4})) // full cap 4, back wraps to 0
+				if d.PeekBack() != 4 {
+					t.Errorf("PeekBack when back==0: got %d, want 4", d.PeekBack())
+				}
+				d.RemoveFront() // size 3, front 1
+				d.RemoveFront() // size 2, front 2
+				d.AddBack(5)    // size 3, back 1 (wrapped)
+				d.AddBack(6)    // size 4, back 2 (wrapped: front=2, back=2)
 				want := []int{6, 5, 4, 3}
 				if got := slices.Collect(d.Backward()); !slices.Equal(got, want) {
 					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+				if d.String() != "[3 4 5 6]" {
+					t.Errorf("wrapped String() = %q, want [3 4 5 6]", d.String())
+				}
+				// RemoveBack across wrap boundary (back 2 -> 1 -> 0 -> 3)
+				for _, exp := range want {
+					if got := d.RemoveBack(); got != exp {
+						t.Errorf("RemoveBack() = %d, want %d", got, exp)
+					}
 				}
 			},
 		},
@@ -816,14 +871,19 @@ func TestArrayDeque_All_Wrapped(t *testing.T) {
 		{
 			name: "all_wrapped",
 			check: func(t *testing.T, d *ArrayDeque[int]) {
-				d.AddAll(slices.Values([]int{1, 2, 3, 4})) // Cap becomes 4
-				d.RemoveFront()                            // size 3, front 1
-				d.RemoveFront()                            // size 2, front 2
-				d.AddBack(5)                               // size 3, back 1 (wrapped)
-				d.AddBack(6)                               // size 4, back 2 (wrapped)
+				d.AddAll(slices.Values([]int{1, 2, 3, 4}))
+				d.RemoveFront()
+				d.RemoveFront()
+				d.AddBack(5)
+				d.AddBack(6)
 				want := []int{3, 4, 5, 6}
 				if got := slices.Collect(d.All()); !slices.Equal(got, want) {
 					t.Errorf("wrong slice value, got: %v, want: %v", got, want)
+				}
+				// Trigger resize while wrapped
+				d.AddBack(7)
+				if got := slices.Collect(d.All()); !slices.Equal(got, []int{3, 4, 5, 6, 7}) {
+					t.Errorf("after wrapped resize: got %v", got)
 				}
 			},
 		},
@@ -832,7 +892,7 @@ func TestArrayDeque_All_Wrapped(t *testing.T) {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			d := New[int]()
+			d := New[int](WithCapacity(4))
 			tc.check(t, d)
 		})
 	}
@@ -906,19 +966,57 @@ func TestArrayDeque_Backward_Break(t *testing.T) {
 	}
 }
 
-func TestArrayDeque_CoveragePanics(t *testing.T) {
-	ad := New[int]()
-	assertPanics := func(f func()) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("expected panic")
-			}
-		}()
-		f()
+func TestArrayDeque_EmptyPanicsAndGCZeroing(t *testing.T) {
+	t.Parallel()
+	cases := []struct {
+		name      string
+		wantPanic bool
+		run       func(*testing.T)
+	}{
+		{name: "remove_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().Remove() }},
+		{name: "remove_front_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().RemoveFront() }},
+		{name: "remove_back_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().RemoveBack() }},
+		{name: "pop_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().Pop() }},
+		{name: "peek_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().Peek() }},
+		{name: "peek_front_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().PeekFront() }},
+		{name: "peek_back_empty", wantPanic: true, run: func(_ *testing.T) { New[int]().PeekBack() }},
+		{
+			name: "clear_and_remove_zero_backing_pointers",
+			run: func(t *testing.T) {
+				d := New[*int](WithCapacity(4))
+				a, b, c := 1, 2, 3
+				d.AddBack(&a)
+				d.AddBack(&b)
+				d.AddBack(&c)
+				backing := d.slice
+				_ = d.RemoveFront()
+				if backing[0] != nil {
+					t.Errorf("expected RemoveFront to zero vacated pointer slot")
+				}
+				_ = d.RemoveBack()
+				if backing[2] != nil {
+					t.Errorf("expected RemoveBack to zero vacated pointer slot")
+				}
+				d.Clear()
+				if backing[1] != nil || d.slice != nil {
+					t.Errorf("expected Clear to zero backing slice and release reference")
+				}
+			},
+		},
 	}
-	assertPanics(func() { ad.RemoveFront() })
-	assertPanics(func() { ad.RemoveBack() })
-	assertPanics(func() { ad.PeekFront() })
-	assertPanics(func() { ad.PeekBack() })
-	_ = ad.String()
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			if tc.wantPanic {
+				defer func() {
+					if r := recover(); r == nil {
+						t.Errorf("expected panic")
+					}
+				}()
+			}
+			tc.run(t)
+		})
+	}
 }

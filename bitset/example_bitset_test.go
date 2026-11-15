@@ -2,6 +2,7 @@ package bitset_test
 
 import (
 	"fmt"
+
 	"github.com/lock14/collections/bitset"
 )
 

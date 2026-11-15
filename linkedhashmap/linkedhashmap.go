@@ -1,19 +1,13 @@
-// Package linkedhashmap provides a hash map that preserves insertion order.
+// Package linkedhashmap provides a hash map that preserves insertion or access order.
 package linkedhashmap
 
 import (
 	"fmt"
-	"github.com/lock14/collections"
 	"iter"
 	"math"
 	"strings"
-)
 
-const (
-	// InsertionOrder indicates the LinkedHashMap iterates over entries in insertion order.
-	InsertionOrder = false
-	// AccessOrder indicates the LinkedHashMap iterates over entries in order of last access.
-	AccessOrder = true
+	"github.com/lock14/collections"
 )
 
 var (
@@ -21,50 +15,60 @@ var (
 	_ fmt.Stringer                              = (*LinkedHashMap[int, int])(nil)
 )
 
-// KeyOrder represents the iteration order of the linked hash map.
+// KeyOrder specifies the iteration order maintained by a LinkedHashMap.
 type KeyOrder bool
 
-// config holds the configuration for a LinkedHashMap.
+const (
+	// InsertionOrder maintains keys in the order they were first inserted.
+	InsertionOrder KeyOrder = false
+	// AccessOrder moves keys to the back whenever they are accessed or updated.
+	AccessOrder KeyOrder = true
+)
+
+// config holds configuration values for a LinkedHashMap.
 type config struct {
 	keyOrder    KeyOrder
 	maxElements int
 	capacity    int
 }
 
-// Opt is a function that configures a LinkedHashMap.
-type Opt func(*config)
+// Option configures a LinkedHashMap.
+type Option func(*config)
 
-// WithAccessOrder configures the LinkedHashMap to iterate over elements in the order they were last accessed.
-func WithAccessOrder() Opt {
-	return func(config *config) {
-		config.keyOrder = AccessOrder
+// WithAccessOrder configures the LinkedHashMap to move entries to the back
+// whenever they are accessed via Get or updated via Put.
+func WithAccessOrder() Option {
+	return func(c *config) {
+		c.keyOrder = AccessOrder
 	}
 }
 
-// WithInsertionOrder configures the LinkedHashMap to iterate over elements in the order they were inserted.
-func WithInsertionOrder() Opt {
-	return func(config *config) {
-		config.keyOrder = InsertionOrder
+// WithInsertionOrder configures the LinkedHashMap to maintain entries in insertion order.
+func WithInsertionOrder() Option {
+	return func(c *config) {
+		c.keyOrder = InsertionOrder
 	}
 }
 
-// WithMaxElements configures the maximum number of elements the LinkedHashMap can hold before evicting.
-func WithMaxElements(maxElements int) Opt {
-	return func(config *config) {
-		config.maxElements = maxElements
+// WithMaxElements configures the maximum number of entries the LinkedHashMap can hold
+// before evicting the eldest entry on insertion.
+// Panics in New if maxElements is less than 1.
+func WithMaxElements(maxElements int) Option {
+	return func(c *config) {
+		c.maxElements = maxElements
 	}
 }
 
-// WithCapacity configures the initial capacity of the underlying map.
-func WithCapacity(capacity int) Opt {
-	return func(config *config) {
-		config.capacity = capacity
+// WithCapacity configures the initial capacity hint of the underlying hash table.
+// Panics in New if capacity is negative.
+func WithCapacity(capacity int) Option {
+	return func(c *config) {
+		c.capacity = capacity
 	}
 }
 
-// public functions/receivers
-
-// LinkedHashMap is a hash map that preserves insertion or access order.
+// LinkedHashMap is a hash map backed by a doubly-linked list that preserves
+// insertion or access order and supports optional bounded-size eviction.
 type LinkedHashMap[K comparable, V any] struct {
 	hashtable   map[K]*node[K, V]
 	list        *node[K, V]
@@ -72,271 +76,308 @@ type LinkedHashMap[K comparable, V any] struct {
 	maxElements int
 }
 
-// New creates a new LinkedHashMap with the given options.
-func New[K comparable, V any](opts ...Opt) *LinkedHashMap[K, V] {
-	c := defaultConfig()
+// New creates an empty LinkedHashMap configured with the given options.
+// By default, it maintains insertion order and has unbounded size.
+// Panics if configured with a negative capacity or maxElements less than 1.
+func New[K comparable, V any](opts ...Option) *LinkedHashMap[K, V] {
+	cfg := defaultConfig()
 	for _, opt := range opts {
-		opt(c)
+		opt(cfg)
+	}
+	if cfg.capacity < 0 {
+		panic("linkedhashmap: capacity cannot be negative")
+	}
+	if cfg.maxElements <= 0 {
+		panic("linkedhashmap: maxElements must be at least 1")
 	}
 	return &LinkedHashMap[K, V]{
-		hashtable:   make(map[K]*node[K, V], c.capacity),
+		hashtable:   make(map[K]*node[K, V], cfg.capacity),
 		list:        sentinel[K, V](),
-		accessOrder: c.keyOrder,
-		maxElements: c.maxElements,
+		accessOrder: cfg.keyOrder,
+		maxElements: cfg.maxElements,
 	}
 }
 
 // Put associates the specified value with the specified key in the map.
-func (hm *LinkedHashMap[K, V]) Put(key K, value V) {
-	n, ok := hm.hashtable[key]
+// If the key already exists and AccessOrder is enabled, the entry is moved to the back.
+// If the key is new and exceeds maxElements, the front entry is evicted.
+func (m *LinkedHashMap[K, V]) Put(key K, value V) {
+	n, ok := m.hashtable[key]
 	if ok {
 		n.value = value
-		if hm.accessOrder {
+		if m.accessOrder {
 			unlink(n)
-			// make n the tail of the list
-			insertBefore(hm.list, n)
+			insertBefore(m.list, n)
 		}
-	} else {
-		n = &node[K, V]{
-			key:   key,
-			value: value,
-		}
-		hm.hashtable[key] = n
-		// make n the tail of the list
-		insertBefore(hm.list, n)
-		if hm.removeEldest() {
-			eldest := hm.list.next
-			unlink(eldest)
-			delete(hm.hashtable, eldest.key)
-		}
+		return
+	}
+	n = &node[K, V]{
+		key:   key,
+		value: value,
+	}
+	m.hashtable[key] = n
+	insertBefore(m.list, n)
+	if m.removeEldest() {
+		eldest := m.list.next
+		unlink(eldest)
+		delete(m.hashtable, eldest.key)
 	}
 }
 
 // PutFirst inserts the specified key-value pair at the front of the map.
-func (hm *LinkedHashMap[K, V]) PutFirst(key K, value V) {
-	n, ok := hm.hashtable[key]
+// If the key already exists, its value is updated and it is moved to the front.
+// If the key is new and exceeds maxElements, the back entry is evicted.
+func (m *LinkedHashMap[K, V]) PutFirst(key K, value V) {
+	n, ok := m.hashtable[key]
 	if ok {
 		n.value = value
 		unlink(n)
-		insertBefore(hm.list.next, n)
-	} else {
-		n = &node[K, V]{
-			key:   key,
-			value: value,
-		}
-		hm.hashtable[key] = n
-		insertBefore(hm.list.next, n)
-		if hm.removeEldest() {
-			eldest := hm.list.prev
-			unlink(eldest)
-			delete(hm.hashtable, eldest.key)
-		}
+		insertBefore(m.list.next, n)
+		return
+	}
+	n = &node[K, V]{
+		key:   key,
+		value: value,
+	}
+	m.hashtable[key] = n
+	insertBefore(m.list.next, n)
+	if m.removeEldest() {
+		eldest := m.list.prev
+		unlink(eldest)
+		delete(m.hashtable, eldest.key)
 	}
 }
 
 // PutLast inserts the specified key-value pair at the end of the map.
-func (hm *LinkedHashMap[K, V]) PutLast(key K, value V) {
-	n, ok := hm.hashtable[key]
+// If the key already exists, its value is updated and it is moved to the back.
+// If the key is new and exceeds maxElements, the front entry is evicted.
+func (m *LinkedHashMap[K, V]) PutLast(key K, value V) {
+	n, ok := m.hashtable[key]
 	if ok {
 		n.value = value
 		unlink(n)
-		insertBefore(hm.list, n)
-	} else {
-		hm.Put(key, value)
+		insertBefore(m.list, n)
+		return
 	}
-}
-
-// First returns the first key-value pair in the map.
-func (hm *LinkedHashMap[K, V]) First() (K, V) {
-	if hm.Size() == 0 {
-		panic("First called on empty map")
-	}
-	e := hm.list.next
-	return e.key, e.value
-}
-
-// Last returns the last key-value pair in the map.
-func (hm *LinkedHashMap[K, V]) Last() (K, V) {
-	if hm.Size() == 0 {
-		panic("Last called on empty map")
-	}
-	e := hm.list.prev
-	return e.key, e.value
+	m.Put(key, value)
 }
 
 // PollFirst removes and returns the first key-value pair in the map.
-func (hm *LinkedHashMap[K, V]) PollFirst() (K, V) {
-	if hm.Size() == 0 {
-		panic("PollFirst called on empty map")
+// Panics if the map is empty.
+func (m *LinkedHashMap[K, V]) PollFirst() (K, V) {
+	if m.Size() == 0 {
+		panic("linkedhashmap: PollFirst called on empty map")
 	}
-	e := hm.list.next
+	e := m.list.next
 	unlink(e)
-	delete(hm.hashtable, e.key)
+	delete(m.hashtable, e.key)
 	return e.key, e.value
 }
 
 // PollLast removes and returns the last key-value pair in the map.
-func (hm *LinkedHashMap[K, V]) PollLast() (K, V) {
-	if hm.Size() == 0 {
-		panic("PollLast called on empty map")
+// Panics if the map is empty.
+func (m *LinkedHashMap[K, V]) PollLast() (K, V) {
+	if m.Size() == 0 {
+		panic("linkedhashmap: PollLast called on empty map")
 	}
-	e := hm.list.prev
+	e := m.list.prev
 	unlink(e)
-	delete(hm.hashtable, e.key)
+	delete(m.hashtable, e.key)
 	return e.key, e.value
 }
 
+// Remove removes the mapping for the specified key from the map if present.
+func (m *LinkedHashMap[K, V]) Remove(key K) {
+	n, ok := m.hashtable[key]
+	if ok {
+		unlink(n)
+		delete(m.hashtable, key)
+	}
+}
+
+// Clear removes all key-value pairs from the map.
+func (m *LinkedHashMap[K, V]) Clear() {
+	m.hashtable = make(map[K]*node[K, V])
+	m.list = sentinel[K, V]()
+}
+
 // Get returns the value associated with the specified key, and a boolean indicating if it was found.
-func (hm *LinkedHashMap[K, V]) Get(key K) (V, bool) {
-	n, ok := hm.hashtable[key]
+// If the key is found and AccessOrder is enabled, the entry is moved to the back.
+func (m *LinkedHashMap[K, V]) Get(key K) (V, bool) {
+	n, ok := m.hashtable[key]
 	if !ok {
 		var zero V
 		return zero, false
 	}
-	if hm.accessOrder {
+	if m.accessOrder {
 		unlink(n)
-		// make n the tail of the list
-		insertBefore(hm.list, n)
+		insertBefore(m.list, n)
 	}
 	return n.value, true
 }
 
-// Remove removes the mapping for the specified key from the map if present.
-func (hm *LinkedHashMap[K, V]) Remove(key K) {
-	n, ok := hm.hashtable[key]
-	if ok {
-		unlink(n)
-		delete(hm.hashtable, key)
+// First returns the first key-value pair in the map without removing it.
+// Panics if the map is empty.
+func (m *LinkedHashMap[K, V]) First() (K, V) {
+	if m.Size() == 0 {
+		panic("linkedhashmap: First called on empty map")
 	}
+	e := m.list.next
+	return e.key, e.value
+}
+
+// Last returns the last key-value pair in the map without removing it.
+// Panics if the map is empty.
+func (m *LinkedHashMap[K, V]) Last() (K, V) {
+	if m.Size() == 0 {
+		panic("linkedhashmap: Last called on empty map")
+	}
+	e := m.list.prev
+	return e.key, e.value
 }
 
 // ContainsKey returns true if the map contains a mapping for the specified key.
-func (hm *LinkedHashMap[K, V]) ContainsKey(key K) bool {
-	_, ok := hm.hashtable[key]
+func (m *LinkedHashMap[K, V]) ContainsKey(key K) bool {
+	_, ok := m.hashtable[key]
 	return ok
 }
 
 // Size returns the number of key-value pairs in the map.
-func (hm *LinkedHashMap[K, V]) Size() int {
-	return len(hm.hashtable)
+func (m *LinkedHashMap[K, V]) Size() int {
+	return len(m.hashtable)
 }
 
 // Empty returns true if the map contains no key-value pairs.
-func (hm *LinkedHashMap[K, V]) Empty() bool {
-	return hm.Size() == 0
+func (m *LinkedHashMap[K, V]) Empty() bool {
+	return len(m.hashtable) == 0
 }
 
-// Clear removes all key-value pairs from the map.
-func (hm *LinkedHashMap[K, V]) Clear() {
-	hm.hashtable = make(map[K]*node[K, V])
-	hm.list = sentinel[K, V]()
-}
-
-// All returns an iterator over all key-value pairs in the map in order.
-func (hm *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
+// All returns an iterator over all key-value pairs in the map in encounter order.
+func (m *LinkedHashMap[K, V]) All() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		if hm.list == nil {
+		if m.list == nil {
 			return
 		}
-		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+		for cur := m.list.next; cur != m.list; {
+			next := cur.next
 			if !yield(cur.key, cur.value) {
 				return
 			}
+			cur = next
 		}
 	}
 }
 
-// Keys returns an iterator over all keys in the map in order.
-func (hm *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
+// Keys returns an iterator over all keys in the map in encounter order.
+func (m *LinkedHashMap[K, V]) Keys() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		if hm.list == nil {
+		if m.list == nil {
 			return
 		}
-		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+		for cur := m.list.next; cur != m.list; {
+			next := cur.next
 			if !yield(cur.key) {
 				return
 			}
+			cur = next
 		}
 	}
 }
 
-// Values returns an iterator over all values in the map in order.
-func (hm *LinkedHashMap[K, V]) Values() iter.Seq[V] {
+// Values returns an iterator over all values in the map in encounter order.
+func (m *LinkedHashMap[K, V]) Values() iter.Seq[V] {
 	return func(yield func(V) bool) {
-		if hm.list == nil {
+		if m.list == nil {
 			return
 		}
-		for cur := hm.list.next; cur != hm.list; cur = cur.next {
+		for cur := m.list.next; cur != m.list; {
+			next := cur.next
 			if !yield(cur.value) {
 				return
 			}
+			cur = next
 		}
 	}
 }
 
-// Backward returns an iterator over the key-value pairs in reverse order.
-func (hm *LinkedHashMap[K, V]) Backward() iter.Seq2[K, V] {
+// Backward returns an iterator over the key-value pairs in reverse encounter order.
+func (m *LinkedHashMap[K, V]) Backward() iter.Seq2[K, V] {
 	return func(yield func(K, V) bool) {
-		if hm.list == nil {
+		if m.list == nil {
 			return
 		}
-		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
+		for cur := m.list.prev; cur != m.list; {
+			prev := cur.prev
 			if !yield(cur.key, cur.value) {
 				return
 			}
+			cur = prev
 		}
 	}
 }
 
-// BackwardKeys returns an iterator over the keys in reverse order.
-func (hm *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
+// BackwardKeys returns an iterator over the keys in reverse encounter order.
+func (m *LinkedHashMap[K, V]) BackwardKeys() iter.Seq[K] {
 	return func(yield func(K) bool) {
-		if hm.list == nil {
+		if m.list == nil {
 			return
 		}
-		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
+		for cur := m.list.prev; cur != m.list; {
+			prev := cur.prev
 			if !yield(cur.key) {
 				return
 			}
+			cur = prev
 		}
 	}
 }
 
-// BackwardValues returns an iterator over the values in reverse order.
-func (hm *LinkedHashMap[K, V]) BackwardValues() iter.Seq[V] {
+// BackwardValues returns an iterator over the values in reverse encounter order.
+func (m *LinkedHashMap[K, V]) BackwardValues() iter.Seq[V] {
 	return func(yield func(V) bool) {
-		if hm.list == nil {
+		if m.list == nil {
 			return
 		}
-		for cur := hm.list.prev; cur != hm.list; cur = cur.prev {
+		for cur := m.list.prev; cur != m.list; {
+			prev := cur.prev
 			if !yield(cur.value) {
 				return
 			}
+			cur = prev
 		}
 	}
 }
 
-// String returns a string representation of the map matching Go built-in map formatting.
-func (hm *LinkedHashMap[K, V]) String() string {
-	vals := make([]string, 0, hm.Size())
-	for k, v := range hm.All() {
-		vals = append(vals, fmt.Sprintf("%v:%v", k, v))
+// String returns a string representation of the map in encounter order,
+// matching Go's built-in map format.
+func (m *LinkedHashMap[K, V]) String() string {
+	if m.Empty() {
+		return "map[]"
 	}
-	return "map[" + strings.Join(vals, " ") + "]"
+	var sb strings.Builder
+	sb.WriteString("map[")
+	first := true
+	for cur := m.list.next; cur != m.list; cur = cur.next {
+		if !first {
+			sb.WriteByte(' ')
+		}
+		first = false
+		_, _ = fmt.Fprintf(&sb, "%v:%v", cur.key, cur.value)
+	}
+	sb.WriteByte(']')
+	return sb.String()
 }
 
-func (hm *LinkedHashMap[K, V]) removeEldest() bool {
-	return hm.Size() > hm.maxElements
+func (m *LinkedHashMap[K, V]) removeEldest() bool {
+	return len(m.hashtable) > m.maxElements
 }
 
 func defaultConfig() *config {
 	return &config{
-		keyOrder:    false,
+		keyOrder:    InsertionOrder,
 		maxElements: math.MaxInt,
 	}
 }
-
-// linked list stuff
 
 type node[K, V any] struct {
 	key   K
@@ -346,10 +387,10 @@ type node[K, V any] struct {
 }
 
 func sentinel[K, V any]() *node[K, V] {
-	node := &node[K, V]{}
-	node.prev = node
-	node.next = node
-	return node
+	n := &node[K, V]{}
+	n.prev = n
+	n.next = n
+	return n
 }
 
 func insertBefore[K, V any](n *node[K, V], b *node[K, V]) {

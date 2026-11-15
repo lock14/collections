@@ -1,24 +1,31 @@
 package comparator_test
 
 import (
-	"github.com/lock14/collections/comparator"
 	"testing"
+
+	"github.com/lock14/collections/comparator"
 )
 
-func BenchmarkNaturalOrder_Compare(b *testing.B) {
+var sinkInt int
+
+func BenchmarkComparator_NaturalOrder(b *testing.B) {
 	b.ReportAllocs()
-	cmp := comparator.NaturalOrder[int]()
+	cmpFunc := comparator.NaturalOrder[int]()
+	var r int
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = cmp(i, i+1)
+		r = cmpFunc(i, i+1)
 	}
+	sinkInt = r
 }
 
-func BenchmarkReverse_Compare(b *testing.B) {
+func BenchmarkComparator_Reverse(b *testing.B) {
 	b.ReportAllocs()
-	cmp := comparator.Reverse(comparator.NaturalOrder[int]())
+	cmpFunc := comparator.Reverse(comparator.NaturalOrder[int]())
+	var r int
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = cmp(i, i+1)
+		r = cmpFunc(i, i+1)
 	}
+	sinkInt = r
 }

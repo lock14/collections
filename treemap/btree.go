@@ -9,90 +9,71 @@ type node[K any, V any] struct {
 	children []*node[K, V]
 }
 
-func (tm *TreeMap[K, V]) newNode(leaf bool) *node[K, V] {
+func (m *TreeMap[K, V]) newNode(leaf bool) *node[K, V] {
 	var children []*node[K, V]
 	if !leaf {
-		children = make([]*node[K, V], 0, 2*tm.degree)
+		children = make([]*node[K, V], 0, 2*m.degree)
 	}
 	return &node[K, V]{
 		leaf:     leaf,
-		keys:     make([]K, 0, 2*tm.degree-1),
-		values:   make([]V, 0, 2*tm.degree-1),
+		keys:     make([]K, 0, 2*m.degree-1),
+		values:   make([]V, 0, 2*m.degree-1),
 		children: children,
 	}
 }
 
-// Get searches for a key in the B-Tree.
-func (tm *TreeMap[K, V]) get(n *node[K, V], key K) (V, bool) {
-	i, found := slices.BinarySearchFunc(n.keys, key, tm.comparator)
-	if found {
-		return n.values[i], true
+func (m *TreeMap[K, V]) get(n *node[K, V], key K) (V, bool) {
+	for {
+		i, found := slices.BinarySearchFunc(n.keys, key, m.comparator)
+		if found {
+			return n.values[i], true
+		}
+		if n.leaf {
+			var zero V
+			return zero, false
+		}
+		n = n.children[i]
 	}
-	if n.leaf {
-		var zero V
-		return zero, false
-	}
-	return tm.get(n.children[i], key)
 }
 
-// Put inserts a new key-value pair or updates an existing one.
-func (tm *TreeMap[K, V]) put(key K, value V) {
-	// Fast path: try to update an existing key first
-	if tm.updateExisting(tm.root, key, value) {
+func (m *TreeMap[K, V]) put(key K, value V) {
+	if m.root == nil {
+		m.root = m.newNode(true)
+	}
+	root := m.root
+	if len(root.keys) == 2*m.degree-1 {
+		if i, found := slices.BinarySearchFunc(root.keys, key, m.comparator); found {
+			root.values[i] = value
+			return
+		}
+		s := m.newNode(false)
+		s.children = append(s.children, root)
+		m.splitChild(s, 0, root)
+		m.root = s
+		m.putNonFull(s, key, value)
 		return
 	}
-
-	root := tm.root
-	if len(root.keys) == 2*tm.degree-1 {
-		s := tm.newNode(false)
-		s.children = append(s.children, root)
-		tm.splitChild(s, 0, root)
-		tm.root = s
-		tm.insertNonFull(s, key, value)
-	} else {
-		tm.insertNonFull(root, key, value)
-	}
-	tm.size++
+	m.putNonFull(root, key, value)
 }
 
-func (tm *TreeMap[K, V]) updateExisting(n *node[K, V], key K, value V) bool {
-	i, found := slices.BinarySearchFunc(n.keys, key, tm.comparator)
-	if found {
-		n.values[i] = value
-		return true
-	}
-	if n.leaf {
-		return false
-	}
-	return tm.updateExisting(n.children[i], key, value)
-}
+func (m *TreeMap[K, V]) splitChild(x *node[K, V], i int, y *node[K, V]) {
+	t := m.degree
+	z := m.newNode(y.leaf)
 
-func (tm *TreeMap[K, V]) splitChild(x *node[K, V], i int, y *node[K, V]) {
-	t := tm.degree
-	z := tm.newNode(y.leaf)
-
-	// Copy the upper t-1 keys and values from y to z
 	z.keys = append(z.keys, y.keys[t:]...)
 	z.values = append(z.values, y.values[t:]...)
 
-	// Truncate y's keys and values
 	midKey := y.keys[t-1]
 	midVal := y.values[t-1]
 
-	var zeroK K
-	var zeroV V
-	for j := t - 1; j < len(y.keys); j++ {
-		y.keys[j] = zeroK
-		y.values[j] = zeroV
-	}
+	clear(y.keys[t-1:])
+	clear(y.values[t-1:])
 	y.keys = y.keys[:t-1]
 	y.values = y.values[:t-1]
 
 	if !y.leaf {
 		z.children = append(z.children, y.children[t:]...)
-		for j := t; j < len(y.children); j++ {
-			y.children[j] = nil
-		}
+		clear(y.children[t:])
 		y.children = y.children[:t]
 	}
 
@@ -101,122 +82,118 @@ func (tm *TreeMap[K, V]) splitChild(x *node[K, V], i int, y *node[K, V]) {
 	x.values = slices.Insert(x.values, i, midVal)
 }
 
-func (tm *TreeMap[K, V]) insertNonFull(x *node[K, V], key K, value V) {
-	if x.leaf {
-		i, _ := slices.BinarySearchFunc(x.keys, key, tm.comparator)
-		x.keys = slices.Insert(x.keys, i, key)
-		x.values = slices.Insert(x.values, i, value)
-	} else {
-		i, _ := slices.BinarySearchFunc(x.keys, key, tm.comparator)
-		if len(x.children[i].keys) == 2*tm.degree-1 {
-			tm.splitChild(x, i, x.children[i])
-			if tm.comparator(key, x.keys[i]) > 0 {
+func (m *TreeMap[K, V]) putNonFull(x *node[K, V], key K, value V) {
+	for {
+		i, found := slices.BinarySearchFunc(x.keys, key, m.comparator)
+		if found {
+			x.values[i] = value
+			return
+		}
+		if x.leaf {
+			x.keys = slices.Insert(x.keys, i, key)
+			x.values = slices.Insert(x.values, i, value)
+			m.size++
+			return
+		}
+		child := x.children[i]
+		if len(child.keys) == 2*m.degree-1 {
+			cmp := m.comparator(key, child.keys[m.degree-1])
+			if cmp == 0 {
+				child.values[m.degree-1] = value
+				return
+			}
+			m.splitChild(x, i, child)
+			if cmp > 0 {
 				i++
 			}
 		}
-		tm.insertNonFull(x.children[i], key, value)
+		x = x.children[i]
 	}
 }
 
-// Remove deletes a key from the B-Tree.
-func (tm *TreeMap[K, V]) remove(key K) {
-	if tm.root == nil || len(tm.root.keys) == 0 {
+func (m *TreeMap[K, V]) remove(key K) {
+	if m.root == nil || len(m.root.keys) == 0 {
 		return
 	}
-	if !tm.ContainsKey(key) {
-		return
+	deleted := m.deleteNode(m.root, key)
+	if len(m.root.keys) == 0 && !m.root.leaf {
+		m.root = m.root.children[0]
 	}
-	tm.deleteNode(tm.root, key)
-	if len(tm.root.keys) == 0 {
-		if !tm.root.leaf {
-			tm.root = tm.root.children[0]
-		}
+	if deleted {
+		m.size--
 	}
-	tm.size--
 }
 
-func (tm *TreeMap[K, V]) deleteNode(x *node[K, V], key K) {
-	t := tm.degree
-	i, found := slices.BinarySearchFunc(x.keys, key, tm.comparator)
+func (m *TreeMap[K, V]) deleteNode(x *node[K, V], key K) bool {
+	t := m.degree
+	i, found := slices.BinarySearchFunc(x.keys, key, m.comparator)
 
-	// Key is in this node
 	if found {
 		if x.leaf {
-			// Case 1: The key is in a leaf node
-			var zeroK K
-			var zeroV V
-			x.keys[i] = zeroK
-			x.values[i] = zeroV
 			x.keys = slices.Delete(x.keys, i, i+1)
 			x.values = slices.Delete(x.values, i, i+1)
-		} else {
-			// Case 2: The key is in an internal node
-			y := x.children[i]
-			z := x.children[i+1]
-			if len(y.keys) >= t {
-				// 2a: Predecessor has enough keys
-				predKey, predVal := tm.getPredecessor(y)
-				x.keys[i] = predKey
-				x.values[i] = predVal
-				tm.deleteNode(y, predKey)
-			} else if len(z.keys) >= t {
-				// 2b: Successor has enough keys
-				succKey, succVal := tm.getSuccessor(z)
-				x.keys[i] = succKey
-				x.values[i] = succVal
-				tm.deleteNode(z, succKey)
-			} else {
-				// 2c: Both have t-1 keys, merge them
-				tm.merge(x, i)
-				tm.deleteNode(y, key)
-			}
+			return true
 		}
-	} else {
-		// Case 3: Key is not in this node
-		if x.leaf {
-			return
+		y := x.children[i]
+		z := x.children[i+1]
+		if len(y.keys) >= t {
+			predKey, predVal := m.getPredecessor(y)
+			x.keys[i] = predKey
+			x.values[i] = predVal
+			return m.deleteNode(y, predKey)
 		}
-
-		// Ensure the child we descend into has at least t keys
-		if len(x.children[i].keys) == t-1 {
-			tm.fill(x, i)
-			// i might have changed after fill, re-find it
-			i, _ = slices.BinarySearchFunc(x.keys, key, tm.comparator)
+		if len(z.keys) >= t {
+			succKey, succVal := m.getSuccessor(z)
+			x.keys[i] = succKey
+			x.values[i] = succVal
+			return m.deleteNode(z, succKey)
 		}
-		tm.deleteNode(x.children[i], key)
+		m.merge(x, i)
+		return m.deleteNode(y, key)
 	}
+
+	if x.leaf {
+		return false
+	}
+	if len(x.children[i].keys) == t-1 {
+		m.fill(x, i)
+		if i > len(x.keys) {
+			i--
+		}
+	}
+	return m.deleteNode(x.children[i], key)
 }
 
-func (tm *TreeMap[K, V]) getPredecessor(x *node[K, V]) (K, V) {
+func (m *TreeMap[K, V]) getPredecessor(x *node[K, V]) (K, V) {
 	for !x.leaf {
 		x = x.children[len(x.children)-1]
 	}
 	return x.keys[len(x.keys)-1], x.values[len(x.values)-1]
 }
 
-func (tm *TreeMap[K, V]) getSuccessor(x *node[K, V]) (K, V) {
+func (m *TreeMap[K, V]) getSuccessor(x *node[K, V]) (K, V) {
 	for !x.leaf {
 		x = x.children[0]
 	}
 	return x.keys[0], x.values[0]
 }
 
-func (tm *TreeMap[K, V]) fill(x *node[K, V], i int) {
-	t := tm.degree
+func (m *TreeMap[K, V]) fill(x *node[K, V], i int) {
+	t := m.degree
 	if i != 0 && len(x.children[i-1].keys) >= t {
-		tm.borrowFromPrev(x, i)
+		m.borrowFromPrev(x, i)
 	} else if i != len(x.children)-1 && len(x.children[i+1].keys) >= t {
-		tm.borrowFromNext(x, i)
+		m.borrowFromNext(x, i)
 	} else {
 		if i != len(x.children)-1 {
-			tm.merge(x, i)
+			m.merge(x, i)
 		} else {
-			tm.merge(x, i-1)
+			m.merge(x, i-1)
 		}
 	}
 }
 
-func (tm *TreeMap[K, V]) borrowFromPrev(x *node[K, V], i int) {
+func (m *TreeMap[K, V]) borrowFromPrev(x *node[K, V], i int) {
 	child := x.children[i]
 	sibling := x.children[i-1]
 
@@ -234,15 +211,13 @@ func (tm *TreeMap[K, V]) borrowFromPrev(x *node[K, V], i int) {
 	x.keys[i-1] = sibling.keys[lastIdx]
 	x.values[i-1] = sibling.values[lastIdx]
 
-	var zeroK K
-	var zeroV V
-	sibling.keys[lastIdx] = zeroK
-	sibling.values[lastIdx] = zeroV
+	clear(sibling.keys[lastIdx:])
+	clear(sibling.values[lastIdx:])
 	sibling.keys = sibling.keys[:lastIdx]
 	sibling.values = sibling.values[:lastIdx]
 }
 
-func (tm *TreeMap[K, V]) borrowFromNext(x *node[K, V], i int) {
+func (m *TreeMap[K, V]) borrowFromNext(x *node[K, V], i int) {
 	child := x.children[i]
 	sibling := x.children[i+1]
 
@@ -261,7 +236,7 @@ func (tm *TreeMap[K, V]) borrowFromNext(x *node[K, V], i int) {
 	sibling.values = slices.Delete(sibling.values, 0, 1)
 }
 
-func (tm *TreeMap[K, V]) merge(x *node[K, V], i int) {
+func (m *TreeMap[K, V]) merge(x *node[K, V], i int) {
 	child := x.children[i]
 	sibling := x.children[i+1]
 

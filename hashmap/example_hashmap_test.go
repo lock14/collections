@@ -2,8 +2,9 @@ package hashmap_test
 
 import (
 	"fmt"
-	"github.com/lock14/collections/hashmap"
 	"slices"
+
+	"github.com/lock14/collections/hashmap"
 )
 
 func ExampleHashMap() {
@@ -20,7 +21,7 @@ func ExampleHashMap() {
 	// Update an existing key
 	m.Put("Alice", 26)
 
-	// Since HashMap is unordered, we collect and sort to ensure deterministic output
+	// Since HashMap is unordered, collect and sort keys for deterministic output
 	keys := slices.Collect(m.Keys())
 	slices.Sort(keys)
 
@@ -36,6 +37,29 @@ func ExampleHashMap() {
 	// - Alice: 26
 	// - Bob: 30
 	// - Charlie: 35
+}
+
+func ExampleNew() {
+	m := hashmap.New[string, int](hashmap.WithCapacity(16))
+	m.Put("go", 1)
+	fmt.Println(m.Size())
+	// Output:
+	// 1
+}
+
+func ExampleWrap() {
+	raw := map[string]int{"a": 1}
+	m := hashmap.Wrap(raw)
+	m.Put("b", 2)
+	fmt.Println(raw["b"])
+
+	empty := hashmap.Wrap[string, int](nil)
+	empty.Put("x", 10)
+	v, ok := empty.Get("x")
+	fmt.Println(v, ok)
+	// Output:
+	// 2
+	// 10 true
 }
 
 func ExampleHashMap_Get() {
@@ -136,7 +160,6 @@ func ExampleHashMap_All() {
 	m.Put("Alice", 25)
 	m.Put("Bob", 30)
 
-	// Collect and sort to ensure deterministic output
 	var entries []string
 	for k, v := range m.All() {
 		entries = append(entries, fmt.Sprintf("%s: %d", k, v))

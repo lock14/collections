@@ -4,602 +4,467 @@ package bitset
 import (
 	"fmt"
 	"iter"
+	"math"
 	"math/bits"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/lock14/collections"
 )
 
+var (
+	_ collections.MutableNavigableSet[int] = (*BitSet)(nil)
+	_ fmt.Stringer                         = (*BitSet)(nil)
+)
+
 const (
 	// DefaultCapacity is the default initial bit capacity of a BitSet.
 	DefaultCapacity = 64
 	wordSize        = 64
-	wordFmt         = "%016X"
 )
 
-// BitSet represents a vector of bits that grows as needed.
+// config holds configuration options for constructing a BitSet.
+type config struct {
+	capacity int
+}
+
+// Option configures a BitSet.
+type Option func(*config)
+
+// WithCapacity sets the initial bit capacity of a BitSet.
+// Passing a negative capacity causes New to panic.
+func WithCapacity(capacity int) Option {
+	return func(c *config) {
+		c.capacity = capacity
+	}
+}
+
+// BitSet represents a dynamically growing vector of bits implementing MutableNavigableSet[int].
 type BitSet struct {
 	bits         []uint64
 	maxWordInUse int
 	size         int
 }
 
-var (
-	_ collections.MutableNavigableSet[int] = (*BitSet)(nil)
-	_ fmt.Stringer                         = (*BitSet)(nil)
-)
-
-// config holds the values for configuring a BitSet.
-type config struct {
-	capacity int
-}
-
-// Option configures a BitSet config
-type Option func(*config)
-
-// WithCapacity provides the option to set the number of bits used in a BitSet.
-func WithCapacity(n int) Option {
-	return func(c *config) {
-		c.capacity = n
-	}
-}
-
-// New creates a BitSet whose initial size is large enough to explicitly
-// represent bits with indices in the range 0 through NumBits-1. If no
-// configuration is used the DefaultCapacity is used as the number of bits.
-// All bits are initially false.
+// New creates a BitSet whose initial capacity is large enough to represent bits
+// with indices in the range [0, capacity) without resizing. If no options are provided,
+// DefaultCapacity is used. All bits are initially false. Panics if capacity is negative.
 func New(opts ...Option) *BitSet {
-	config := defaultConfig()
+	cfg := defaultConfig()
 	for _, option := range opts {
-		option(config)
+		option(cfg)
 	}
-	ensureNonNegative(config.capacity)
+	if cfg.capacity < 0 {
+		panic(fmt.Sprintf("bitset: capacity cannot be negative: %d", cfg.capacity))
+	}
 	return &BitSet{
-		bits:         make([]uint64, (config.capacity/wordSize)+min(1, config.capacity%wordSize)),
+		bits:         make([]uint64, (cfg.capacity/wordSize)+min(1, cfg.capacity%wordSize)),
 		maxWordInUse: 0,
 		size:         0,
 	}
 }
 
-// ClearBit sets the bit specified by the index to false.
-func (b *BitSet) ClearBit(bit int) {
+// FromBytes creates a new BitSet containing all set bits from data interpreted in little-endian byte order.
+func FromBytes(data []byte) *BitSet {
+	s := New(WithCapacity(len(data) * 8))
+	k := 0
+	for i := 0; i < len(data); i += 8 {
+		var word uint64
+		for j := 0; i+j < len(data) && j < 8; j++ {
+			word |= uint64(data[i+j]) << (8 * j)
+		}
+		s.bits[k] = word
+		k++
+	}
+	s.maxWordInUse = s.lastNonZeroWord() + 1
+	s.recomputeSize()
+	return s
+}
+
+// SetBit sets the bit at the specified non-negative index to true.
+// Panics if bit is negative.
+func (s *BitSet) SetBit(bit int) {
 	index, shift := convert(bit)
-	if index >= b.maxWordInUse {
+	s.ensureSize(index)
+	if s.bits[index]&(1<<shift) == 0 {
+		if s.size != -1 {
+			s.size++
+		}
+		s.bits[index] |= 1 << shift
+		if index+1 > s.maxWordInUse {
+			s.maxWordInUse = index + 1
+		}
+	}
+}
+
+// ClearBit sets the bit at the specified non-negative index to false.
+// Panics if bit is negative.
+func (s *BitSet) ClearBit(bit int) {
+	index, shift := convert(bit)
+	if index >= s.maxWordInUse {
 		return
 	}
-	if b.bits[index]&(1<<shift) != 0 {
-		if b.size != -1 {
-			b.size--
+	if s.bits[index]&(1<<shift) != 0 {
+		if s.size != -1 {
+			s.size--
 		}
-		b.bits[index] &= ^(1 << shift)
-		if index == b.maxWordInUse-1 && b.bits[index] == 0 {
-			b.maxWordInUse = b.lastNonZeroWord() + 1
-		}
-	}
-}
-
-// SetBit sets the bit at the specified index to true.
-func (b *BitSet) SetBit(bit int) {
-	index, shift := convert(bit)
-	b.ensureSize(index)
-	if b.bits[index]&(1<<shift) == 0 {
-		if b.size != -1 {
-			b.size++
-		}
-		b.bits[index] |= 1 << shift
-		if index+1 > b.maxWordInUse {
-			b.maxWordInUse = index + 1
-		}
-	}
-}
-
-// GetBit returns the value of the bit with the specified index.
-func (b *BitSet) GetBit(bit int) bool {
-	index, shift := convert(bit)
-	if index >= b.maxWordInUse {
-		return false
-	}
-	return (b.bits[index]>>shift)&1 == 1
-}
-
-// Capacity returns the maximum number of bits this bit set can currently hold without resizing.
-func (b *BitSet) Capacity() int {
-	return len(b.bits) * wordSize
-}
-
-// Size returns the number of set bits in the BitSet.
-func (b *BitSet) Size() int {
-	if b.size == -1 {
-		b.recomputeSize()
-	}
-	return b.size
-}
-
-// Length returns the 'logical size' of this BitSet.
-// The 'logical size' is the highest set bit in the BitSet plus one.
-// Returns zero if no bits are set.
-func (b *BitSet) Length() int {
-	if b.maxWordInUse == 0 {
-		return 0
-	}
-	return wordSize*(b.maxWordInUse-1) + (wordSize - bits.LeadingZeros64(b.bits[b.maxWordInUse-1]))
-}
-
-// Flip sets each bit to the complement of its current value. This call is
-// equivalent to b.FlipRange(0, b.Capacity())
-func (b *BitSet) Flip() {
-	for i := 0; i < len(b.bits); i++ {
-		b.bits[i] = ^b.bits[i]
-	}
-	b.maxWordInUse = b.lastNonZeroWord() + 1
-	b.size = -1
-}
-
-// FlipRange sets each bit from the specified start bit (inclusive) to the
-// specified end bit (exclusive) to the complement of its current value.
-func (b *BitSet) FlipRange(start int, end int) {
-	startIndex, startShift := convert(start)
-	endIndex, endShift := convert(end)
-	if end != b.Capacity() {
-		b.ensureSize(endIndex)
-	}
-
-	startMask := ^(^uint64(0) << startShift)
-	endMask := ^uint64(0) << endShift
-
-	if startIndex == endIndex {
-		// flip middle bits, keep upper and lower bits the same
-		middleMask := ^(startMask | endMask)
-		oldWord := b.bits[startIndex]
-		lowerBits := oldWord & startMask
-		middleBits := (^oldWord) & middleMask
-		upperBits := oldWord & endMask
-		b.bits[startIndex] = lowerBits | middleBits | upperBits
-	} else {
-		// flip upper bits, keep lower bits the same
-		oldStart := b.bits[startIndex]
-		lowerBits := oldStart & startMask
-		upperBits := (^oldStart) & ^startMask
-		b.bits[startIndex] = upperBits | lowerBits
-
-		// flip all bits at each of the middles indices
-		for i := startIndex + 1; i < endIndex; i++ {
-			b.bits[i] = ^b.bits[i]
-		}
-
-		if end != b.Capacity() {
-			// flip lower bits, keep upper bits the same
-			oldEnd := b.bits[endIndex]
-			lowerBits = (^oldEnd) & ^endMask
-			upperBits = oldEnd & endMask
-			b.bits[endIndex] = upperBits | lowerBits
-		}
-	}
-	b.maxWordInUse = b.lastNonZeroWord() + 1
-	b.size = -1
-}
-
-// FromBytes returns new BitSet containing all the bits in the given byte array.
-func FromBytes(bytes []byte) *BitSet {
-	b := New(WithCapacity(len(bytes) * 8))
-	k := 0
-	for i := 0; i < len(bytes); i += 8 {
-		word := uint64(0)
-		for j := 0; i+j < len(bytes) && j < 8; j++ {
-			b := uint64(bytes[i+j])
-			bShift := b << (8 * j)
-			word |= bShift
-		}
-		b.bits[k] = word
-		k++
-	}
-	b.maxWordInUse = b.lastNonZeroWord() + 1
-	b.recomputeSize()
-	return b
-}
-
-// ToBytes returns a byte array containing all the set bits in this BitSet.
-func (b *BitSet) ToBytes() []byte {
-	n := b.maxWordInUse
-	if n == 0 {
-		return []byte{}
-	}
-	length := 8 * (n - 1)
-	for word := b.bits[n-1]; word != 0; word >>= 8 {
-		length++
-	}
-	bytes := make([]byte, length)
-	k := 0
-	for i := 0; i < n-1; i++ {
-		for j := 0; j < 8; j++ {
-			bytes[k] = byte(0xFF & (b.bits[i] >> (j * 8)))
-			k++
-		}
-	}
-	for word := b.bits[n-1]; word != 0; word >>= 8 {
-		bytes[k] = byte(word & 0xFF)
-		k++
-	}
-	return bytes
-}
-
-// String returns a string representation of the elements in this BitSet matching Go slice formatting.
-func (b *BitSet) String() string {
-	vals := make([]string, 0, b.Size())
-	for bit := range b.All() {
-		vals = append(vals, strconv.Itoa(bit))
-	}
-	return "[" + strings.Join(vals, " ") + "]"
-}
-
-// SetBits returns an iterator that iterates over the set bits of this BitSet.
-// It uses word-level iteration with bits.TrailingZeros64 for efficiency.
-func (b *BitSet) SetBits() iter.Seq[int] {
-	return func(yield func(int) bool) {
-		for i := 0; i < b.maxWordInUse; i++ {
-			word := b.bits[i]
-			for word != 0 {
-				tz := bits.TrailingZeros64(word)
-				if !yield(i*wordSize + tz) {
-					return
-				}
-				word &= word - 1 // clear lowest set bit
+		s.bits[index] &= ^(1 << shift)
+		if index == s.maxWordInUse-1 && s.bits[index] == 0 {
+			s.maxWordInUse = s.lastNonZeroWord() + 1
+			if s.maxWordInUse == 0 {
+				s.size = 0
 			}
 		}
 	}
 }
 
-func convert(bit int) (int, int) {
-	ensureNonNegative(bit)
-	return bit / wordSize, bit % wordSize
-}
-
-func defaultConfig() *config {
-	return &config{
-		capacity: DefaultCapacity,
+// Flip sets each bit in [0, s.Capacity()) to the complement of its current value.
+func (s *BitSet) Flip() {
+	for i := 0; i < len(s.bits); i++ {
+		s.bits[i] = ^s.bits[i]
 	}
+	s.invalidateSize()
 }
 
-func (b *BitSet) ensureSize(index int) {
-	if index >= len(b.bits) {
-		newBits := make([]uint64, index+1)
-		copy(newBits, b.bits)
-		b.bits = newBits
+// FlipRange sets each bit in the half-open range [start, end) to the complement of its current value.
+// Panics if start is negative or if end < start.
+func (s *BitSet) FlipRange(start, end int) {
+	ensureNonNegative(start)
+	if end < start {
+		panic(fmt.Sprintf("bitset: start index %d greater than end index %d", start, end))
 	}
-}
+	if start == end {
+		return
+	}
+	startIndex, startShift := convert(start)
+	lastIndex, lastShift := convert(end - 1)
+	s.ensureSize(lastIndex)
 
-func (b *BitSet) lastNonZeroWord() int {
-	for i := len(b.bits) - 1; i >= 0; i-- {
-		if b.bits[i] != 0 {
-			return i
+	firstMask := ^uint64(0) << startShift
+	lastMask := ^uint64(0) >> (wordSize - 1 - lastShift)
+	if startIndex == lastIndex {
+		s.bits[startIndex] ^= firstMask & lastMask
+	} else {
+		s.bits[startIndex] ^= firstMask
+		for i := startIndex + 1; i < lastIndex; i++ {
+			s.bits[i] = ^s.bits[i]
 		}
+		s.bits[lastIndex] ^= lastMask
 	}
-	return -1
+	s.invalidateSize()
 }
 
-func ensureNonNegative(i int) {
-	if i < 0 {
-		panic(fmt.Sprintf("runtime error: index out of range [%d]", i))
-	}
+// Add inserts the specified non-negative integer into the set.
+// Panics if t is negative.
+func (s *BitSet) Add(t int) {
+	s.SetBit(t)
 }
 
-func (b *BitSet) recomputeSize() {
-	size := 0
-	for i := 0; i < b.maxWordInUse; i++ {
-		size += bits.OnesCount64(b.bits[i])
-	}
-	b.size = size
-}
-
-// Add inserts the specified element into the bit set.
-func (b *BitSet) Add(t int) {
-	b.SetBit(t)
-}
-
-// RemoveElement removes the specified element from the bit set.
-func (b *BitSet) RemoveElement(t int) {
-	b.ClearBit(t)
-}
-
-// Contains returns true if this bit set contains the specified element.
-func (b *BitSet) Contains(t int) bool {
-	return b.GetBit(t)
-}
-
-// Empty returns true if the collection contains no elements.
-func (b *BitSet) Empty() bool {
-	return b.size == 0
-}
-
-// All returns an iterator over all the elements in the bit set.
-func (b *BitSet) All() iter.Seq[int] {
-	return b.SetBits()
-}
-
-// Clear removes all elements from the bit set.
-func (b *BitSet) Clear() {
-	clear(b.bits)
-	b.maxWordInUse = 0
-	b.size = 0
-}
-
-// Remove removes and returns a single element from the bit set.
-func (b *BitSet) Remove() int {
-	if b.size == 0 {
-		panic("remove from empty set")
-	}
-	for i := 0; i < b.maxWordInUse; i++ {
-		if b.bits[i] != 0 {
-			tz := bits.TrailingZeros64(b.bits[i])
-			val := i*wordSize + tz
-			b.ClearBit(val)
-			return val
-		}
-	}
-	panic("size is not zero but no bits set")
-}
-
-// AddAll inserts all elements from the given sequence into the collection.
-func (b *BitSet) AddAll(seq iter.Seq[int]) {
+// AddAll inserts all elements from the given sequence into the set.
+// Panics if any element is negative.
+func (s *BitSet) AddAll(seq iter.Seq[int]) {
 	for v := range seq {
-		b.SetBit(v)
+		s.SetBit(v)
 	}
 }
 
-// RemoveAll removes all elements of the specified collection from this set.
-func (b *BitSet) RemoveAll(col collections.Collection[int]) {
+// Remove removes and returns the smallest set bit in the set.
+// Panics if the set is empty.
+func (s *BitSet) Remove() int {
+	return s.PollFirst()
+}
+
+// RemoveElement removes the specified non-negative integer from the set if present.
+// Panics if t is negative.
+func (s *BitSet) RemoveElement(t int) {
+	s.ClearBit(t)
+}
+
+// RemoveAll removes all elements in col from this set.
+func (s *BitSet) RemoveAll(col collections.Collection[int]) {
 	if other, ok := col.(*BitSet); ok {
-		for i := 0; i < b.maxWordInUse && i < other.maxWordInUse; i++ {
-			b.bits[i] &= ^other.bits[i]
+		for i := 0; i < s.maxWordInUse && i < other.maxWordInUse; i++ {
+			s.bits[i] &= ^other.bits[i]
 		}
-		b.maxWordInUse = b.lastNonZeroWord() + 1
-		b.size = -1
+		s.invalidateSize()
 		return
 	}
 	for v := range col.All() {
-		b.ClearBit(v)
+		s.ClearBit(v)
 	}
 }
 
-// RetainAll retains only the elements in this set that are contained in the specified collection.
-func (b *BitSet) RetainAll(col collections.Collection[int]) {
+// RetainAll retains only the elements in this set that are also contained in col.
+func (s *BitSet) RetainAll(col collections.Collection[int]) {
 	if other, ok := col.(*BitSet); ok {
-		for i := 0; i < b.maxWordInUse; i++ {
+		for i := 0; i < s.maxWordInUse; i++ {
 			if i < other.maxWordInUse {
-				b.bits[i] &= other.bits[i]
+				s.bits[i] &= other.bits[i]
 			} else {
-				b.bits[i] = 0
+				s.bits[i] = 0
 			}
 		}
-		b.maxWordInUse = b.lastNonZeroWord() + 1
-		b.size = -1
+		s.invalidateSize()
 		return
 	}
 	if set, ok := col.(collections.Set[int]); ok {
-		for v := range b.All() {
+		for v := range s.All() {
 			if !set.Contains(v) {
-				b.ClearBit(v)
+				s.ClearBit(v)
 			}
 		}
 		return
 	}
 
-	// For generic non-set collections, build a temporary BitSet to avoid O(N*M).
-	temp := New(WithCapacity(b.Capacity()))
+	temp := New(WithCapacity(s.Capacity()))
 	for v := range col.All() {
-		if b.Contains(v) {
+		if s.Contains(v) {
 			temp.SetBit(v)
 		}
 	}
-	b.bits = temp.bits
-	b.maxWordInUse = temp.maxWordInUse
-	b.size = temp.size
+	s.bits = temp.bits
+	s.maxWordInUse = temp.maxWordInUse
+	s.size = temp.size
 }
 
-// ContainsAll returns true if this set contains all elements of the specified collection.
-func (b *BitSet) ContainsAll(col collections.Collection[int]) bool {
+// PollFirst removes and returns the smallest element in the set.
+// Panics if the set is empty.
+func (s *BitSet) PollFirst() int {
+	if s.Empty() {
+		panic("bitset: PollFirst called on empty set")
+	}
+	val := s.First()
+	s.ClearBit(val)
+	return val
+}
+
+// PollLast removes and returns the largest element in the set.
+// Panics if the set is empty.
+func (s *BitSet) PollLast() int {
+	if s.Empty() {
+		panic("bitset: PollLast called on empty set")
+	}
+	val := s.Last()
+	s.ClearBit(val)
+	return val
+}
+
+// Clear sets all bits in the set to false while retaining allocated capacity.
+func (s *BitSet) Clear() {
+	clear(s.bits)
+	s.maxWordInUse = 0
+	s.size = 0
+}
+
+// GetBit returns the value of the bit at the specified non-negative index.
+// Panics if bit is negative.
+func (s *BitSet) GetBit(bit int) bool {
+	index, shift := convert(bit)
+	if index >= s.maxWordInUse {
+		return false
+	}
+	return (s.bits[index]>>shift)&1 == 1
+}
+
+// Contains returns true if this set contains the specified non-negative integer.
+// Panics if t is negative.
+func (s *BitSet) Contains(t int) bool {
+	return s.GetBit(t)
+}
+
+// ContainsAll returns true if this set contains every element of col.
+func (s *BitSet) ContainsAll(col collections.Collection[int]) bool {
 	if other, ok := col.(*BitSet); ok {
 		for i := 0; i < other.maxWordInUse; i++ {
-			if i >= b.maxWordInUse {
+			if i >= s.maxWordInUse {
 				if other.bits[i] != 0 {
 					return false
 				}
-			} else if (b.bits[i] & other.bits[i]) != other.bits[i] {
+			} else if (s.bits[i] & other.bits[i]) != other.bits[i] {
 				return false
 			}
 		}
 		return true
 	}
 	for v := range col.All() {
-		if !b.Contains(v) {
+		if !s.Contains(v) {
 			return false
 		}
 	}
 	return true
 }
 
-// First returns the first element in the bitset.
-func (b *BitSet) First() int {
-	if b.Empty() {
-		panic("First called on empty bitset")
-	}
-	for i := 0; i < b.maxWordInUse; i++ {
-		if b.bits[i] != 0 {
-			tz := bits.TrailingZeros64(b.bits[i])
-			return i*wordSize + tz
-		}
-	}
-	panic("unreachable")
+// Capacity returns the number of bits this BitSet can hold in its active word slice without growing.
+func (s *BitSet) Capacity() int {
+	return len(s.bits) * wordSize
 }
 
-// Last returns the last element in the bitset.
-func (b *BitSet) Last() int {
-	if b.Empty() {
-		panic("Last called on empty bitset")
+// Size returns the number of set bits (population count) in the BitSet.
+func (s *BitSet) Size() int {
+	if s.size == -1 {
+		s.recomputeSize()
 	}
-	for i := b.maxWordInUse - 1; i >= 0; i-- {
-		if b.bits[i] != 0 {
-			lz := bits.LeadingZeros64(b.bits[i])
-			return i*wordSize + (wordSize - 1 - lz)
-		}
-	}
-	panic("unreachable")
+	return s.size
 }
 
-// PollFirst removes and returns the first element in the bitset.
-func (b *BitSet) PollFirst() int {
-	if b.Empty() {
-		panic("PollFirst called on empty bitset")
+// Length returns the logical length of the BitSet: the index of the highest set bit plus one,
+// or zero if the BitSet is empty.
+func (s *BitSet) Length() int {
+	if s.maxWordInUse == 0 {
+		return 0
 	}
-	val := b.First()
-	b.ClearBit(val)
-	return val
+	return wordSize*(s.maxWordInUse-1) + (wordSize - bits.LeadingZeros64(s.bits[s.maxWordInUse-1]))
 }
 
-// PollLast removes and returns the last element in the bitset.
-func (b *BitSet) PollLast() int {
-	if b.Empty() {
-		panic("PollLast called on empty bitset")
-	}
-	val := b.Last()
-	b.ClearBit(val)
-	return val
+// Empty returns true if the BitSet contains no set bits.
+func (s *BitSet) Empty() bool {
+	return s.maxWordInUse == 0
 }
 
-// Lower returns the greatest element in this set strictly less than the given element, or (0, false) if no such element exists.
-func (b *BitSet) Lower(t int) (int, bool) {
+// First returns the smallest element in the set.
+// Panics if the set is empty.
+func (s *BitSet) First() int {
+	if s.Empty() {
+		panic("bitset: First called on empty set")
+	}
+	i := 0
+	for s.bits[i] == 0 {
+		i++
+	}
+	return i*wordSize + bits.TrailingZeros64(s.bits[i])
+}
+
+// Last returns the largest element in the set.
+// Panics if the set is empty.
+func (s *BitSet) Last() int {
+	if s.Empty() {
+		panic("bitset: Last called on empty set")
+	}
+	i := s.maxWordInUse - 1
+	return i*wordSize + (wordSize - 1 - bits.LeadingZeros64(s.bits[i]))
+}
+
+// Lower returns the greatest element strictly less than t, or (0, false) if no such element exists.
+func (s *BitSet) Lower(t int) (int, bool) {
 	if t <= 0 {
 		return 0, false
 	}
-	index, shift := convert(t - 1)
-	if index >= b.maxWordInUse {
-		if b.Empty() {
-			return 0, false
-		}
-		return b.Last(), true
-	}
-
-	var mask uint64
-	if shift == wordSize-1 {
-		mask = ^uint64(0)
-	} else {
-		mask = (1 << (shift + 1)) - 1
-	}
-
-	w := b.bits[index] & mask
-	if w != 0 {
-		lz := bits.LeadingZeros64(w)
-		return index*wordSize + (wordSize - 1 - lz), true
-	}
-
-	for i := index - 1; i >= 0; i-- {
-		if b.bits[i] != 0 {
-			lz := bits.LeadingZeros64(b.bits[i])
-			return i*wordSize + (wordSize - 1 - lz), true
-		}
-	}
-	return 0, false
+	return s.Floor(t - 1)
 }
 
-// Floor returns the greatest element in this set less than or equal to the given element, or (0, false) if no such element exists.
-func (b *BitSet) Floor(t int) (int, bool) {
-	if t < 0 {
+// Floor returns the greatest element less than or equal to t, or (0, false) if no such element exists.
+func (s *BitSet) Floor(t int) (int, bool) {
+	if t < 0 || s.Empty() {
 		return 0, false
 	}
 	index, shift := convert(t)
-	if index >= b.maxWordInUse {
-		if b.Empty() {
-			return 0, false
-		}
-		return b.Last(), true
+	if index >= s.maxWordInUse {
+		return s.Last(), true
 	}
 
-	var mask uint64
-	if shift == wordSize-1 {
-		mask = ^uint64(0)
-	} else {
-		mask = (1 << (shift + 1)) - 1
-	}
-
-	w := b.bits[index] & mask
-	if w != 0 {
-		lz := bits.LeadingZeros64(w)
-		return index*wordSize + (wordSize - 1 - lz), true
+	mask := ^uint64(0) >> (wordSize - 1 - shift)
+	if w := s.bits[index] & mask; w != 0 {
+		return index*wordSize + (wordSize - 1 - bits.LeadingZeros64(w)), true
 	}
 
 	for i := index - 1; i >= 0; i-- {
-		if b.bits[i] != 0 {
-			lz := bits.LeadingZeros64(b.bits[i])
-			return i*wordSize + (wordSize - 1 - lz), true
+		if s.bits[i] != 0 {
+			return i*wordSize + (wordSize - 1 - bits.LeadingZeros64(s.bits[i])), true
 		}
 	}
 	return 0, false
 }
 
-// Ceiling returns the least element in this set greater than or equal to the given element, or (0, false) if no such element exists.
-func (b *BitSet) Ceiling(t int) (int, bool) {
-	if t < 0 {
-		t = 0
+// Ceiling returns the least element greater than or equal to t, or (0, false) if no such element exists.
+func (s *BitSet) Ceiling(t int) (int, bool) {
+	if s.Empty() {
+		return 0, false
+	}
+	if t <= 0 {
+		return s.First(), true
 	}
 	index, shift := convert(t)
-	if index >= b.maxWordInUse {
+	if index >= s.maxWordInUse {
 		return 0, false
 	}
 
-	mask := ^uint64(0) << shift
-	w := b.bits[index] & mask
-	if w != 0 {
-		tz := bits.TrailingZeros64(w)
-		return index*wordSize + tz, true
+	if w := s.bits[index] & (^uint64(0) << shift); w != 0 {
+		return index*wordSize + bits.TrailingZeros64(w), true
 	}
 
-	for i := index + 1; i < b.maxWordInUse; i++ {
-		if b.bits[i] != 0 {
-			tz := bits.TrailingZeros64(b.bits[i])
-			return i*wordSize + tz, true
+	for i := index + 1; i < s.maxWordInUse; i++ {
+		if s.bits[i] != 0 {
+			return i*wordSize + bits.TrailingZeros64(s.bits[i]), true
 		}
 	}
 	return 0, false
 }
 
-// Higher returns the least element in this set strictly greater than the given element, or (0, false) if no such element exists.
-func (b *BitSet) Higher(t int) (int, bool) {
+// Higher returns the least element strictly greater than t, or (0, false) if no such element exists.
+func (s *BitSet) Higher(t int) (int, bool) {
+	if t == math.MaxInt {
+		return 0, false
+	}
 	if t < 0 {
-		if b.Empty() {
-			return 0, false
-		}
-		return b.First(), true
+		return s.Ceiling(0)
 	}
-	index, shift := convert(t + 1)
-	if index >= b.maxWordInUse {
-		return 0, false
-	}
-
-	mask := ^uint64(0) << shift
-	w := b.bits[index] & mask
-	if w != 0 {
-		tz := bits.TrailingZeros64(w)
-		return index*wordSize + tz, true
-	}
-
-	for i := index + 1; i < b.maxWordInUse; i++ {
-		if b.bits[i] != 0 {
-			tz := bits.TrailingZeros64(b.bits[i])
-			return i*wordSize + tz, true
-		}
-	}
-	return 0, false
+	return s.Ceiling(t + 1)
 }
 
-// Backward returns a reverse iterator over the elements of this set in descending order.
-func (b *BitSet) Backward() iter.Seq[int] {
+// ToBytes returns a minimal little-endian byte slice representing all set bits in the BitSet.
+func (s *BitSet) ToBytes() []byte {
+	n := s.maxWordInUse
+	if n == 0 {
+		return []byte{}
+	}
+	length := 8 * (n - 1)
+	for word := s.bits[n-1]; word != 0; word >>= 8 {
+		length++
+	}
+	out := make([]byte, length)
+	k := 0
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < 8; j++ {
+			out[k] = byte(0xFF & (s.bits[i] >> (j * 8)))
+			k++
+		}
+	}
+	for word := s.bits[n-1]; word != 0; word >>= 8 {
+		out[k] = byte(word & 0xFF)
+		k++
+	}
+	return out
+}
+
+// SetBits returns an iterator over all set bit indices in ascending order.
+func (s *BitSet) SetBits() iter.Seq[int] {
 	return func(yield func(int) bool) {
-		for i := b.maxWordInUse - 1; i >= 0; i-- {
-			w := b.bits[i]
+		for i := 0; i < s.maxWordInUse; i++ {
+			word := s.bits[i]
+			for word != 0 {
+				tz := bits.TrailingZeros64(word)
+				if !yield(i*wordSize + tz) {
+					return
+				}
+				word &= word - 1
+			}
+		}
+	}
+}
+
+// All returns an iterator over all set bit indices in ascending order.
+func (s *BitSet) All() iter.Seq[int] {
+	return s.SetBits()
+}
+
+// Backward returns an iterator over all set bit indices in descending order.
+func (s *BitSet) Backward() iter.Seq[int] {
+	return func(yield func(int) bool) {
+		for i := s.maxWordInUse - 1; i >= 0; i-- {
+			w := s.bits[i]
 			for w != 0 {
-				lz := bits.LeadingZeros64(w)
-				bit := wordSize - 1 - lz
+				bit := wordSize - 1 - bits.LeadingZeros64(w)
 				if !yield(i*wordSize + bit) {
 					return
 				}
@@ -609,18 +474,18 @@ func (b *BitSet) Backward() iter.Seq[int] {
 	}
 }
 
-// From returns an iterator over the elements of this set greater than or equal to from.
-func (b *BitSet) From(from int) iter.Seq[int] {
+// From returns an iterator over all elements greater than or equal to from in ascending order.
+func (s *BitSet) From(from int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if from < 0 {
 			from = 0
 		}
 		index, shift := convert(from)
-		if index >= b.maxWordInUse {
+		if index >= s.maxWordInUse {
 			return
 		}
 
-		w := b.bits[index] & (^uint64(0) << shift)
+		w := s.bits[index] & (^uint64(0) << shift)
 		for w != 0 {
 			tz := bits.TrailingZeros64(w)
 			if !yield(index*wordSize + tz) {
@@ -629,8 +494,8 @@ func (b *BitSet) From(from int) iter.Seq[int] {
 			w &= w - 1
 		}
 
-		for i := index + 1; i < b.maxWordInUse; i++ {
-			w = b.bits[i]
+		for i := index + 1; i < s.maxWordInUse; i++ {
+			w = s.bits[i]
 			for w != 0 {
 				tz := bits.TrailingZeros64(w)
 				if !yield(i*wordSize + tz) {
@@ -642,21 +507,17 @@ func (b *BitSet) From(from int) iter.Seq[int] {
 	}
 }
 
-// To returns an iterator over the elements of this set strictly less than to.
-func (b *BitSet) To(to int) iter.Seq[int] {
+// To returns an iterator over all elements strictly less than to in ascending order.
+func (s *BitSet) To(to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if to <= 0 {
 			return
 		}
-		endIndex, endShift := convert(to)
-
-		for i := 0; i < b.maxWordInUse && i <= endIndex; i++ {
-			w := b.bits[i]
-			if i == endIndex {
-				if endShift == 0 {
-					return
-				}
-				w &= (1 << endShift) - 1
+		lastIndex, lastShift := convert(to - 1)
+		for i := 0; i < s.maxWordInUse && i <= lastIndex; i++ {
+			w := s.bits[i]
+			if i == lastIndex {
+				w &= ^uint64(0) >> (wordSize - 1 - lastShift)
 			}
 			for w != 0 {
 				tz := bits.TrailingZeros64(w)
@@ -669,8 +530,8 @@ func (b *BitSet) To(to int) iter.Seq[int] {
 	}
 }
 
-// Between returns an iterator over the elements of this set in the half-open range [from, to).
-func (b *BitSet) Between(from, to int) iter.Seq[int] {
+// Between returns an iterator over all elements in the half-open range [from, to) in ascending order.
+func (s *BitSet) Between(from, to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		if from >= to || to <= 0 {
 			return
@@ -679,21 +540,18 @@ func (b *BitSet) Between(from, to int) iter.Seq[int] {
 			from = 0
 		}
 		index, shift := convert(from)
-		if index >= b.maxWordInUse {
+		if index >= s.maxWordInUse {
 			return
 		}
-		endIndex, endShift := convert(to)
+		lastIndex, lastShift := convert(to - 1)
 
-		for i := index; i < b.maxWordInUse && i <= endIndex; i++ {
-			w := b.bits[i]
+		for i := index; i < s.maxWordInUse && i <= lastIndex; i++ {
+			w := s.bits[i]
 			if i == index {
-				w &= (^uint64(0) << shift)
+				w &= ^uint64(0) << shift
 			}
-			if i == endIndex {
-				if endShift == 0 {
-					return
-				}
-				w &= (1 << endShift) - 1
+			if i == lastIndex {
+				w &= ^uint64(0) >> (wordSize - 1 - lastShift)
 			}
 			for w != 0 {
 				tz := bits.TrailingZeros64(w)
@@ -704,4 +562,76 @@ func (b *BitSet) Between(from, to int) iter.Seq[int] {
 			}
 		}
 	}
+}
+
+// String returns a string representation of the BitSet matching Go slice formatting.
+func (s *BitSet) String() string {
+	if s.Empty() {
+		return "[]"
+	}
+	var sb strings.Builder
+	sb.WriteByte('[')
+	first := true
+	var buf [20]byte
+	for bit := range s.All() {
+		if !first {
+			sb.WriteByte(' ')
+		}
+		first = false
+		sb.Write(strconv.AppendInt(buf[:0], int64(bit), 10))
+	}
+	sb.WriteByte(']')
+	return sb.String()
+}
+
+func defaultConfig() *config {
+	return &config{
+		capacity: DefaultCapacity,
+	}
+}
+
+func ensureNonNegative(i int) {
+	if i < 0 {
+		panic(fmt.Sprintf("runtime error: index out of range [%d]", i))
+	}
+}
+
+func convert(bit int) (int, int) {
+	ensureNonNegative(bit)
+	return bit / wordSize, bit % wordSize
+}
+
+func (s *BitSet) ensureSize(index int) {
+	if index >= len(s.bits) {
+		oldLen := len(s.bits)
+		s.bits = slices.Grow(s.bits, index+1-oldLen)
+		s.bits = s.bits[:index+1]
+		clear(s.bits[oldLen:])
+	}
+}
+
+func (s *BitSet) lastNonZeroWord() int {
+	for i := len(s.bits) - 1; i >= 0; i-- {
+		if s.bits[i] != 0 {
+			return i
+		}
+	}
+	return -1
+}
+
+func (s *BitSet) invalidateSize() {
+	s.maxWordInUse = s.lastNonZeroWord() + 1
+	if s.maxWordInUse == 0 {
+		s.size = 0
+	} else {
+		s.size = -1
+	}
+}
+
+func (s *BitSet) recomputeSize() {
+	size := 0
+	for i := 0; i < s.maxWordInUse; i++ {
+		size += bits.OnesCount64(s.bits[i])
+	}
+	s.size = size
 }

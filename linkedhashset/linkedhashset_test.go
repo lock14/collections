@@ -1,33 +1,48 @@
 package linkedhashset
 
 import (
-	"github.com/lock14/collections/arraylist"
+	"iter"
 	"slices"
 	"testing"
 )
 
+type testSliceCollection[T any] []T
+
+func (c testSliceCollection[T]) All() iter.Seq[T] {
+	return slices.Values(c)
+}
+
+func (c testSliceCollection[T]) Size() int {
+	return len(c)
+}
+
+func (c testSliceCollection[T]) Empty() bool {
+	return len(c) == 0
+}
+
 func TestNew(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
-		name  string
-		opts  []Option
-		check func(*testing.T, *LinkedHashSet[int])
+		name      string
+		opts      []Option
+		wantPanic bool
+		check     func(*testing.T, *LinkedHashSet[int])
 	}{
 		{
 			name: "default",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				if s.Size() != 0 || !s.Empty() {
-					t.Errorf("expected empty set")
+					t.Errorf("expected empty set, got size %d", s.Size())
 				}
 			},
 		},
 		{
-			name: "capacity",
-			opts: []Option{WithCapacity(100)},
+			name: "capacity_zero_and_positive",
+			opts: []Option{WithCapacity(0), WithCapacity(100)},
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				if s.Size() != 1 {
-					t.Errorf("expected size 1")
+					t.Errorf("expected size 1, got %d", s.Size())
 				}
 			},
 		},
@@ -37,7 +52,7 @@ func TestNew(t *testing.T) {
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				if s.Size() != 1 {
-					t.Errorf("expected size 1")
+					t.Errorf("expected size 1, got %d", s.Size())
 				}
 			},
 		},
@@ -47,32 +62,55 @@ func TestNew(t *testing.T) {
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				if s.Size() != 1 {
-					t.Errorf("expected size 1")
+					t.Errorf("expected size 1, got %d", s.Size())
 				}
 			},
 		},
 		{
-			name: "max_elements",
+			name: "max_elements_eviction",
 			opts: []Option{WithMaxElements(2)},
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				s.Add(2)
 				s.Add(3)
-				if s.Size() != 2 {
-					t.Errorf("expected size 2, got %v", s.Size())
-				}
-				if s.Contains(1) {
-					t.Errorf("expected element 1 to be evicted")
+				if s.Size() != 2 || s.Contains(1) {
+					t.Errorf("expected element 1 evicted and size 2, got %s", s.String())
 				}
 			},
+		},
+		{
+			name:      "negative_capacity_panics",
+			opts:      []Option{WithCapacity(-1)},
+			wantPanic: true,
+		},
+		{
+			name:      "zero_max_elements_panics",
+			opts:      []Option{WithMaxElements(0)},
+			wantPanic: true,
+		},
+		{
+			name:      "negative_max_elements_panics",
+			opts:      []Option{WithMaxElements(-1)},
+			wantPanic: true,
 		},
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+			defer func() {
+				r := recover()
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic, got none")
+				}
+				if !tc.wantPanic && r != nil {
+					t.Errorf("unexpected panic: %v", r)
+				}
+			}()
 			s := New[int](tc.opts...)
-			tc.check(t, s)
+			if tc.check != nil {
+				tc.check(t, s)
+			}
 		})
 	}
 }
@@ -86,18 +124,17 @@ func TestLinkedHashSet_Order(t *testing.T) {
 		want  []int
 	}{
 		{
-			name: "insertion order (default)",
-			opts: nil,
+			name: "insertion_order_default",
 			setup: func(s *LinkedHashSet[int]) {
 				s.Add(3)
 				s.Add(1)
 				s.Add(2)
-				s.Add(1) // re-insert shouldn't change order if insertion order
+				s.Add(1)
 			},
 			want: []int{3, 1, 2},
 		},
 		{
-			name: "insertion order (explicit)",
+			name: "insertion_order_explicit",
 			opts: []Option{WithInsertionOrder()},
 			setup: func(s *LinkedHashSet[int]) {
 				s.Add(3)
@@ -108,13 +145,13 @@ func TestLinkedHashSet_Order(t *testing.T) {
 			want: []int{3, 1, 2},
 		},
 		{
-			name: "access order",
+			name: "access_order_moves_to_back_on_reinsert",
 			opts: []Option{WithAccessOrder()},
 			setup: func(s *LinkedHashSet[int]) {
 				s.Add(3)
 				s.Add(1)
 				s.Add(2)
-				s.Add(1) // re-insert should move 1 to the end
+				s.Add(1)
 			},
 			want: []int{3, 2, 1},
 		},
@@ -125,9 +162,8 @@ func TestLinkedHashSet_Order(t *testing.T) {
 			t.Parallel()
 			s := New[int](tc.opts...)
 			tc.setup(s)
-			got := slices.Collect(s.All())
-			if !slices.Equal(got, tc.want) {
-				t.Errorf("expected order %v, got %v", tc.want, got)
+			if got := slices.Collect(s.All()); !slices.Equal(got, tc.want) {
+				t.Errorf("expected %v, got %v", tc.want, got)
 			}
 		})
 	}
@@ -144,45 +180,43 @@ func TestLinkedHashSet_AddRemoveContains(t *testing.T) {
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				s.Add(2)
-				s.Add(2) // duplicate
-				if s.Size() != 2 {
-					t.Errorf("expected size 2")
-				}
-				if !s.Contains(1) || !s.Contains(2) || s.Contains(3) {
-					t.Errorf("contains failed")
+				s.Add(2)
+				if s.Size() != 2 || !s.Contains(1) || !s.Contains(2) || s.Contains(3) {
+					t.Errorf("add/contains failed: %s", s.String())
 				}
 			},
 		},
 		{
-			name: "remove_element",
+			name: "remove_element_present_and_absent",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				s.Add(2)
 				s.RemoveElement(1)
+				s.RemoveElement(99)
 				if s.Contains(1) || s.Size() != 1 {
-					t.Errorf("remove failed")
+					t.Errorf("remove element failed: %s", s.String())
 				}
 			},
 		},
 		{
-			name: "remove_arbitrary",
+			name: "remove_returns_first_in_order",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
-				s.Add(1)
-				val := s.Remove()
-				if val != 1 {
-					t.Errorf("expected to remove 1")
+				s.Add(10)
+				s.Add(20)
+				if val := s.Remove(); val != 10 {
+					t.Errorf("expected Remove() to return first element 10, got %d", val)
 				}
-				if !s.Empty() {
-					t.Errorf("expected empty")
+				if s.Size() != 1 || !s.Contains(20) {
+					t.Errorf("unexpected remaining set: %s", s.String())
 				}
 			},
 		},
 		{
-			name: "remove_empty_panic",
+			name: "remove_empty_panics",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				defer func() {
 					if r := recover(); r == nil {
-						t.Errorf("expected panic")
+						t.Errorf("expected panic on empty Remove()")
 					}
 				}()
 				s.Remove()
@@ -193,8 +227,8 @@ func TestLinkedHashSet_AddRemoveContains(t *testing.T) {
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(1)
 				s.Clear()
-				if !s.Empty() {
-					t.Errorf("expected empty")
+				if !s.Empty() || s.Size() != 0 {
+					t.Errorf("expected empty set after Clear")
 				}
 			},
 		},
@@ -209,7 +243,7 @@ func TestLinkedHashSet_AddRemoveContains(t *testing.T) {
 	}
 }
 
-func TestLinkedHashSet_Bulk(t *testing.T) {
+func TestLinkedHashSet_BulkAndString(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
 		name  string
@@ -220,76 +254,97 @@ func TestLinkedHashSet_Bulk(t *testing.T) {
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.AddAll(slices.Values([]int{1, 2, 3}))
 				if s.Size() != 3 || !s.Contains(1) {
-					t.Errorf("AddAll failed")
+					t.Errorf("AddAll failed: %s", s.String())
 				}
 			},
 		},
 		{
-			name: "contains_all",
+			name: "contains_all_including_self_alias",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.AddAll(slices.Values([]int{1, 2, 3}))
+				if !s.ContainsAll(s) {
+					t.Errorf("expected self ContainsAll to return true")
+				}
 				other := New[int]()
 				other.Add(1)
 				other.Add(2)
 				if !s.ContainsAll(other) {
-					t.Errorf("ContainsAll failed")
+					t.Errorf("ContainsAll subset failed")
 				}
 				other.Add(4)
 				if s.ContainsAll(other) {
-					t.Errorf("ContainsAll should fail")
+					t.Errorf("ContainsAll non-subset should return false")
 				}
 			},
 		},
 		{
-			name: "remove_all_set",
+			name: "remove_all_empty_normal_and_self_alias",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
-				s.AddAll(slices.Values([]int{1, 2, 3}))
 				other := New[int]()
 				other.Add(1)
+				s.RemoveAll(other)
+				if !s.Empty() {
+					t.Errorf("expected empty set to remain empty")
+				}
+
+				s.AddAll(slices.Values([]int{1, 2, 3}))
 				other.Add(2)
 				s.RemoveAll(other)
 				if s.Contains(1) || s.Contains(2) || !s.Contains(3) {
-					t.Errorf("RemoveAll failed")
+					t.Errorf("RemoveAll failed: %s", s.String())
+				}
+
+				s.Add(4)
+				s.RemoveAll(s)
+				if !s.Empty() {
+					t.Errorf("expected empty set after RemoveAll(self)")
 				}
 			},
 		},
 		{
-			name: "retain_all_set",
+			name: "retain_all_empty_set_collection_and_self_alias",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
-				s.AddAll(slices.Values([]int{1, 2, 3}))
 				other := New[int]()
 				other.Add(2)
+				s.RetainAll(other)
+				if !s.Empty() {
+					t.Errorf("expected empty set to remain empty")
+				}
+
+				s.AddAll(slices.Values([]int{1, 2, 3}))
+				s.RetainAll(s)
+				if s.Size() != 3 {
+					t.Errorf("expected RetainAll(self) to preserve size 3, got %d", s.Size())
+				}
+
 				other.Add(3)
 				other.Add(4)
 				s.RetainAll(other)
-				if s.Contains(1) || !s.Contains(2) || !s.Contains(3) {
-					t.Errorf("RetainAll failed")
+				if !slices.Equal(slices.Collect(s.All()), []int{2, 3}) {
+					t.Errorf("RetainAll Set failed: %s", s.String())
+				}
+
+				s.AddAll(slices.Values([]int{10, 20}))
+				s.RetainAll(testSliceCollection[int]{3, 20, 20, 99})
+				if !slices.Equal(slices.Collect(s.All()), []int{3, 20}) {
+					t.Errorf("RetainAll non-Set Collection failed: %s", s.String())
 				}
 			},
 		},
 		{
-			name: "retain_all_generic",
+			name: "string_empty_single_and_multiple",
 			check: func(t *testing.T, s *LinkedHashSet[int]) {
-				s.AddAll(slices.Values([]int{1, 2, 3}))
-				list := arraylist.Wrap([]int{2, 3, 4})
-				s.RetainAll(list)
-				if s.Contains(1) || !s.Contains(2) || !s.Contains(3) {
-					t.Errorf("RetainAll generic failed")
+				if got := s.String(); got != "[]" {
+					t.Errorf("expected [], got %s", got)
 				}
-			},
-		},
-		{
-			name: "string",
-			check: func(t *testing.T, s *LinkedHashSet[int]) {
 				s.Add(3)
+				if got := s.String(); got != "[3]" {
+					t.Errorf("expected [3], got %s", got)
+				}
 				s.Add(1)
 				s.Add(2)
-				if s.String() != "[3 1 2]" {
-					t.Errorf("expected string [3 1 2], got %s", s.String())
-				}
-				s.Clear()
-				if s.String() != "[]" {
-					t.Errorf("expected string [], got %s", s.String())
+				if got := s.String(); got != "[3 1 2]" {
+					t.Errorf("expected [3 1 2], got %s", got)
 				}
 			},
 		},
@@ -304,131 +359,134 @@ func TestLinkedHashSet_Bulk(t *testing.T) {
 	}
 }
 
-func TestLinkedHashSet_Sequenced(t *testing.T) {
+func TestLinkedHashSet_SequencedAndBackward(t *testing.T) {
 	t.Parallel()
+	cases := []struct {
+		name      string
+		opts      []Option
+		wantPanic bool
+		check     func(*testing.T, *LinkedHashSet[int])
+	}{
+		{
+			name:      "first_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *LinkedHashSet[int]) {
+				s.First()
+			},
+		},
+		{
+			name:      "last_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *LinkedHashSet[int]) {
+				s.Last()
+			},
+		},
+		{
+			name:      "poll_first_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *LinkedHashSet[int]) {
+				s.PollFirst()
+			},
+		},
+		{
+			name:      "poll_last_empty_panics",
+			wantPanic: true,
+			check: func(_ *testing.T, s *LinkedHashSet[int]) {
+				s.PollLast()
+			},
+		},
+		{
+			name: "first_last_poll_first_poll_last",
+			check: func(t *testing.T, s *LinkedHashSet[int]) {
+				s.AddAll(slices.Values([]int{10, 20, 30}))
+				if v := s.First(); v != 10 {
+					t.Errorf("First() = %d, want 10", v)
+				}
+				if v := s.Last(); v != 30 {
+					t.Errorf("Last() = %d, want 30", v)
+				}
+				if v := s.PollFirst(); v != 10 || s.Contains(10) {
+					t.Errorf("PollFirst() = %d", v)
+				}
+				if v := s.PollLast(); v != 30 || s.Contains(30) {
+					t.Errorf("PollLast() = %d", v)
+				}
+			},
+		},
+		{
+			name: "add_first_and_add_last_insert_and_reposition",
+			check: func(t *testing.T, s *LinkedHashSet[int]) {
+				s.AddFirst(2)
+				s.AddFirst(1)
+				s.AddLast(3)
+				if got := slices.Collect(s.All()); !slices.Equal(got, []int{1, 2, 3}) {
+					t.Errorf("expected [1 2 3], got %v", got)
+				}
+				s.AddFirst(3)
+				if got := slices.Collect(s.All()); !slices.Equal(got, []int{3, 1, 2}) {
+					t.Errorf("expected [3 1 2], got %v", got)
+				}
+				s.AddLast(1)
+				if got := slices.Collect(s.All()); !slices.Equal(got, []int{3, 2, 1}) {
+					t.Errorf("expected [3 2 1], got %v", got)
+				}
+			},
+		},
+		{
+			name: "add_first_and_add_last_eviction",
+			opts: []Option{WithMaxElements(2)},
+			check: func(t *testing.T, s *LinkedHashSet[int]) {
+				s.AddFirst(1)
+				s.AddFirst(2)
+				s.AddFirst(3) // Evicts tail (1)
+				if got := slices.Collect(s.All()); !slices.Equal(got, []int{3, 2}) {
+					t.Errorf("expected [3 2], got %v", got)
+				}
+				s.AddLast(4) // Evicts head (3)
+				if got := slices.Collect(s.All()); !slices.Equal(got, []int{2, 4}) {
+					t.Errorf("expected [2 4], got %v", got)
+				}
+			},
+		},
+		{
+			name: "all_and_backward_with_early_break",
+			check: func(t *testing.T, s *LinkedHashSet[int]) {
+				s.AddAll(slices.Values([]int{1, 2, 3}))
+				if got := slices.Collect(s.Backward()); !slices.Equal(got, []int{3, 2, 1}) {
+					t.Errorf("expected Backward [3 2 1], got %v", got)
+				}
 
-	t.Run("first_last", func(t *testing.T) {
-		s := New[int]()
-
-		s.Add(10)
-		s.Add(20)
-		s.Add(30)
-
-		v := s.First()
-		if v != 10 {
-			t.Errorf("First: expected 10, got %v", v)
-		}
-
-		v = s.Last()
-		if v != 30 {
-			t.Errorf("Last: expected 30, got %v", v)
-		}
-	})
-
-	t.Run("poll_first_last", func(t *testing.T) {
-		s := New[int]()
-
-		s.Add(10)
-		s.Add(20)
-		s.Add(30)
-
-		v := s.PollFirst()
-		if v != 10 {
-			t.Errorf("PollFirst: expected 10, got %v", v)
-		}
-		if s.Contains(10) {
-			t.Errorf("PollFirst didn't remove")
-		}
-
-		v = s.PollLast()
-		if v != 30 {
-			t.Errorf("PollLast: expected 30, got %v", v)
-		}
-		if s.Contains(30) {
-			t.Errorf("PollLast didn't remove")
-		}
-	})
-
-	t.Run("empty_panics", func(t *testing.T) {
-		s := New[int]()
-
-		assertPanic := func(name string, f func()) {
-			t.Helper()
+				fCount := 0
+				for range s.All() {
+					fCount++
+					break
+				}
+				bCount := 0
+				for range s.Backward() {
+					bCount++
+					break
+				}
+				if fCount != 1 || bCount != 1 {
+					t.Errorf("expected early break counts 1/1, got %d/%d", fCount, bCount)
+				}
+			},
+		},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			defer func() {
-				if r := recover(); r == nil {
-					t.Errorf("%s did not panic", name)
+				r := recover()
+				if tc.wantPanic && r == nil {
+					t.Errorf("expected panic, got none")
+				}
+				if !tc.wantPanic && r != nil {
+					t.Errorf("unexpected panic: %v", r)
 				}
 			}()
-			f()
-		}
-
-		assertPanic("First", func() { s.First() })
-		assertPanic("Last", func() { s.Last() })
-		assertPanic("PollFirst", func() { s.PollFirst() })
-		assertPanic("PollLast", func() { s.PollLast() })
-	})
-
-	t.Run("put_first_last", func(t *testing.T) {
-		s := New[int]()
-		s.AddFirst(2)
-		s.AddFirst(1)
-		s.AddLast(3)
-
-		got := slices.Collect(s.All())
-		expected := []int{1, 2, 3}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-
-		// Update existing with AddFirst
-		s.AddFirst(3)
-		got = slices.Collect(s.All())
-		expected = []int{3, 1, 2}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-
-		// Update existing with AddLast
-		s.AddLast(1)
-		got = slices.Collect(s.All())
-		expected = []int{3, 2, 1}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-	})
-
-	t.Run("add_first_eviction", func(t *testing.T) {
-		s := New[int](WithMaxElements(2))
-		s.AddFirst(1)
-		s.AddFirst(2)
-		s.AddFirst(3) // Should evict tail (1)
-
-		got := slices.Collect(s.All())
-		expected := []int{3, 2}
-		if !slices.Equal(got, expected) {
-			t.Errorf("expected keys %v, got %v", expected, got)
-		}
-	})
-}
-
-func TestLinkedHashSet_Backward(t *testing.T) {
-	t.Parallel()
-	s := New[int]()
-	s.Add(1)
-	s.Add(2)
-	s.Add(3)
-
-	var elements []int
-	for v := range s.Backward() {
-		elements = append(elements, v)
-	}
-	if !slices.Equal(elements, []int{3, 2, 1}) {
-		t.Errorf("expected Backward [3, 2, 1], got %v", elements)
-	}
-
-	// Test coverage for early exit iterator
-	for v := range s.Backward() {
-		_ = v
-		break
+			s := New[int](tc.opts...)
+			tc.check(t, s)
+		})
 	}
 }

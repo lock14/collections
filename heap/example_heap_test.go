@@ -30,6 +30,21 @@ func ExampleHeap_min() {
 	// - 20
 }
 
+func ExampleMax() {
+	h := heap.Max[int](heap.WithCapacity[int](8))
+	h.AddAll(slices.Values([]int{10, 5, 20, 1}))
+
+	for !h.Empty() {
+		fmt.Println(h.Remove())
+	}
+
+	// Output:
+	// 20
+	// 10
+	// 5
+	// 1
+}
+
 func ExampleHeap_priorityQueue() {
 	// A custom Priority Queue using a struct and a custom comparator
 	type Task struct {

@@ -8,7 +8,7 @@
     *   Iterator implementations should minimize or eliminate allocation overhead when consumed in `for ... range` loops.
 *   **Non-Concurrent by Design:** Implementations are single-threaded by contract (matching Go's standard slice/map philosophy). Do not add internal mutexes, sync primitives, or goroutines to collection structs. Concurrency is strictly the caller's responsibility.
 *   **Zero-Allocation Reads:** Read operations (e.g., `Get`, `Contains`, `Peek`, `PeekFront`, `PeekBack`, `Size`, `Empty`) must avoid heap allocations (guaranteed 0 B/op and 0 allocs/op in benchmarks).
-*   **Predictable Memory & Growth:** Growth policies should be amortized O(1) (e.g. geometric resizing) and shrink gracefully where appropriate or support explicit capacity/trim APIs (e.g. `NewWithCapacity`).
+*   **Predictable Memory & Growth:** Growth policies should be amortized O(1) (e.g. geometric resizing) and shrink gracefully where appropriate or support explicit capacity/trim APIs (e.g. `WithCapacity`).
 *   **String Representations (`fmt.Stringer`):**
     *   **`Collection[T]` Types:** String representations MUST match the format of Go's built-in slice: `[e1 e2 e3]` (space-separated, `[]` when empty).
     *   **`Map[K, V]` Types:** String representations MUST match the format of Go's built-in map: `map[k1:v1 k2:v2]` (prefixed by `map[`, space-separated `k:v` with no space after the colon, `map[]` when empty).
@@ -26,7 +26,7 @@ Every collection package in this repository must maintain a consistent, standard
 *   **Standard 4-File Package Structure:** Single-collection packages (e.g. `hashset`, `hashmap`, `arraydeque`, `treeset`, `linkedhashmap`, etc.) MUST consist of exactly four files:
     1.  **`<pkg>.go`**: The primary implementation file containing the type declaration, compile-time interface assertions, configuration options, constructors, and public/private methods.
     2.  **`<pkg>_test.go`**: Table-driven unit tests verifying functional correctness, edge cases, and bounds checks (`package <pkg>`).
-    3.  **`<pkg>_bench_test.go`**: Performance benchmarks measuring throughput and zero-allocation invariants (`package <pkg>`).
+    3.  **`<pkg>_bench_test.go`**: Black-box performance benchmarks measuring throughput and zero-allocation invariants against the public API (`package <pkg>_test`).
     4.  **`example_<pkg>_test.go`**: Consumer-facing runnable examples with `// Output:` comments (`package <pkg>_test`).
 *   **Multi-File / Complex Packages:** When a package implements multiple representations (e.g. `trie` with `string.go` and `slice.go`) or contains a dedicated complex algorithmic engine (e.g. `treemap` with `btree.go`), the entry point, interfaces, and constructors remain in `<pkg>.go`, while variant-specific implementations and tests use clear, consistent naming (e.g. `slice_test.go`). Extraneous or ad-hoc test files (e.g. `coverage_patch_test.go`, `set.go`, `map.go`) are prohibited.
 *   **Internal Section Ordering in `<pkg>.go`:**
@@ -37,7 +37,7 @@ Every collection package in this repository must maintain a consistent, standard
     4.  Constants & defaults (e.g. `DefaultCapacity`, `DefaultDegree`, order constants).
     5.  Configuration types and functional options (`config`, `Option`, `With...`).
     6.  Struct definitions (`type Type[T any] struct { ... }`).
-    7.  Constructors (`New`, `NewOrdered`, `NewWithCapacity`, etc.).
+    7.  Constructors (`New`, `NewOrdered`, `Of`, `Wrap`, etc.).
     8.  Public methods grouped logically (Mutators, Accessors/Queries, Iterators, Stringer).
     9.  Private helper functions and traversal logic.
 
@@ -69,13 +69,13 @@ For all tests in this repository, strictly adhere to the following conventions:
 
 # Benchmarking Conventions
 
-*   **Location & Naming:** Benchmarks belong in `<pkg>_bench_test.go` and must follow `func Benchmark<Type>_<Method>(b *testing.B)`.
+*   **Location & Naming:** Benchmarks belong in `<pkg>_bench_test.go` (`package <pkg>_test`) and must follow `func Benchmark<Type>_<Method>(b *testing.B)`.
 *   **Allocation Tracking:** Always call `b.ReportAllocs()` in benchmark functions.
 *   **Timer Isolation:** Isolate setup code from measured operations using `b.ResetTimer()` and `b.StopTimer()` / `b.StartTimer()` when appropriate.
 *   **Measurement Patterns:**
     *   **Steady-State Mutators (Add/Remove, Push/Pop):** Prepopulate the collection to a fixed size $N$ outside the loop, `b.ResetTimer()`, and execute balanced add/remove operations inside the `for i := 0; i < b.N; i++` loop to measure steady-state per-operation latency rather than unbounded growth or repeated reallocations.
     *   **Zero-Allocation Reads (Get, Contains, Peek, Iteration):** Prepopulate the collection outside the loop, `b.ResetTimer()`, and execute read-only operations inside the loop.
-    *   **Bulk / Preallocated Operations:** Test preallocation efficiencies (e.g. `NewWithCapacity`, `Add_Preallocated`) to verify zero amortized allocation overhead.
+    *   **Bulk / Preallocated Operations:** Test preallocation efficiencies (e.g. `WithCapacity`, `Add_Preallocated`) to verify zero amortized allocation overhead.
 *   **Regression Guard:** Ensure read-path benchmarks show 0 B/op and 0 allocs/op.
 
 # Examples (`example_*_test.go`)
@@ -88,7 +88,7 @@ For all tests in this repository, strictly adhere to the following conventions:
 
 *   **`README.md` (User-Facing):** Reserved strictly for public/consumer-facing documentation, quickstart examples, feature overviews, high-level capabilities, installation instructions, and package indices. It should **not** delve into internal implementation details, internal algorithmic plumbing, or agent/contributor rules.
 *   **`AGENTS.md` (Architecture & Implementation Guidelines):** The canonical place to encode architecture, design invariants, implementation decisions, performance constraints, code guidelines, testing/benchmarking rules, and agent workflows.
-*   **Documentation Synchronization:** Whenever any code change modifies, adds, or removes APIs, behaviors, or package structures, all relevant documentation (**Go doc comments**, **`README.md`**, and **`AGENTS.md`**) MUST be updated in the same change to keep documentation strictly in sync with the codebase.
+*   **Documentation Synchronization:** Whenever any code change modifies, adds, or removes APIs, behaviors, or package structures, all relevant documentation (**Go doc comments**, **`README.md`**, **`CONTRIBUTING.md`**, **`llms.txt`**, and **`AGENTS.md`**) MUST be updated in the same change to keep documentation strictly in sync with the codebase.
 
 # Pull Request & Workflow Conventions
 
@@ -105,7 +105,7 @@ Before concluding any code modification task, agents MUST run and verify the fol
 1. `gofmt -s -w .`
 2. `go mod tidy && git diff --exit-code go.mod go.sum`
 3. `go test -race ./...`
-4. `golangci-lint run ./...` (or `revive ./... && go vet ./...`)
+4. `golangci-lint run ./...` (or `revive ./... && staticcheck ./... && go vet ./...`)
 5. `govulncheck ./...`
 
 

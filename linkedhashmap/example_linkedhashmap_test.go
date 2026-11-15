@@ -2,6 +2,7 @@ package linkedhashmap_test
 
 import (
 	"fmt"
+
 	"github.com/lock14/collections/linkedhashmap"
 )
 
@@ -28,6 +29,18 @@ func ExampleLinkedHashMap() {
 	// - Third: C
 }
 
+func ExampleNew() {
+	m := linkedhashmap.New[string, int](
+		linkedhashmap.WithCapacity(8),
+		linkedhashmap.WithInsertionOrder(),
+	)
+	m.Put("alpha", 1)
+	m.Put("beta", 2)
+	fmt.Println(m.String())
+	// Output:
+	// map[alpha:1 beta:2]
+}
+
 func ExampleLinkedHashMap_lruCache() {
 	// A LinkedHashMap can be used as an LRU cache by configuring it with
 	// WithAccessOrder and WithMaxElements.
@@ -40,10 +53,10 @@ func ExampleLinkedHashMap_lruCache() {
 	cache.Put(2, "two")
 	cache.Put(3, "three")
 
-	// accessing 1 moves it to the end (most recently used)
+	// Accessing 1 moves it to the end (most recently used)
 	cache.Get(1)
 
-	// inserting 4 will evict the eldest element (which is 2 now)
+	// Inserting 4 evicts the eldest element (which is now 2)
 	cache.Put(4, "four")
 
 	for k, v := range cache.All() {

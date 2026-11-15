@@ -3,22 +3,10 @@ package arraydeque
 
 import (
 	"fmt"
-	"github.com/lock14/collections"
 	"iter"
 	"strings"
-)
 
-const (
-	// DefaultCapacity is the capacity assigned if no other is provided.
-	DefaultCapacity = 16
-	// if an arraydeque's capacity is under this amount its capacity
-	// will double when it needs to be resized.
-	doublingThreshold = 512
-	// if an arraydeque's capacity is over the doublingThreshold but under
-	// this amount, then the capacity will increase by 50% when it needs
-	// to be resized. Otherwise, if an arraydeque's capacity is over this
-	// amount then the capacity will increase by 25%.
-	fiftyPercentThreshold = 2048
+	"github.com/lock14/collections"
 )
 
 var (
@@ -26,7 +14,35 @@ var (
 	_ fmt.Stringer                  = (*ArrayDeque[int])(nil)
 )
 
-// ArrayDeque represents a deque of elements of type T backed by an array.
+const (
+	// DefaultCapacity is the capacity assigned if no other is provided.
+	DefaultCapacity = 16
+	// doublingThreshold is the capacity threshold below which an ArrayDeque
+	// doubles its capacity when resized.
+	doublingThreshold = 512
+	// fiftyPercentThreshold is the capacity threshold below which (and at or above
+	// doublingThreshold) an ArrayDeque increases its capacity by 50% when resized.
+	// At or above this threshold, capacity increases by 25%.
+	fiftyPercentThreshold = 2048
+)
+
+// config holds the values for configuring an ArrayDeque.
+type config struct {
+	capacity int
+}
+
+// Option configures an ArrayDeque.
+type Option func(*config)
+
+// WithCapacity configures the initial capacity of the ArrayDeque.
+// Passing a negative capacity causes New to panic.
+func WithCapacity(capacity int) Option {
+	return func(c *config) {
+		c.capacity = capacity
+	}
+}
+
+// ArrayDeque represents a double-ended queue of elements of type T backed by a circular slice.
 // The zero value for ArrayDeque is an empty deque ready to use.
 type ArrayDeque[T any] struct {
 	slice []T
@@ -35,67 +51,28 @@ type ArrayDeque[T any] struct {
 	size  int
 }
 
-// config holds the values for configuring an ArrayDeque.
-type config struct {
-	capacity int
-}
-
-// Option configures an ArrayDeque config
-type Option func(*config)
-
-// WithCapacity configures the initial capacity of the ArrayDeque.
-func WithCapacity(capacity int) Option {
-	return func(c *config) {
-		c.capacity = capacity
-	}
-}
-
 // New creates an empty ArrayDeque whose initial size is 0.
+// Panics if a negative capacity is provided via WithCapacity.
 func New[T any](opts ...Option) *ArrayDeque[T] {
-	config := defaultConfig()
-	for _, option := range opts {
-		option(config)
+	cfg := defaultConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	if cfg.capacity < 0 {
+		panic("arraydeque: capacity cannot be negative")
 	}
 	return &ArrayDeque[T]{
-		slice: make([]T, config.capacity),
+		slice: make([]T, cfg.capacity),
 	}
 }
 
-// Peek is an alias for PeekFront
-func (d *ArrayDeque[T]) Peek() T {
-	return d.PeekFront()
-}
-
-// Add is an alias for AddBack
+// Add inserts the given element at the back of this deque.
+// It is an alias for AddBack.
 func (d *ArrayDeque[T]) Add(t T) {
 	d.AddBack(t)
 }
 
-// Remove is an alias for RemoveFront
-func (d *ArrayDeque[T]) Remove() T {
-	return d.RemoveFront()
-}
-
-// Push is an alias for AddFront
-func (d *ArrayDeque[T]) Push(t T) {
-	d.AddFront(t)
-}
-
-// Pop is an alias for RemoveFront
-func (d *ArrayDeque[T]) Pop() T {
-	return d.RemoveFront()
-}
-
-// PeekFront returns the element at the front of this deque.
-// If this deque is empty, PeekFront panics.
-func (d *ArrayDeque[T]) PeekFront() T {
-	if d.Empty() {
-		panic("cannot peek from an empty Deque")
-	}
-	return d.slice[d.front]
-}
-
-// AddFront adds the given element to the front of this deque.
+// AddFront inserts the given element at the front of this deque.
 func (d *ArrayDeque[T]) AddFront(t T) {
 	if d.size == len(d.slice) {
 		d.resize()
@@ -108,37 +85,7 @@ func (d *ArrayDeque[T]) AddFront(t T) {
 	d.size++
 }
 
-// RemoveFront removes the given element at the front of this deque
-// and returns it. If this deque is empty, RemoveFront panics.
-func (d *ArrayDeque[T]) RemoveFront() T {
-	if d.Empty() {
-		panic("cannot remove from an empty ArrayDeque")
-	}
-	var zero T
-	t := d.slice[d.front]
-	d.slice[d.front] = zero
-	d.front++
-	if d.front == len(d.slice) {
-		d.front = 0
-	}
-	d.size--
-	return t
-}
-
-// PeekBack returns the element at the back of this deque.
-// If this deque is empty, PeekBack panics.
-func (d *ArrayDeque[T]) PeekBack() T {
-	if d.Empty() {
-		panic("cannot peek from an empty Deque")
-	}
-	i := d.back - 1
-	if i < 0 {
-		i = len(d.slice) - 1
-	}
-	return d.slice[i]
-}
-
-// AddBack adds the given element to the back of this deque.
+// AddBack inserts the given element at the back of this deque.
 func (d *ArrayDeque[T]) AddBack(t T) {
 	if d.size == len(d.slice) {
 		d.resize()
@@ -151,11 +98,47 @@ func (d *ArrayDeque[T]) AddBack(t T) {
 	d.size++
 }
 
-// RemoveBack removes the given element at the back of this deque
-// and returns it. If this deque is empty, RemoveBack panics.
+// Push inserts the given element at the front of this deque.
+// It is an alias for AddFront.
+func (d *ArrayDeque[T]) Push(t T) {
+	d.AddFront(t)
+}
+
+// AddAll appends all elements from the given sequence to the back of this deque.
+func (d *ArrayDeque[T]) AddAll(sequence iter.Seq[T]) {
+	for t := range sequence {
+		d.Add(t)
+	}
+}
+
+// Remove removes and returns the element at the front of this deque.
+// It is an alias for RemoveFront. Panics if this deque is empty.
+func (d *ArrayDeque[T]) Remove() T {
+	return d.RemoveFront()
+}
+
+// RemoveFront removes and returns the element at the front of this deque.
+// Panics if this deque is empty.
+func (d *ArrayDeque[T]) RemoveFront() T {
+	if d.Empty() {
+		panic("arraydeque: cannot remove from an empty deque")
+	}
+	var zero T
+	t := d.slice[d.front]
+	d.slice[d.front] = zero
+	d.front++
+	if d.front == len(d.slice) {
+		d.front = 0
+	}
+	d.size--
+	return t
+}
+
+// RemoveBack removes and returns the element at the back of this deque.
+// Panics if this deque is empty.
 func (d *ArrayDeque[T]) RemoveBack() T {
 	if d.Empty() {
-		panic("cannot remove from an empty ArrayDeque")
+		panic("arraydeque: cannot remove from an empty deque")
 	}
 	var zero T
 	d.back--
@@ -168,11 +151,47 @@ func (d *ArrayDeque[T]) RemoveBack() T {
 	return t
 }
 
-// AddAll adds all elements from the given sequence to the back of this deque.
-func (d *ArrayDeque[T]) AddAll(sequence iter.Seq[T]) {
-	for t := range sequence {
-		d.Add(t)
+// Pop removes and returns the element at the front of this deque.
+// It is an alias for RemoveFront. Panics if this deque is empty.
+func (d *ArrayDeque[T]) Pop() T {
+	return d.RemoveFront()
+}
+
+// Clear removes all elements from this deque and releases backing memory for garbage collection.
+func (d *ArrayDeque[T]) Clear() {
+	clear(d.slice)
+	d.slice = nil
+	d.front = 0
+	d.back = 0
+	d.size = 0
+}
+
+// Peek returns the element at the front of this deque without removing it.
+// It is an alias for PeekFront. Panics if this deque is empty.
+func (d *ArrayDeque[T]) Peek() T {
+	return d.PeekFront()
+}
+
+// PeekFront returns the element at the front of this deque without removing it.
+// Panics if this deque is empty.
+func (d *ArrayDeque[T]) PeekFront() T {
+	if d.Empty() {
+		panic("arraydeque: cannot peek from an empty deque")
 	}
+	return d.slice[d.front]
+}
+
+// PeekBack returns the element at the back of this deque without removing it.
+// Panics if this deque is empty.
+func (d *ArrayDeque[T]) PeekBack() T {
+	if d.Empty() {
+		panic("arraydeque: cannot peek from an empty deque")
+	}
+	i := d.back - 1
+	if i < 0 {
+		i = len(d.slice) - 1
+	}
+	return d.slice[i]
 }
 
 // Size returns the number of elements in this deque.
@@ -181,32 +200,11 @@ func (d *ArrayDeque[T]) Size() int {
 }
 
 // Empty returns true if this deque contains no elements.
-// Otherwise, returns false.
 func (d *ArrayDeque[T]) Empty() bool {
 	return d.size == 0
 }
 
-// Clear removes all elements from this deque and
-// releases any memory in use by this deque for garbage
-// collection.
-func (d *ArrayDeque[T]) Clear() {
-	d.slice = nil
-	d.front = 0
-	d.back = 0
-	d.size = 0
-}
-
-// String returns a string representation of this deque matching Go slice formatting.
-func (d *ArrayDeque[T]) String() string {
-	str := make([]string, 0, d.Size())
-	for t := range d.All() {
-		str = append(str, fmt.Sprintf("%v", t))
-	}
-	return "[" + strings.Join(str, " ") + "]"
-}
-
-// All returns an iterator over all elements,
-// going from front to back in this deque.
+// All returns an iterator over all elements in this deque from front to back.
 func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	return func(yield func(T) bool) {
 		count := 0
@@ -224,8 +222,7 @@ func (d *ArrayDeque[T]) All() iter.Seq[T] {
 	}
 }
 
-// Backward returns an iterator over all elements,
-// going from back to front in this deque.
+// Backward returns an iterator over all elements in this deque from back to front.
 func (d *ArrayDeque[T]) Backward() iter.Seq[T] {
 	return func(yield func(T) bool) {
 		count := 0
@@ -246,32 +243,47 @@ func (d *ArrayDeque[T]) Backward() iter.Seq[T] {
 	}
 }
 
-func (d *ArrayDeque[T]) resize() {
-	var newCap int
-	if len(d.slice) == 0 {
-		newCap = DefaultCapacity
-	} else if d.size < doublingThreshold {
-		newCap = len(d.slice) << 1
-	} else if d.size < fiftyPercentThreshold {
-		newCap = len(d.slice)
-		newCap += len(d.slice) >> 1
-	} else { // grow by 25%
-		newCap = len(d.slice)
-		newCap += len(d.slice) >> 2
+// String returns a string representation of this deque matching Go slice formatting.
+func (d *ArrayDeque[T]) String() string {
+	if d.Empty() {
+		return "[]"
 	}
-	s := make([]T, newCap)
-	m := copy(s, d.slice[d.front:])
-	n := copy(s[m:], d.slice[0:d.front])
-	if m+n != d.size {
-		panic("resize algorithm incorrect")
+	var sb strings.Builder
+	sb.WriteByte('[')
+	first := true
+	for v := range d.All() {
+		if !first {
+			sb.WriteByte(' ')
+		}
+		first = false
+		fmt.Fprint(&sb, v)
 	}
-	d.slice = s
-	d.front = 0
-	d.back = d.size
+	sb.WriteByte(']')
+	return sb.String()
 }
 
 func defaultConfig() *config {
 	return &config{
 		capacity: DefaultCapacity,
 	}
+}
+
+func (d *ArrayDeque[T]) resize() {
+	var newCap int
+	switch {
+	case len(d.slice) == 0:
+		newCap = DefaultCapacity
+	case d.size < doublingThreshold:
+		newCap = len(d.slice) << 1
+	case d.size < fiftyPercentThreshold:
+		newCap = len(d.slice) + (len(d.slice) >> 1)
+	default:
+		newCap = len(d.slice) + (len(d.slice) >> 2)
+	}
+	s := make([]T, newCap)
+	m := copy(s, d.slice[d.front:])
+	copy(s[m:], d.slice[:d.front])
+	d.slice = s
+	d.front = 0
+	d.back = d.size
 }

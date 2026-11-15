@@ -28,8 +28,8 @@ func ExampleArrayDeque_queue() {
 }
 
 func ExampleArrayDeque_stack() {
-	// ArrayDeque can also be used efficiently as a Stack
-	// Elements are added to the back and removed from the back (LIFO).
+	// ArrayDeque can also be used efficiently as a Stack.
+	// Push and Pop add and remove elements at the front (LIFO).
 	stack := arraydeque.New[string]()
 
 	stack.Push("Page 1")
@@ -45,6 +45,15 @@ func ExampleArrayDeque_stack() {
 	// Navigating back from: Page 3
 	// Navigating back from: Page 2
 	// Navigating back from: Page 1
+}
+
+func ExampleWithCapacity() {
+	d := arraydeque.New[int](arraydeque.WithCapacity(32))
+	d.AddBack(10)
+	d.AddBack(20)
+	fmt.Println(d)
+	// Output:
+	// [10 20]
 }
 
 func ExampleArrayDeque_Peek() {

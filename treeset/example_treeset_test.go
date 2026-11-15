@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"slices"
 
+	"github.com/lock14/collections/comparator"
 	"github.com/lock14/collections/treeset"
 )
 
-func ExampleTreeSet_navigable() {
-	// TreeSet is backed by a B-Tree and implements the NavigableSet interface.
+func ExampleTreeSet() {
+	// TreeSet is backed by a B-Tree and implements the MutableNavigableSet interface.
 	// Elements are kept sorted and can be queried based on proximity.
 	set := treeset.NewOrdered[int]()
 
@@ -21,15 +22,12 @@ func ExampleTreeSet_navigable() {
 	fmt.Println("First element:", set.First())
 	fmt.Println("Last element:", set.Last())
 
-	// Floor finds the greatest element less than or equal to the given element
 	floor, _ := set.Floor(25)
 	fmt.Println("Floor(25):", floor)
 
-	// Ceiling finds the least element greater than or equal to the given element
 	ceiling, _ := set.Ceiling(25)
 	fmt.Println("Ceiling(25):", ceiling)
 
-	// Iterate over elements between bounds (inclusive min, exclusive max)
 	fmt.Println("Elements between 20 and 50:")
 	for v := range set.Between(20, 50) {
 		fmt.Println("-", v)
@@ -44,6 +42,26 @@ func ExampleTreeSet_navigable() {
 	// - 20
 	// - 30
 	// - 40
+}
+
+func ExampleNew() {
+	set := treeset.New[int](
+		treeset.WithDegree[int](16),
+		treeset.WithComparator(comparator.Reverse(comparator.NaturalOrder[int]())),
+	)
+	set.AddAll(slices.Values([]int{1, 2, 3}))
+	fmt.Println(set.String())
+	// Output:
+	// [3 2 1]
+}
+
+func ExampleNewOrdered() {
+	set := treeset.NewOrdered[string](treeset.WithDegree[string](8))
+	set.Add("banana")
+	set.Add("apple")
+	fmt.Println(set.String())
+	// Output:
+	// [apple banana]
 }
 
 func ExampleTreeSet_Add() {

@@ -8,14 +8,14 @@ import (
 
 func ExampleLinkedHashSet() {
 	// LinkedHashSet provides an ordered collection of unique elements.
-	// It guarantees that iteration strictly follows insertion order.
+	// It guarantees that iteration strictly follows insertion order by default.
 	set := linkedhashset.New[string]()
 
 	set.Add("First")
 	set.Add("Second")
 	set.Add("Third")
 
-	// Adding an existing element does not change its position in the insertion order
+	// Adding an existing element does not change its position in insertion order
 	set.Add("First")
 
 	fmt.Println("Iterating over LinkedHashSet:")
@@ -28,6 +28,20 @@ func ExampleLinkedHashSet() {
 	// - First
 	// - Second
 	// - Third
+}
+
+func ExampleNew() {
+	set := linkedhashset.New[string](
+		linkedhashset.WithAccessOrder(),
+		linkedhashset.WithMaxElements(2),
+	)
+	set.Add("a")
+	set.Add("b")
+	set.Add("a") // Moves "a" to the back
+	set.Add("c") // Evicts "b"
+	fmt.Println(set.String())
+	// Output:
+	// [a c]
 }
 
 func ExampleLinkedHashSet_Add() {

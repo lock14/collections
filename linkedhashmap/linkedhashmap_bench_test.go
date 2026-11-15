@@ -1,8 +1,16 @@
 package linkedhashmap_test
 
 import (
-	"github.com/lock14/collections/linkedhashmap"
 	"testing"
+
+	"github.com/lock14/collections/linkedhashmap"
+)
+
+const benchSize = 1000
+
+var (
+	sinkInt  int
+	sinkBool bool
 )
 
 func BenchmarkLinkedHashMap_Put(b *testing.B) {
@@ -25,59 +33,98 @@ func BenchmarkLinkedHashMap_Put_Preallocated(b *testing.B) {
 
 func BenchmarkLinkedHashMap_Put_Evict(b *testing.B) {
 	b.ReportAllocs()
-	m := linkedhashmap.New[int, int](linkedhashmap.WithMaxElements(1000))
-	for i := 0; i < 1000; i++ {
+	m := linkedhashmap.New[int, int](linkedhashmap.WithMaxElements(benchSize))
+	for i := 0; i < benchSize; i++ {
 		m.Put(i, i)
 	}
 	b.ResetTimer()
-	for i := 1000; i < b.N+1000; i++ {
+	for i := benchSize; i < b.N+benchSize; i++ {
 		m.Put(i, i)
+	}
+}
+
+func BenchmarkLinkedHashMap_PutRemove(b *testing.B) {
+	b.ReportAllocs()
+	m := linkedhashmap.New[int, int](linkedhashmap.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
+		m.Put(i, i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		k := i % benchSize
+		m.Remove(k)
+		m.Put(k, i)
 	}
 }
 
 func BenchmarkLinkedHashMap_Get_InsertionOrder(b *testing.B) {
 	b.ReportAllocs()
-	m := linkedhashmap.New[int, int]()
-	for i := 0; i < 1000; i++ {
+	m := linkedhashmap.New[int, int](linkedhashmap.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
 		m.Put(i, i)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.Get(i % 1000)
+		sinkInt, sinkBool = m.Get(i % benchSize)
 	}
 }
 
 func BenchmarkLinkedHashMap_Get_AccessOrder(b *testing.B) {
 	b.ReportAllocs()
-	m := linkedhashmap.New[int, int](linkedhashmap.WithAccessOrder())
-	for i := 0; i < 1000; i++ {
+	m := linkedhashmap.New[int, int](
+		linkedhashmap.WithCapacity(benchSize),
+		linkedhashmap.WithAccessOrder(),
+	)
+	for i := 0; i < benchSize; i++ {
 		m.Put(i, i)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.Get(i % 1000)
+		sinkInt, sinkBool = m.Get(i % benchSize)
 	}
 }
 
-func BenchmarkLinkedHashMap_AddRemove(b *testing.B) {
+func BenchmarkLinkedHashMap_First(b *testing.B) {
 	b.ReportAllocs()
-	m := linkedhashmap.New[int, int]()
+	m := linkedhashmap.New[int, int](linkedhashmap.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
+		m.Put(i, i)
+	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.Put(i, i)
-		m.Remove(i)
+		k, v := m.First()
+		sinkInt = k + v
 	}
 }
 
-func BenchmarkLinkedHashMap_IterateAll(b *testing.B) {
+func BenchmarkLinkedHashMap_All(b *testing.B) {
 	b.ReportAllocs()
-	m := linkedhashmap.New[int, int]()
-	for i := 0; i < 1000; i++ {
+	m := linkedhashmap.New[int, int](linkedhashmap.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
 		m.Put(i, i)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for range m.All() {
+		sum := 0
+		for k, v := range m.All() {
+			sum += k + v
 		}
+		sinkInt = sum
+	}
+}
+
+func BenchmarkLinkedHashMap_Backward(b *testing.B) {
+	b.ReportAllocs()
+	m := linkedhashmap.New[int, int](linkedhashmap.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
+		m.Put(i, i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sum := 0
+		for k, v := range m.Backward() {
+			sum += k + v
+		}
+		sinkInt = sum
 	}
 }

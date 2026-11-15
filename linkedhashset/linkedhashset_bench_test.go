@@ -1,8 +1,16 @@
 package linkedhashset_test
 
 import (
-	"github.com/lock14/collections/linkedhashset"
 	"testing"
+
+	"github.com/lock14/collections/linkedhashset"
+)
+
+const benchSize = 1000
+
+var (
+	sinkInt  int
+	sinkBool bool
 )
 
 func BenchmarkLinkedHashSet_Add(b *testing.B) {
@@ -23,38 +31,87 @@ func BenchmarkLinkedHashSet_Add_Preallocated(b *testing.B) {
 	}
 }
 
-func BenchmarkLinkedHashSet_Contains(b *testing.B) {
+func BenchmarkLinkedHashSet_AddRemoveElement(b *testing.B) {
 	b.ReportAllocs()
-	s := linkedhashset.New[int]()
-	for i := 0; i < 1000; i++ {
+	s := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
 		s.Add(i)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		s.Contains(i % 1000)
+		k := i % benchSize
+		s.RemoveElement(k)
+		s.Add(k)
 	}
 }
 
-func BenchmarkLinkedHashSet_AddRemove(b *testing.B) {
+func BenchmarkLinkedHashSet_Contains(b *testing.B) {
 	b.ReportAllocs()
-	s := linkedhashset.New[int]()
+	s := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
+		s.Add(i)
+	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		sinkBool = s.Contains(i % benchSize)
+	}
+}
+
+func BenchmarkLinkedHashSet_First(b *testing.B) {
+	b.ReportAllocs()
+	s := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
 		s.Add(i)
-		s.RemoveElement(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sinkInt = s.First()
+	}
+}
+
+func BenchmarkLinkedHashSet_All(b *testing.B) {
+	b.ReportAllocs()
+	s := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
+		s.Add(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sum := 0
+		for v := range s.All() {
+			sum += v
+		}
+		sinkInt = sum
+	}
+}
+
+func BenchmarkLinkedHashSet_Backward(b *testing.B) {
+	b.ReportAllocs()
+	s := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize))
+	for i := 0; i < benchSize; i++ {
+		s.Add(i)
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		sum := 0
+		for v := range s.Backward() {
+			sum += v
+		}
+		sinkInt = sum
 	}
 }
 
 func BenchmarkLinkedHashSet_RetainAll(b *testing.B) {
 	b.ReportAllocs()
-	other := linkedhashset.New[int]()
-	for i := 0; i < 500; i++ {
+	other := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize / 2))
+	for i := 0; i < benchSize/2; i++ {
 		other.Add(i)
 	}
+	s := linkedhashset.New[int](linkedhashset.WithCapacity(benchSize))
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		s := linkedhashset.New[int]()
-		for j := 0; j < 1000; j++ {
+		for j := 0; j < benchSize; j++ {
 			s.Add(j)
 		}
 		b.StartTimer()

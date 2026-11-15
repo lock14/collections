@@ -40,7 +40,7 @@ func main() {
 
 ## Data Structures
 
-Implementations leverage Go generics to eliminate `interface{}` boxing and runtime type assertions.
+Implementations leverage Go generics to eliminate `interface{}` boxing and runtime type assertions. Configurable collections accept functional options (`Option`) such as `WithCapacity`, `WithDegree`, `WithAccessOrder`, `WithMaxElements`, and `WithDirected`.
 
 *   **Maps**
     *   `hashmap`: Map backed by a hash table.

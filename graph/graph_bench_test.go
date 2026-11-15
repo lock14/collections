@@ -6,12 +6,44 @@ import (
 	"github.com/lock14/collections/graph"
 )
 
-func BenchmarkGraph_AddVertex(b *testing.B) {
+const benchSize = 1000
+
+var (
+	sinkInt  int
+	sinkBool bool
+)
+
+func buildBenchDirectedGraph(n int) *graph.Graph[int] {
+	g := graph.New[int](graph.WithDirected(), graph.WithCapacity(n))
+	for i := range n {
+		g.AddEdge(i, (i+1)%n)
+		g.AddEdge(i, (i+7)%n)
+		g.AddEdge(i, (i+31)%n)
+		g.AddEdge(i, (i+127)%n)
+	}
+	return g
+}
+
+func BenchmarkGraph_AddRemoveVertex(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
 	b.ReportAllocs()
-	g := graph.New[int]()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		g.AddVertex(i)
+		v := benchSize + (i & 1023)
+		g.AddVertex(v)
+		g.RemoveVertex(v)
+	}
+}
+
+func BenchmarkGraph_AddRemoveEdge(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		u := i % benchSize
+		v := (u + 503) % benchSize
+		g.AddEdge(u, v)
+		g.RemoveEdge(u, v)
 	}
 }
 
@@ -22,101 +54,69 @@ func BenchmarkGraph_AddVertex_Preallocated(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		g.AddVertex(i)
 	}
+	sinkInt = g.Order()
 }
 
-func BenchmarkGraph_AddEdge_Directed(b *testing.B) {
+func BenchmarkGraph_ContainsEdge(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
 	b.ReportAllocs()
-	g := graph.New[int](graph.WithDirected())
 	b.ResetTimer()
+	var ok bool
 	for i := 0; i < b.N; i++ {
-		g.AddEdge(i, i+1)
+		u := i % benchSize
+		ok = g.ContainsEdge(u, (u+1)%benchSize)
 	}
+	sinkBool = ok
 }
 
-func BenchmarkGraph_AddEdge_Directed_Preallocated(b *testing.B) {
+func BenchmarkGraph_Successors(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
 	b.ReportAllocs()
-	g := graph.New[int](graph.WithDirected(), graph.WithCapacity(b.N))
 	b.ResetTimer()
+	var sum int
 	for i := 0; i < b.N; i++ {
-		g.AddEdge(i, i+1)
-	}
-}
-
-func BenchmarkGraph_AddEdge_Undirected(b *testing.B) {
-	b.ReportAllocs()
-	g := graph.New[int]()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.AddEdge(i, i+1)
-	}
-}
-
-func BenchmarkGraph_AddEdge_Undirected_Preallocated(b *testing.B) {
-	b.ReportAllocs()
-	g := graph.New[int](graph.WithCapacity(b.N))
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.AddEdge(i, i+1)
-	}
-}
-
-func BenchmarkGraph_AddRemoveVertex(b *testing.B) {
-	b.ReportAllocs()
-	g := graph.New[int]()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.AddVertex(i)
-		g.RemoveVertex(i)
-	}
-}
-
-func BenchmarkGraph_AddRemoveEdge(b *testing.B) {
-	b.ReportAllocs()
-	g := graph.New[int]()
-	g.AddVertex(1)
-	g.AddVertex(2)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		g.AddEdge(1, 2)
-		g.RemoveEdge(1, 2)
-	}
-}
-
-func BenchmarkGraph_IterateVertices(b *testing.B) {
-	b.ReportAllocs()
-	g := graph.New[int]()
-	for i := 0; i < 1000; i++ {
-		g.AddVertex(i)
-	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		for range g.Vertices() {
+		for v := range g.Successors(i % benchSize) {
+			sum += v
 		}
 	}
+	sinkInt = sum
 }
 
-func BenchmarkGraph_IterateEdges(b *testing.B) {
+func BenchmarkGraph_Vertices(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
 	b.ReportAllocs()
-	g := graph.New[int]()
-	for i := 0; i < 1000; i++ {
-		g.AddEdge(i, i+1)
-	}
 	b.ResetTimer()
+	var sum int
 	for i := 0; i < b.N; i++ {
-		for range g.Edges() {
+		for v := range g.Vertices() {
+			sum += v
 		}
 	}
+	sinkInt = sum
 }
 
-func BenchmarkGraph_IncidentEdges(b *testing.B) {
+func BenchmarkGraph_Edges(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
 	b.ReportAllocs()
-	g := graph.New[int]()
-	for i := 0; i < 1000; i++ {
-		g.AddEdge(0, i)
-	}
 	b.ResetTimer()
+	var sum int
 	for i := 0; i < b.N; i++ {
-		for range g.IncidentEdges(0) {
+		for u, v := range g.Edges() {
+			sum += u + v
 		}
 	}
+	sinkInt = sum
+}
+
+func BenchmarkGraph_IncidentEdges_Directed(b *testing.B) {
+	g := buildBenchDirectedGraph(benchSize)
+	b.ReportAllocs()
+	b.ResetTimer()
+	var sum int
+	for i := 0; i < b.N; i++ {
+		for u, v := range g.IncidentEdges(i % benchSize) {
+			sum += u + v
+		}
+	}
+	sinkInt = sum
 }
